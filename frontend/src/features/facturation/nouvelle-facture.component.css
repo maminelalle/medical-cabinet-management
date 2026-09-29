@@ -1,0 +1,49 @@
+/* Nouvelle facture - mise en page locale */
+.new-invoice-page { display: grid; gap: 18px; }
+
+.form-card { display: grid; gap: 20px; }
+.form-card .section-heading { padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+
+.lines { display: grid; gap: 14px; }
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, .6fr) auto;
+  align-items: end;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.remove-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.remove-button:hover:not(:disabled) { border-color: #fecaca; background: var(--danger-soft); color: var(--danger-text); }
+.remove-button:disabled { opacity: .45; cursor: not-allowed; }
+
+.summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, var(--brand-soft), var(--bg-surface) 65%); border-color: #dbeafe; }
+.summary span { display: block; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; }
+.summary strong { display: block; margin-top: 8px; color: var(--text-strong); font-size: clamp(22px, 2vw, 28px); font-weight: 800; letter-spacing: -.03em; }
+.summary p { max-width: 320px; color: var(--text-muted); font-size: var(--fs-xs); text-align: right; }
+
+@media (max-width: 1180px) {
+  .line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .line .remove-button { grid-column: 2; justify-self: end; }
+}
+@media (max-width: 760px) {
+  .line { grid-template-columns: minmax(0, 1fr); }
+  .line .remove-button { grid-column: 1; justify-self: start; }
+  .summary { flex-direction: column; align-items: flex-start; }
+  .summary p { max-width: none; text-align: left; }
+}

@@ -1,0 +1,129 @@
+<section class="dossier-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">MÉDECIN / DOSSIER PATIENT</p>
+      <h1>Dossier médical</h1>
+      <p class="subtitle">Historique des consultations, ordonnances et prochains rendez-vous du patient.</p>
+    </div>
+    <div class="page-actions">
+      <a class="soft-button" routerLink="/patients">← Liste des patients</a>
+      <a class="primary-button" routerLink="/rendez-vous">Mon planning</a>
+    </div>
+  </header>
+
+  @if (loading) {
+    <section class="card loading-state">Chargement du dossier médical...</section>
+  } @else if (error) {
+    <section class="card error-state">
+      <span class="error-icon">!</span>
+      <strong>Dossier indisponible</strong>
+      <p>{{ error }}</p>
+      <a class="soft-button" routerLink="/patients">Retour à la liste des patients</a>
+    </section>
+  } @else if (dossier) {
+    <div class="dossier-grid">
+      <aside class="dossier-side">
+        <article class="card identity-card">
+          <span class="patient-avatar">{{ dossier.patient.prenom[0] }}{{ dossier.patient.nom[0] }}</span>
+          <h2>{{ dossier.patient.prenom }} {{ dossier.patient.nom }}</h2>
+          <p class="subtitle">
+            {{ age !== null ? age + ' ans' : 'Âge non renseigné' }} · né(e) le {{ dossier.patient.dateNaissance | date:'dd/MM/yyyy':'':'fr-FR' }}
+          </p>
+          <ul class="identity-list">
+            <li><span>Téléphone</span><strong>{{ dossier.patient.telephone || 'Non renseigné' }}</strong></li>
+            <li><span>Email</span><strong>{{ dossier.patient.email || 'Non renseigné' }}</strong></li>
+            <li><span>Adresse</span><strong>{{ dossier.patient.adresse || 'Non renseignée' }}</strong></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Synthèse</h2>
+              <p>Activité médicale enregistrée</p>
+            </div>
+          </div>
+          <ul class="stats-list">
+            <li><span>Consultations</span><strong>{{ dossier.consultations.length }}</strong></li>
+            <li><span>Ordonnances</span><strong>{{ nombrePrescriptions }}</strong></li>
+            <li><span>Rendez-vous à venir</span><strong>{{ prochainRendezVous }}</strong></li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Prochains rendez-vous</h2>
+              <p>Créneaux déjà planifiés</p>
+            </div>
+          </div>
+          @if (dossier.prochainsRendezVous.length) {
+            <div class="next-list">
+              @for (rendezVous of dossier.prochainsRendezVous; track rendezVous.id) {
+                <div>
+                  <span>
+                    <strong>{{ rendezVous.dateHeure | date:'EEE d MMM · HH:mm':'':'fr-FR' }}</strong>
+                    <small>{{ rendezVous.motif || 'Consultation' }} · Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</small>
+                  </span>
+                  <span class="badge" [class]="rendezVous.statut.toLowerCase()">{{ statutLabel(rendezVous.statut) }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">Aucun rendez-vous à venir.</div>
+          }
+        </article>
+      </aside>
+
+      <section class="timeline">
+        <div class="card-heading">
+          <div>
+            <h2>Historique des consultations</h2>
+            <p>{{ dossier.consultations.length }} consultation(s) enregistrée(s) pour ce patient</p>
+          </div>
+        </div>
+
+        @if (dossier.consultations.length) {
+          @for (consultation of dossier.consultations; track consultation.id) {
+            <article class="card timeline-item">
+              <div class="timeline-head">
+                <div>
+                  <h3>{{ consultation.dateHeure | date:'EEEE d MMMM yyyy · HH:mm':'':'fr-FR' }}</h3>
+                  <p>
+                    Dr. {{ consultation.medecinPrenom }} {{ consultation.medecinNom }}{{ consultation.specialite ? ' · ' + consultation.specialite : '' }}
+                    — {{ consultation.motif || 'Consultation' }}
+                  </p>
+                </div>
+                <div class="timeline-meta">
+                  @if (consultation.prescription) { <span class="badge confirme">Ordonnance</span> }
+                  <a class="row-action" [routerLink]="['/rendez-vous', consultation.rendezVousId, 'consultation']" aria-label="Ouvrir la consultation">→</a>
+                </div>
+              </div>
+
+              <p class="report-text">{{ consultation.compteRendu }}</p>
+
+              @if (consultation.prescription) {
+                <div class="ordonnance">
+                  @for (item of consultation.prescription.lignes; track item.id) {
+                    <div>
+                      <span>
+                        <strong>{{ item.medicament }}</strong>
+                        <small>{{ item.posologie || 'Posologie non précisée' }}</small>
+                      </span>
+                      <span class="pill">{{ item.duree || 'Durée libre' }}</span>
+                    </div>
+                  }
+                </div>
+                @if (consultation.prescription.instructions) {
+                  <p class="subtitle">Instructions : {{ consultation.prescription.instructions }}</p>
+                }
+              }
+            </article>
+          }
+        } @else {
+          <div class="empty-state">Aucune consultation enregistrée pour ce patient.</div>
+        }
+      </section>
+    </div>
+  }
+</section>

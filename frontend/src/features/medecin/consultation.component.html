@@ -1,0 +1,139 @@
+<section class="consultation-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">MÉDECIN / CONSULTATION</p>
+      <h1>Compte-rendu de consultation</h1>
+      <p class="subtitle">Rédigez le compte-rendu puis, si nécessaire, l'ordonnance rattachée au rendez-vous.</p>
+    </div>
+    <a class="back-link" routerLink="/rendez-vous">← Retour au planning</a>
+  </header>
+
+  @if (loading) {
+    <section class="card loading-state">Chargement du rendez-vous...</section>
+  } @else if (rendezVous) {
+    <article class="card summary-card">
+      <span class="patient-avatar">{{ rendezVous.patientPrenom[0] }}{{ rendezVous.patientNom[0] }}</span>
+      <div>
+        <h2>{{ rendezVous.patientPrenom }} {{ rendezVous.patientNom }}</h2>
+        <p>{{ rendezVous.dateHeure | date:'EEEE d MMMM yyyy':'':'fr-FR' }} à {{ rendezVous.dateHeure | date:'HH:mm' }} · Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</p>
+        <p>Motif : {{ rendezVous.motif || 'Consultation' }}</p>
+      </div>
+      <span class="badge" [class]="rendezVous.statut.toLowerCase()">{{ statutLabel(rendezVous.statut) }}</span>
+    </article>
+
+    @if (message) {
+      <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong>Redirection vers le dossier du patient.</div></div>
+    }
+    @if (error) {
+      <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div>
+    }
+
+    @if (!consultation) {
+      <form class="card consultation-card" [formGroup]="form" (ngSubmit)="enregistrerConsultation()">
+        <div class="section-heading">
+          <div>
+            <h2>Compte-rendu médical</h2>
+            <p>Le compte-rendu clôture le rendez-vous et alimente le dossier du patient</p>
+          </div>
+        </div>
+        <label>
+          Compte-rendu *
+          <textarea rows="6" formControlName="compteRendu" placeholder="Observations, examen clinique, diagnostic, conduite à tenir..."></textarea>
+        </label>
+
+        <div class="section-heading">
+          <div>
+            <h2>Ordonnance</h2>
+            <p>Optionnelle — laissez vide si aucun médicament n'est prescrit</p>
+          </div>
+          <button class="soft-button" type="button" (click)="ajouterLigne()">+ Ajouter un médicament</button>
+        </div>
+
+        <div class="prescription-lines" formArrayName="lignes">
+          @for (ligne of lignes.controls; track ligne; let index = $index) {
+            <div class="prescription-line" [formGroupName]="index">
+              <label>Médicament<input formControlName="medicament" placeholder="Paracétamol 500 mg"></label>
+              <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
+              <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
+              <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>
+            </div>
+          }
+        </div>
+
+        <label>
+          Instructions au patient
+          <textarea rows="3" formControlName="instructions" placeholder="Précautions, régime, date de contrôle..."></textarea>
+        </label>
+
+        <div class="form-actions">
+          <a class="cancel-button" routerLink="/rendez-vous">Annuler</a>
+          <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer la consultation' }} <span>→</span></button>
+        </div>
+      </form>
+    } @else {
+      <article class="card consultation-card">
+        <div class="section-heading">
+          <div>
+            <h2>Compte-rendu enregistré</h2>
+            <p>Consultation du {{ consultation.dateHeure | date:'dd/MM/yyyy':'':'fr-FR' }} · Dr. {{ consultation.medecinPrenom }} {{ consultation.medecinNom }}</p>
+          </div>
+          <span class="badge confirme">Consultation clôturée</span>
+        </div>
+        <p class="report-text">{{ consultation.compteRendu }}</p>
+
+        @if (consultation.prescription) {
+          <div class="section-heading">
+            <div>
+              <h2>Ordonnance du {{ consultation.prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</h2>
+              <p>{{ consultation.prescription.lignes.length }} médicament(s) prescrit(s)</p>
+            </div>
+          </div>
+          <div class="ordonnance">
+            @for (item of consultation.prescription.lignes; track item.id) {
+              <div>
+                <span>
+                  <strong>{{ item.medicament }}</strong>
+                  <small>{{ item.posologie || 'Posologie non précisée' }}</small>
+                </span>
+                <span class="pill">{{ item.duree || 'Durée libre' }}</span>
+              </div>
+            }
+          </div>
+          @if (consultation.prescription.instructions) {
+            <p class="subtitle">Instructions : {{ consultation.prescription.instructions }}</p>
+          }
+        } @else {
+          <form class="consultation-card" [formGroup]="form" (ngSubmit)="enregistrerOrdonnanceSeule()">
+            <div class="section-heading">
+              <div>
+                <h2>Ajouter une ordonnance</h2>
+                <p>Aucune prescription n'est rattachée à cette consultation</p>
+              </div>
+              <button class="soft-button" type="button" (click)="ajouterLigne()">+ Ajouter un médicament</button>
+            </div>
+            <div class="prescription-lines" formArrayName="lignes">
+              @for (ligne of lignes.controls; track ligne; let index = $index) {
+                <div class="prescription-line" [formGroupName]="index">
+                  <label>Médicament<input formControlName="medicament" placeholder="Paracétamol 500 mg"></label>
+                  <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
+                  <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
+                  <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>
+                </div>
+              }
+            </div>
+            <label>
+              Instructions au patient
+              <textarea rows="3" formControlName="instructions"></textarea>
+            </label>
+            <div class="form-actions">
+              <a class="cancel-button" routerLink="/rendez-vous">Fermer</a>
+              <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : "Enregistrer l'ordonnance" }}</button>
+            </div>
+          </form>
+        }
+      </article>
+    }
+  } @else {
+    <div class="empty-state">Rendez-vous indisponible.</div>
+  }
+</section>

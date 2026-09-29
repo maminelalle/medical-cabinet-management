@@ -1,0 +1,38 @@
+/* Vitrine du design system - mise en page locale */
+.ui-kit-page { display: grid; gap: 20px; }
+.kit-section { display: grid; gap: 18px; }
+.kit-section > .card { display: grid; gap: 18px; }
+.kit-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 14px; }
+.swatch { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); }
+.swatch > span { height: 54px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.swatch strong { color: var(--text-strong); font-size: var(--fs-xs); font-weight: 800; }
+.swatch small { color: var(--text-soft); font-size: 10px; font-weight: 600; }
+
+.type-scale { display: grid; gap: 14px; }
+.type-scale > div { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+.type-scale > div:last-child { padding-bottom: 0; border-bottom: 0; }
+.type-scale small { color: var(--text-soft); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+.button-row, .badge-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.progress-row { display: grid; gap: 14px; }
+.progress-row > div { display: grid; gap: 8px; }
+.progress-row small { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; }
+
+.nav-preview { display: grid; gap: 2px; max-width: 320px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); }
+.nav-preview .nav-label { margin: 12px 12px 6px; color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.nav-preview .nav-label:first-child { margin-top: 4px; }
+.nav-preview .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; }
+.nav-preview .nav-item.active { background: var(--bg-active); color: var(--brand-dark); font-weight: 700; }
+.nav-preview .nav-item em { margin-left: auto; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--bg-hover); color: var(--text-soft); font-size: 9.5px; font-style: normal; font-weight: 700; }
+
+/* Accent de chacune des quatre cartes indicateurs */
+.ui-kit-page .stats-grid .stat-card:nth-child(1) { border-top-color: var(--accent); }
+.ui-kit-page .stats-grid .stat-card:nth-child(2) { border-top-color: var(--brand); }
+.ui-kit-page .stats-grid .stat-card:nth-child(3) { border-top-color: var(--warn); }
+.ui-kit-page .stats-grid .stat-card:nth-child(4) { border-top-color: var(--violet); }
+
+@media (max-width: 980px) {
+  .kit-grid-2 { grid-template-columns: minmax(0, 1fr); }
+}

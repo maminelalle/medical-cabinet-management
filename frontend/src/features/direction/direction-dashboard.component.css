@@ -1,0 +1,61 @@
+/* Tableau de bord DIRECTION - mise en page locale */
+.direction-page { display: grid; gap: 20px; }
+
+.segmented { display: inline-flex; gap: 2px; padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); }
+.segmented button { padding: 8px 14px; border: 0; border-radius: var(--radius-xs); background: transparent; color: var(--text-muted); font: inherit; font-size: var(--fs-xs); font-weight: 700; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+.segmented button:hover { background: var(--bg-hover); color: var(--text-strong); }
+.segmented button.active { background: var(--ink); color: #fff; }
+
+.period-card { padding: 18px 22px; }
+.period-card .filters { align-items: flex-end; }
+
+/* Accent de chacune des quatre cartes indicateurs */
+.stats-grid .stat-card:nth-child(1) { border-top-color: var(--brand); }
+.stats-grid .stat-card:nth-child(2) { border-top-color: var(--accent); }
+.stats-grid .stat-card:nth-child(3) { border-top-color: var(--warn); }
+.stats-grid .stat-card:nth-child(4) { border-top-color: var(--violet); }
+
+/* --- Chiffre d'affaires par type d'acte --------------------------------- */
+.chart-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.bars { display: grid; gap: 18px; margin-top: 22px; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 152px) minmax(0, 1fr) minmax(0, 132px); align-items: center; gap: 14px; }
+.bar-row > span { overflow: hidden; color: var(--text); font-size: var(--fs-xs); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 10px; overflow: hidden; border-radius: var(--radius-pill); background: var(--bg-hover); }
+.bar-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), #60a5fa); transition: width 320ms ease; }
+.bar-row strong { color: var(--text-strong); font-size: var(--fs-xs); font-weight: 800; text-align: right; }
+
+/* --- Etat des factures -------------------------------------------------- */
+.donut {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background-image: radial-gradient(closest-side, var(--bg-surface) 0 68%, transparent 69%), conic-gradient(var(--brand) 0 100%, var(--bg-hover) 100%);
+  color: var(--brand-dark);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+.donut-legend { display: grid; gap: 12px; margin-top: 22px; }
+.donut-legend > div { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.donut-legend i { width: 10px; height: 10px; border-radius: 50%; }
+.donut-legend i.paid { background: var(--accent); }
+.donut-legend i.partial { background: var(--warn); }
+.donut-legend i.pending { background: var(--info); }
+.donut-legend span { display: flex; flex: 1; align-items: center; gap: 8px; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.donut-legend strong { margin-left: auto; color: var(--text-strong); font-size: var(--fs-sm); font-weight: 800; }
+
+/* --- Activite par medecin et impayes ------------------------------------ */
+.lower-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.lower-grid table td.amount { color: var(--warn-text); font-weight: 800; text-align: right; white-space: nowrap; }
+.lower-grid table td:last-child { text-align: right; }
+
+@media (max-width: 1180px) {
+  .chart-grid, .lower-grid { grid-template-columns: minmax(0, 1fr); }
+  .bar-row { grid-template-columns: minmax(0, 120px) minmax(0, 1fr); row-gap: 6px; }
+  .bar-row strong { grid-column: 2; text-align: left; }
+}
+@media (max-width: 760px) {
+  .segmented { width: 100%; }
+  .segmented button { flex: 1; }
+}

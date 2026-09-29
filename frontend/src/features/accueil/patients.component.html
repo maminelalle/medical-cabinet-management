@@ -1,7 +1,101 @@
-<main class="workspace">
-  <header><div><p class="eyebrow">ACCUEIL / PATIENTS</p><h1>Fiches patients</h1></div><span class="status">{{ patients.length }} dossier(s)</span></header>
-  <section class="content-grid">
-    <form class="panel form-panel" [formGroup]="form" (ngSubmit)="save()"><h2>{{ editingId === null ? 'Nouveau patient' : 'Modifier la fiche' }}</h2><label>Nom<input formControlName="nom"></label><label>Prenom<input formControlName="prenom"></label><label>Date de naissance<input type="date" formControlName="dateNaissance"></label><label>Telephone<input formControlName="telephone"></label><label>Email<input type="email" formControlName="email"></label><label>Adresse<input formControlName="adresse"></label><button type="submit">{{ editingId === null ? 'Ajouter la fiche' : 'Enregistrer' }}</button>@if (editingId !== null) { <button type="button" class="secondary" (click)="cancelEdit()">Annuler</button> }</form>
-    <section class="panel"><div class="toolbar"><input placeholder="Rechercher par nom ou prenom" [(ngModel)]="query" (keyup.enter)="load()"><button type="button" class="secondary" (click)="load()">Rechercher</button></div>@if (message) { <p class="message">{{ message }}</p> } @if (loading) { <p>Chargement...</p> } @else { <div class="patient-list">@for (patient of patients; track patient.id) { <article><div><strong>{{ patient.nom }} {{ patient.prenom }}</strong><span>{{ patient.dateNaissance }}</span></div><small>{{ patient.telephone || 'Telephone non renseigne' }}</small><div class="actions"><button type="button" class="secondary" (click)="edit(patient)">Modifier</button><button type="button" class="danger" (click)="remove(patient)">Supprimer</button></div></article>} @empty { <p>Aucun patient trouve.</p> }</div>}</section>
+<section class="patients-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">{{ isMedecin ? 'MÉDECIN / PATIENTS' : 'ACCUEIL / PATIENTS' }}</p>
+      <h1>Liste des patients</h1>
+      <p class="subtitle">
+        {{ isMedecin
+          ? 'Ouvrez le dossier médical de vos patients et consultez leur historique de consultations.'
+          : 'Retrouvez rapidement les dossiers administratifs du cabinet.' }}
+      </p>
+    </div>
+    @if (!isMedecin) {
+      <button class="primary-button" type="button" (click)="startCreate()"><span>+</span> Nouveau patient</button>
+    }
+  </header>
+
+  <section class="card table-card">
+    <div class="table-heading">
+      <div>
+        <h2>Patients enregistrés</h2>
+        <p>{{ patients.length }} dossier(s) dans votre base</p>
+      </div>
+      <div class="search-field">
+        <span>⌕</span>
+        <input placeholder="Rechercher par nom ou prénom" [(ngModel)]="query" (keyup.enter)="load()">
+        <button type="button" (click)="load()">Rechercher</button>
+      </div>
+    </div>
+
+    @if (message) { <p class="message">{{ message }}</p> }
+
+    @if (loading) {
+      <div class="empty-state">Chargement des patients...</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Date de naissance</th>
+              <th>Téléphone</th>
+              <th>Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (patient of patients; track patient.id) {
+              <tr>
+                <td>
+                  <div class="patient-cell">
+                    <span class="patient-avatar">{{ patient.prenom[0] }}{{ patient.nom[0] }}</span>
+                    <strong>{{ patient.prenom }} {{ patient.nom }}</strong>
+                  </div>
+                </td>
+                <td>{{ patient.dateNaissance }}</td>
+                <td>{{ patient.telephone || 'Non renseigné' }}</td>
+                <td>{{ patient.email || 'Non renseigné' }}</td>
+                <td>
+                  <div class="actions">
+                    @if (isMedecin) {
+                      <a class="row-action" [routerLink]="['/dossier', patient.id]" aria-label="Dossier médical">☰</a>
+                    } @else {
+                      <button class="row-action" type="button" (click)="edit(patient)" aria-label="Modifier">✎</button>
+                      <button class="row-action danger" type="button" (click)="remove(patient)" aria-label="Supprimer">⌫</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty-cell">Aucun patient trouvé.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   </section>
-</main>
+
+  @if (formOpen) {
+    <section class="edit-drawer card">
+      <div class="drawer-heading">
+        <div>
+          <p class="breadcrumb">FICHE PATIENT</p>
+          <h2>{{ editingId === null ? 'Nouveau patient' : 'Modifier le patient' }}</h2>
+        </div>
+        <button type="button" class="close-button" (click)="cancelEdit()">×</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <label>Nom<input formControlName="nom"></label>
+        <label>Prénom<input formControlName="prenom"></label>
+        <label>Date de naissance<input type="date" formControlName="dateNaissance"></label>
+        <label>Téléphone<input formControlName="telephone"></label>
+        <label>Email<input type="email" formControlName="email"></label>
+        <label>Adresse<input formControlName="adresse"></label>
+        <div class="form-actions">
+          <button type="button" class="soft-button" (click)="cancelEdit()">Annuler</button>
+          <button class="primary-button" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </section>
+  }
+</section>

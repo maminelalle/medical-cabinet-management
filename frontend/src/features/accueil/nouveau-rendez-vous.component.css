@@ -1,0 +1,7 @@
+/* Nouveau rendez-vous - mise en page locale */
+.new-appointment-page { display: grid; gap: 18px; }
+.form-card { display: grid; gap: 20px; }
+
+@media (max-width: 760px) {
+  .form-card { padding: 18px; }
+}

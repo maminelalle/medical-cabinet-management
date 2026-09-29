@@ -1,0 +1,61 @@
+/* Consultation medecin - mise en page locale */
+.consultation-page { display: grid; gap: 18px; }
+
+.summary-card { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.summary-card .patient-avatar { width: 46px; height: 46px; font-size: 14px; }
+.summary-card h2 { font-size: 18px; }
+.summary-card p { margin-top: 4px; color: var(--text-muted); font-size: var(--fs-xs); }
+.summary-card .badge { margin-left: auto; }
+
+.consultation-card { display: grid; gap: 22px; }
+.report-text {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.prescription-lines { display: grid; gap: 12px; }
+.prescription-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, .7fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.remove-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.remove-button:hover:not(:disabled) { border-color: #fecaca; background: var(--danger-soft); color: var(--danger-text); }
+.remove-button:disabled { opacity: .45; cursor: not-allowed; }
+
+.ordonnance { display: grid; gap: 10px; }
+.ordonnance > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.ordonnance strong { color: var(--text-strong); font-size: var(--fs-sm); font-weight: 700; }
+.ordonnance small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); }
+
+@media (max-width: 1180px) {
+  .prescription-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prescription-line .remove-button { grid-column: 2; justify-self: end; }
+}
+@media (max-width: 760px) {
+  .prescription-line { grid-template-columns: minmax(0, 1fr); }
+  .prescription-line .remove-button { grid-column: 1; justify-self: start; }
+}

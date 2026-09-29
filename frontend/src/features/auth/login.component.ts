@@ -8,11 +8,11 @@ export class LoginComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  readonly form = this.formBuilder.nonNullable.group({ email: ['', [Validators.required, Validators.email]], motDePasse: ['', Validators.required] });
+  readonly form = this.formBuilder.nonNullable.group({ email: ['', [Validators.required, Validators.email]], motDePasse: ['', Validators.required], remember: [true] });
   error = '';
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.error = '';
-    this.auth.login(this.form.value.email!, this.form.value.motDePasse!).subscribe({ next: () => this.router.navigate(['/patients']), error: () => this.error = 'Identifiants invalides ou serveur indisponible.' });
+    this.auth.login(this.form.value.email!, this.form.value.motDePasse!).subscribe({ next: () => this.router.navigate([this.auth.role() === 'DIRECTION' ? '/direction/dashboard' : this.auth.role() === 'MEDECIN' ? '/rendez-vous' : '/accueil']), error: () => this.error = 'Identifiants invalides ou serveur indisponible.' });
   }
 }

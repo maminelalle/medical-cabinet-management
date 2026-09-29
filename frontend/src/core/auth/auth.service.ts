@@ -18,4 +18,5 @@ export class AuthService {
   logout(): void { localStorage.clear(); }
   isAuthenticated(): boolean { return Boolean(localStorage.getItem('token')); }
   role(): string | null { return localStorage.getItem('role'); }
+  email(): string | null { return localStorage.getItem('email'); }
 }

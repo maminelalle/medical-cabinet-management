@@ -1,0 +1,239 @@
+<section class="ui-kit-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">SYSTÈME / DESIGN SYSTEM</p>
+      <h1>Design system du cabinet</h1>
+      <p class="subtitle">Tous les composants d'interface de l'application, alignés sur la maquette d'administration.</p>
+    </div>
+    <div class="page-actions">
+      <button class="soft-button" type="button">Exporter les jetons</button>
+      <button class="primary-button" type="button"><span>+</span> Nouveau composant</button>
+    </div>
+  </header>
+
+  <section class="kit-section">
+    <article class="card">
+      <div class="card-heading">
+        <div>
+          <h2>Jetons de couleur</h2>
+          <p>Variables CSS déclarées dans <strong>src/styles.css</strong> et réutilisées par tous les écrans.</p>
+        </div>
+        <span class="pill soft">{{ swatches.length }} jetons</span>
+      </div>
+      <div class="swatch-grid">
+        @for (color of swatches; track color.token) {
+          <div class="swatch">
+            <span [style.background]="'var(' + color.token + ')'"></span>
+            <strong>{{ color.label }}</strong>
+            <small>{{ color.token }}</small>
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="kit-section">
+    <div class="kit-grid-2">
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Typographie</h2>
+            <p>Police Manrope, titres extra-gras et étiquettes en majuscules.</p>
+          </div>
+        </div>
+        <div class="type-scale">
+          <div><small>Titre de page · 26 à 32 px</small><h1>Tableau de bord</h1></div>
+          <div><small>Titre de carte · 17 px</small><h2>Prochains rendez-vous</h2></div>
+          <div><small>Titre de section · 14 px</small><h3>Actes facturés</h3></div>
+          <div><small>Texte courant · 14 px</small><p>Le suivi administratif des patients reste lisible et hiérarchisé.</p></div>
+          <div><small>Texte secondaire · 13 px</small><p class="subtitle">Métadonnées, aides et descriptions secondaires.</p></div>
+          <div><small>Étiquette · 11 px</small><p class="breadcrumb">Étiquette en majuscules</p></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Navigation</h2>
+            <p>Groupes de menu, élément actif et entrées désactivées.</p>
+          </div>
+        </div>
+        <div class="nav-preview">
+          <p class="nav-label">Pilotage</p>
+          @for (item of navPreview; track item[0]) {
+            <span class="nav-item" [class.active]="item[1] === 'active'">
+              {{ item[0] }}
+              @if (item[2]) { <em>{{ item[2] }}</em> }
+            </span>
+          }
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="kit-section">
+    <article class="card">
+      <div class="card-heading">
+        <div>
+          <h2>Boutons</h2>
+          <p>Actions principales, secondaires, contextuelles et iconographiques.</p>
+        </div>
+      </div>
+      <div class="button-row">
+        <button class="primary-button" type="button"><span>+</span> Action principale</button>
+        <button class="soft-button" type="button">Action secondaire</button>
+        <button class="soft-button success" type="button">Valider un paiement</button>
+        <button class="soft-button danger" type="button">Annuler la facture</button>
+        <button class="ghost-button" type="button">Action discrète</button>
+        <button class="primary-button" type="button" disabled>Désactivé</button>
+        <button class="icon-button" type="button" aria-label="Rechercher">⌕</button>
+        <button class="row-action" type="button" aria-label="Voir">→</button>
+        <button class="row-action danger" type="button" aria-label="Supprimer"></button>
+      </div>
+      <div class="divider"></div>
+      <div class="badge-row">
+        @for (badge of badges; track badge[0]) {
+          <span class="badge" [class]="badge[0]">{{ badge[1] }}</span>
+        }
+        <span class="pill soft">Pilule douce</span>
+        <span class="pill">Pilule neutre</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="kit-section">
+    <div class="stats-grid">
+      @for (kpi of kpis; track kpi.label) {
+        <article class="stat-card">
+          <span class="stat-icon" [class]="kpi.tone">{{ kpi.icon }}</span>
+          <div>
+            <span>{{ kpi.label }}</span>
+            <strong>{{ kpi.value }}</strong>
+            <small class="up">{{ kpi.caption }}</small>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="kit-section">
+    <article class="card">
+      <div class="card-heading">
+        <div>
+          <h2>Tableau de données</h2>
+          <p>En-têtes en majuscules, lignes aérées et actions alignées à droite.</p>
+        </div>
+        <button class="soft-button" type="button">↻ Actualiser</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Facture</th>
+              <th>Patient</th>
+              <th>Date</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of invoices; track invoice.id) {
+              <tr>
+                <td><strong>{{ invoice.id }}</strong></td>
+                <td>
+                  <div class="patient-cell">
+                    <span class="patient-avatar">{{ invoice.initials }}</span>
+                    <strong>{{ invoice.patient }}</strong>
+                  </div>
+                </td>
+                <td>{{ invoice.date }}</td>
+                <td>{{ invoice.amount }}</td>
+                <td><span class="badge" [class]="invoice.badge">{{ invoice.status }}</span></td>
+                <td>
+                  <div class="actions">
+                    <button class="row-action" type="button" aria-label="Voir la facture">→</button>
+                    <button class="row-action danger" type="button" aria-label="Supprimer la facture">⌫</button>
+                  </div>
+                </td>
+              </tr>
+            }
+            <tr>
+              <td class="empty-cell" colspan="6">Cellule vide — état « aucun résultat ».</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="kit-section">
+    <div class="kit-grid-2">
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Formulaires</h2>
+            <p>Champs, listes déroulantes et actions de validation.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <label>Patient<input value="Aminata Diallo"></label>
+          <label>Médecin<input value="Dr. Ahmed Diallo"></label>
+          <label>Date<input type="date" value="2026-09-15"></label>
+          <label>Statut
+            <select>
+              <option>Confirmé</option>
+              <option>En attente</option>
+            </select>
+          </label>
+          <label class="full">Motif<textarea rows="3">Consultation de contrôle</textarea></label>
+        </div>
+        <div class="form-actions">
+          <button class="cancel-button" type="button">Annuler</button>
+          <button class="primary-button" type="button">Enregistrer</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Retours et états</h2>
+            <p>Messages contextuels, progression et listes vides.</p>
+          </div>
+        </div>
+        <div class="alert success">
+          <span>✓</span>
+          <div><strong>Paiement enregistré</strong>La facture FAC-142 est désormais soldée.</div>
+        </div>
+        <div class="alert info">
+          <span>i</span>
+          <div><strong>Information</strong>Le planning du 18 septembre est encore vide.</div>
+        </div>
+        <div class="alert warning">
+          <span>!</span>
+          <div><strong>Attention</strong>Trois factures dépassent trente jours d'ancienneté.</div>
+        </div>
+        <div class="alert danger">
+          <span>×</span>
+          <div><strong>Erreur</strong>Le service de facturation est momentanément indisponible.</div>
+        </div>
+        <div class="progress-row">
+          <div>
+            <small>Factures payées · 72%</small>
+            <div class="progress"><span style="width: 72%"></span></div>
+          </div>
+          <div>
+            <small>Occupation du planning · 48%</small>
+            <div class="progress"><span style="width: 48%"></span></div>
+          </div>
+        </div>
+        <div class="empty-state">Aucune donnée à afficher pour cette période.</div>
+        <div class="empty-state">
+          <span class="loading-dot"></span>
+          <strong>Chargement des données</strong>
+          <small>Connexion au service en cours...</small>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,119 @@
+<section class="appointments-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">{{ contextLabel }}</p>
+      <h1>{{ isDoctor ? 'Mon planning' : 'Planning des rendez-vous' }}</h1>
+      <p class="subtitle">
+        {{ isDoctor
+          ? 'Ouvrez le dossier de vos patients, rédigez les comptes-rendus et suivez les statuts de vos consultations.'
+          : 'Organisez les consultations, filtrez par médecin et mettez à jour le statut des rendez-vous.' }}
+      </p>
+    </div>
+    @if (isAccueil) {
+      <a class="primary-button" routerLink="/rendez-vous/nouveau"><span>+</span> Nouveau rendez-vous</a>
+    }
+  </header>
+
+  <section class="card filters">
+    <label><span>Date</span><input type="date" [(ngModel)]="date" (change)="load()"></label>
+    @if (isAccueil) {
+      <label>
+        <span>Médecin</span>
+        <select [(ngModel)]="medecinId" (change)="load()">
+          <option value="">Tous les médecins</option>
+          @for (doctor of doctors; track doctor.id) {
+            <option [value]="doctor.id">Dr. {{ doctor.prenom }} {{ doctor.nom }}{{ doctor.specialite ? ' · ' + doctor.specialite : '' }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <label><span>Périmètre</span><input value="Mes rendez-vous" disabled></label>
+    }
+    <label>
+      <span>Statut</span>
+      <select [(ngModel)]="status" (change)="load()">
+        <option value="">Tous les statuts</option>
+        @for (item of statuses; track item) { <option [value]="item">{{ statusLabel(item) }}</option> }
+      </select>
+    </label>
+  </section>
+
+  @if (message) {
+    <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong></div></div>
+  }
+
+  <section class="card table-card">
+    <div class="table-heading">
+      <div>
+        <h2>Rendez-vous du {{ date | date:'d MMMM yyyy':'':'fr-FR' }}</h2>
+        <p>{{ appointments.length }} consultation(s) planifiée(s)</p>
+      </div>
+      <button class="soft-button" type="button" (click)="load()">↻ Actualiser</button>
+    </div>
+
+    @if (loading) {
+      <div class="empty-state">
+        <span class="loading-dot"></span>
+        <strong>Chargement du planning</strong>
+        <small>Récupération des rendez-vous en cours...</small>
+      </div>
+    } @else if (error) {
+      <div class="error-state">
+        <span class="error-icon">!</span>
+        <strong>Le planning est momentanément indisponible</strong>
+        <p>{{ error }}</p>
+        <button class="soft-button" type="button" (click)="load()">Réessayer</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Heure</th>
+              <th>Patient</th>
+              <th>Médecin</th>
+              <th>Motif</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (appointment of appointments; track appointment.id) {
+              <tr>
+                <td class="time">{{ time(appointment.dateHeure) }}</td>
+                <td>
+                  <strong>{{ appointment.patientPrenom }} {{ appointment.patientNom }}</strong>
+                  <small>Patient #{{ appointment.patientId }}</small>
+                </td>
+                <td>Dr. {{ appointment.medecinPrenom }} {{ appointment.medecinNom }}</td>
+                <td>{{ appointment.motif || 'Consultation' }}</td>
+                <td><span class="badge" [class]="appointment.statut.toLowerCase()">{{ statusLabel(appointment.statut) }}</span></td>
+                <td>
+                  <div class="actions">
+                    <select
+                      class="statut-select"
+                      [ngModel]="appointment.statut"
+                      (ngModelChange)="changerStatut(appointment, $event)"
+                      [disabled]="savingId === appointment.id"
+                      [attr.aria-label]="'Changer le statut du rendez-vous de ' + appointment.patientPrenom"
+                    >
+                      @for (item of statuses; track item) { <option [value]="item">{{ statusLabel(item) }}</option> }
+                    </select>
+                    @if (isDoctor) {
+                      <a class="row-action" [routerLink]="['/dossier', appointment.patientId]" aria-label="Dossier médical du patient">☰</a>
+                      @if (estOuvert(appointment)) {
+                        <a class="row-action" [routerLink]="['/rendez-vous', appointment.id, 'consultation']" aria-label="Ouvrir la consultation">✎</a>
+                      }
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td class="empty-cell" colspan="6">Aucun rendez-vous ne correspond à vos filtres.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

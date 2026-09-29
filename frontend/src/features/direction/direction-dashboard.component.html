@@ -1,0 +1,180 @@
+<section class="direction-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">DIRECTION / TABLEAU DE BORD</p>
+      <h1>Vue d'ensemble <span>✦</span></h1>
+      <p class="subtitle">Indicateurs calculés sur les données réelles du cabinet : rendez-vous, consultations, factures et paiements.</p>
+    </div>
+    <div class="segmented">
+      <button type="button" [class.active]="periode === 'mois'" (click)="changerPeriode('mois')">Ce mois</button>
+      <button type="button" [class.active]="periode === 'annee'" (click)="changerPeriode('annee')">Cette année</button>
+      <button type="button" [class.active]="periode === 'tout'" (click)="changerPeriode('tout')">Tout l'historique</button>
+    </div>
+  </header>
+
+  <section class="card period-card">
+    <div class="filters">
+      <label><span>Du</span><input type="date" [(ngModel)]="dateDebut"></label>
+      <label><span>Au</span><input type="date" [(ngModel)]="dateFin"></label>
+      <button class="primary-button" type="button" (click)="charger()">Appliquer la période</button>
+    </div>
+  </section>
+
+  @if (error) {
+    <div class="alert danger"><span>×</span><div><strong>Indicateurs indisponibles</strong>{{ error }}</div></div>
+  }
+
+  @if (loading) {
+    <section class="card loading-state">Chargement des indicateurs...</section>
+  } @else {
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-icon blue">▤</span>
+        <div>
+          <span>Consultations sur la période</span>
+          <strong>{{ consultationsPeriode }}</strong>
+          <small>{{ rendezVousPeriode }} rendez-vous planifiés</small>
+        </div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon teal">₨</span>
+        <div>
+          <span>Chiffre d'affaires encaissé</span>
+          <strong>{{ format(revenuEncaisse) }}</strong>
+          <small class="up">↗ sur {{ format(revenuFacture) }} facturés</small>
+        </div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon orange">◷</span>
+        <div>
+          <span>Montant restant à recouvrer</span>
+          <strong>{{ format(resteARecouvrer) }}</strong>
+          <small class="down">{{ nombreImpayees }} facture(s) impayée(s)</small>
+        </div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon green">✓</span>
+        <div>
+          <span>Taux de factures impayées</span>
+          <strong>{{ tauxImpayees }}%</strong>
+          <small>sur l'ensemble des factures actives</small>
+        </div>
+      </article>
+    </section>
+
+    <section class="chart-grid">
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Chiffre d'affaires par type d'acte</h2>
+            <p>Consultation, hospitalisation, acte chirurgical et autres actes facturés</p>
+          </div>
+          <span class="pill">Total : {{ format(revenuFacture) }}</span>
+        </div>
+        @if (finances?.parTypeActe?.length) {
+          <div class="bars">
+            @for (type of finances!.parTypeActe; track type.typeActe) {
+              <div class="bar-row">
+                <span>{{ typeLabel(type.typeActe) }}</span>
+                <div class="bar-track"><i [style.width]="barWidth(type.montant)"></i></div>
+                <strong>{{ format(type.montant) }}</strong>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">Aucune facture sur cette période.</div>
+        }
+      </article>
+
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>État des factures</h2>
+            <p>Répartition des paiements du cabinet</p>
+          </div>
+          <span class="donut" [style.backgroundImage]="donutStyle">{{ 100 - tauxImpayees }}%</span>
+        </div>
+        <div class="donut-legend">
+          <div><i class="paid"></i><span>Factures payées <strong>{{ countStatut('PAYEE') }}</strong></span></div>
+          <div><i class="partial"></i><span>Factures partielles <strong>{{ countStatut('PARTIELLE') }}</strong></span></div>
+          <div><i class="pending"></i><span>En attente de paiement <strong>{{ countStatut('EN_ATTENTE') }}</strong></span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="lower-grid">
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Activité par médecin</h2>
+            <p>Rendez-vous et consultations sur la période sélectionnée</p>
+          </div>
+        </div>
+        @if (activite?.parMedecin?.length) {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Médecin</th><th>Spécialité</th><th>Rendez-vous</th><th>Consultations</th></tr>
+              </thead>
+              <tbody>
+                @for (medecin of activite!.parMedecin; track medecin.medecinId) {
+                  <tr>
+                    <td>
+                      <div class="patient-cell">
+                        <span class="patient-avatar">{{ medecin.prenom[0] }}{{ medecin.nom[0] }}</span>
+                        <strong>Dr. {{ medecin.prenom }} {{ medecin.nom }}</strong>
+                      </div>
+                    </td>
+                    <td>{{ medecin.specialite || 'Non précisée' }}</td>
+                    <td>{{ medecin.rendezVous }}</td>
+                    <td><span class="badge confirme">{{ medecin.consultations }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">Aucun médecin enregistré.</div>
+        }
+      </article>
+
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Factures impayées</h2>
+            <p>{{ nombreImpayees }} facture(s) restant à encaisser</p>
+          </div>
+          <span class="pill">{{ format(resteARecouvrer) }}</span>
+        </div>
+        @if (impayes?.factures?.length) {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Facture</th><th>Patient</th><th>Reste à payer</th><th>Statut</th></tr>
+              </thead>
+              <tbody>
+                @for (facture of impayes!.factures; track facture.id) {
+                  <tr>
+                    <td>
+                      <strong>FAC-{{ facture.id.toString().padStart(3, '0') }}</strong>
+                      <small>{{ facture.dateFacture }}</small>
+                    </td>
+                    <td>{{ facture.patientPrenom }} {{ facture.patientNom }}</td>
+                    <td class="amount">{{ format(facture.resteAPayer) }}</td>
+                    <td>
+                      <span class="badge" [class]="facture.statut.toLowerCase()">
+                        {{ facture.statut === 'PARTIELLE' ? 'Partielle' : 'En attente' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">Aucune facture impayée : tous les encaissements sont à jour.</div>
+        }
+      </article>
+    </section>
+  }
+</section>

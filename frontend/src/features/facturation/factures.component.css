@@ -1,0 +1,75 @@
+/* Facturation - mise en page locale */
+.billing-page { display: grid; gap: 18px; }
+.billing-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+
+.list-card .filters {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.list-card .filters h2 { font-size: var(--fs-h2); }
+.list-card .filters p { margin-top: 6px; color: var(--text-muted); font-size: var(--fs-xs); }
+.list-card select { width: auto; min-width: 178px; }
+
+/* --- Liste des factures ------------------------------------------------- */
+.invoice-list { display: grid; gap: 10px; margin-top: 18px; }
+.invoice-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, .9fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+.invoice-row:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+.invoice-row.selected { border-color: #bfdbfe; background: var(--brand-soft); box-shadow: 0 0 0 3px rgba(37, 99, 235, .08); }
+.invoice-row strong { display: block; overflow: hidden; color: var(--text-strong); font-size: var(--fs-sm); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.invoice-row small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
+.invoice-row .invoice-number { color: var(--text); font-size: var(--fs-xs); font-weight: 800; }
+.invoice-row .patient, .invoice-row .amount { min-width: 0; }
+.invoice-row .amount { text-align: right; }
+.invoice-row .badge { justify-self: start; }
+.invoice-row .arrow { color: var(--text-soft); font-size: 15px; }
+
+/* --- Detail de la facture ---------------------------------------------- */
+.detail-card { display: grid; gap: 20px; }
+.detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.detail-heading h2 { font-size: 20px; }
+.patient-summary { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-subtle); }
+.patient-summary strong { display: block; color: var(--text-strong); font-size: var(--fs-sm); font-weight: 700; }
+.patient-summary small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
+
+.line-items { display: grid; gap: 10px; }
+.line-items h3, .payment-box h3 { color: var(--text-soft); font-size: var(--fs-label); font-weight: 800; letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.line-items > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.line-items span small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
+.line-items strong { color: var(--text-strong); font-size: var(--fs-sm); font-weight: 800; }
+
+.totals { display: grid; gap: 10px; padding: 16px; border-radius: var(--radius-md); background: var(--bg-subtle); }
+.totals span { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; }
+.totals strong { color: var(--text-strong); font-weight: 800; }
+.totals .paid-text { color: var(--accent-text); }
+.totals .remaining { padding-top: 12px; border-top: 1px dashed var(--border-strong); color: var(--text-strong); font-weight: 700; }
+.totals .remaining strong { color: var(--warn-text); font-size: var(--fs-h2); }
+
+.payment-box { display: grid; gap: 14px; padding: 18px; border: 1px solid #bbf7d0; border-radius: var(--radius-md); background: var(--accent-soft); }
+.payment-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.payment-button { justify-self: start; }
+
+@media (max-width: 1180px) {
+  .billing-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .invoice-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 10px; }
+  .invoice-row .amount { text-align: left; }
+  .payment-fields { grid-template-columns: minmax(0, 1fr); }
+}

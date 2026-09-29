@@ -1,0 +1,26 @@
+/* Planning des rendez-vous - mise en page locale */
+.appointments-page { display: grid; gap: 18px; }
+
+.filters { padding: 18px 22px; }
+.filters label span { display: block; }
+.filter-search { flex: 1 1 220px; align-self: flex-end; }
+.filter-search input { font-size: var(--fs-sm); }
+.statut-select { width: auto; min-height: 34px; padding: 0 8px; font-size: var(--fs-label); font-weight: 700; }
+
+.table-card { padding: 0; overflow: hidden; }
+.table-card .table-heading { padding: 22px 22px 0; }
+.table-card .empty-state, .table-card .error-state { margin: 22px; }
+.table-card .table-wrap { margin-top: 18px; }
+.table-card thead th:first-child { padding-left: 22px; border-radius: 0; }
+.table-card thead th:last-child { padding-right: 22px; border-radius: 0; }
+.table-card tbody td:first-child { padding-left: 22px; }
+.table-card tbody td:last-child { padding-right: 22px; }
+
+@media (max-width: 760px) {
+  .filters { padding: 16px; }
+  .filter-search { flex: 1 1 100%; }
+  .table-card .table-heading { padding: 18px 18px 0; }
+  .table-card .empty-state, .table-card .error-state { margin: 18px; }
+  .table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 18px; }
+  .table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 18px; }
+}
