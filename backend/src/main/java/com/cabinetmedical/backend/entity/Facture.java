@@ -27,4 +27,8 @@ public class Facture {
     private Utilisateur createdBy;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+    @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<LigneFacture> lignes = new java.util.ArrayList<>();
+    @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Paiement> paiements = new java.util.ArrayList<>();
 }

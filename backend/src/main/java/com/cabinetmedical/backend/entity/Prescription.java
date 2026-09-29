@@ -19,4 +19,6 @@ public class Prescription {
     private LocalDate datePrescription;
     @Column(columnDefinition = "TEXT")
     private String instructions;
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<LignePrescription> lignes = new java.util.ArrayList<>();
 }
