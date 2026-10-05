@@ -16,6 +16,7 @@ public record RendezVousResponse(
         String medecinPrenom,
         LocalDateTime dateHeure,
         String motif,
+        Integer numeroFile,
         StatutRendezVous statut,
         Instant createdAt
 ) {
@@ -30,6 +31,7 @@ public record RendezVousResponse(
                 rendezVous.getMedecin().getPrenom(),
                 rendezVous.getDateHeure(),
                 rendezVous.getMotif(),
+                rendezVous.getNumeroFile(),
                 rendezVous.getStatut(),
                 rendezVous.getCreatedAt()
         );

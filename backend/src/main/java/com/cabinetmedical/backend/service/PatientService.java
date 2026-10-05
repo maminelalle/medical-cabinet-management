@@ -3,7 +3,9 @@ package com.cabinetmedical.backend.service;
 import com.cabinetmedical.backend.dto.PatientRequest;
 import com.cabinetmedical.backend.dto.PatientResponse;
 import com.cabinetmedical.backend.entity.Patient;
+import com.cabinetmedical.backend.repository.FactureRepository;
 import com.cabinetmedical.backend.repository.PatientRepository;
+import com.cabinetmedical.backend.repository.RendezVousRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PatientService {
     private final PatientRepository patientRepository;
+    private final RendezVousRepository rendezVousRepository;
+    private final FactureRepository factureRepository;
 
     @Transactional(readOnly = true)
     public List<PatientResponse> rechercher(String query) {
@@ -47,6 +51,14 @@ public class PatientService {
     public void supprimer(Long id) {
         if (!patientRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Patient introuvable");
+        }
+        // Un dossier qui contient un historique medical ou financier ne doit jamais etre efface.
+        long rendezVous = rendezVousRepository.countByPatientId(id);
+        long factures = factureRepository.countByPatientId(id);
+        if (rendezVous > 0 || factures > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(
+                    "Suppression impossible : ce patient a un historique (%d rendez-vous, %d facture(s)). Son dossier doit être conservé.",
+                    rendezVous, factures));
         }
         patientRepository.deleteById(id);
     }

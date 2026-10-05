@@ -31,20 +31,21 @@ public class RendezVousService {
     private final UtilisateurRepository utilisateurRepository;
 
     @Transactional(readOnly = true)
-    public List<RendezVousResponse> rechercher(Long medecinId, LocalDate date, StatutRendezVous statut,
-                                               UserDetails utilisateurConnecte) {
+    public List<RendezVousResponse> rechercher(Long medecinId, LocalDate date, LocalDate dateDebut, LocalDate dateFin,
+                                               StatutRendezVous statut, UserDetails utilisateurConnecte) {
         Long medecinFiltre = medecinId;
         if (estMedecin(utilisateurConnecte)) {
             medecinFiltre = trouverMedecinConnecte(utilisateurConnecte).getId();
         }
         Long medecinFiltreFinal = medecinFiltre;
 
-        LocalDateTime dateDebut = date == null ? null : date.atStartOfDay();
-        LocalDateTime dateFin = date == null ? null : date.plusDays(1).atStartOfDay();
+        LocalDateTime debut = date != null ? date.atStartOfDay() : (dateDebut == null ? null : dateDebut.atStartOfDay());
+        LocalDateTime fin = date != null ? date.plusDays(1).atStartOfDay()
+                : (dateFin == null ? null : dateFin.plusDays(1).atStartOfDay());
         return rendezVousRepository.findAllByOrderByDateHeureAsc().stream()
             .filter(rendezVous -> medecinFiltreFinal == null || rendezVous.getMedecin().getId().equals(medecinFiltreFinal))
-            .filter(rendezVous -> dateDebut == null || !rendezVous.getDateHeure().isBefore(dateDebut))
-            .filter(rendezVous -> dateFin == null || rendezVous.getDateHeure().isBefore(dateFin))
+            .filter(rendezVous -> debut == null || !rendezVous.getDateHeure().isBefore(debut))
+            .filter(rendezVous -> fin == null || rendezVous.getDateHeure().isBefore(fin))
             .filter(rendezVous -> statut == null || rendezVous.getStatut() == statut)
                 .map(RendezVousResponse::from).toList();
     }
@@ -65,6 +66,9 @@ public class RendezVousService {
         rendezVous.setMedecin(medecin);
         rendezVous.setDateHeure(request.dateHeure());
         rendezVous.setMotif(request.motif());
+        LocalDate date = request.dateHeure().toLocalDate();
+        rendezVous.setNumeroFile((int) rendezVousRepository.countByDateHeureGreaterThanEqualAndDateHeureLessThan(
+            date.atStartOfDay(), date.plusDays(1).atStartOfDay()) + 1);
         rendezVous.setCreatedBy(trouverUtilisateur(utilisateurConnecte));
         return RendezVousResponse.from(rendezVousRepository.save(rendezVous));
     }
@@ -72,8 +76,18 @@ public class RendezVousService {
     @Transactional
     public RendezVousResponse modifier(Long id, RendezVousRequest request) {
         RendezVous rendezVous = trouver(id);
+        if (rendezVous.getStatut() != StatutRendezVous.PLANIFIE && rendezVous.getStatut() != StatutRendezVous.CONFIRME) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Seul un rendez-vous planifié ou confirmé peut être modifié");
+        }
         Medecin medecin = trouverMedecin(request.medecinId());
         verifierCreneauDisponible(medecin.getId(), request.dateHeure(), id);
+        LocalDate nouveauJour = request.dateHeure().toLocalDate();
+        if (!rendezVous.getDateHeure().toLocalDate().equals(nouveauJour)) {
+            // Changement de jour : nouveau numero de file dans la journee cible.
+            rendezVous.setNumeroFile((int) rendezVousRepository.countByDateHeureGreaterThanEqualAndDateHeureLessThan(
+                    nouveauJour.atStartOfDay(), nouveauJour.plusDays(1).atStartOfDay()) + 1);
+        }
         rendezVous.setPatient(trouverPatient(request.patientId()));
         rendezVous.setMedecin(medecin);
         rendezVous.setDateHeure(request.dateHeure());

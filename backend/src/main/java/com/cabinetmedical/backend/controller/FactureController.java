@@ -1,5 +1,6 @@
 package com.cabinetmedical.backend.controller;
 
+import com.cabinetmedical.backend.dto.AnnulationFactureRequest;
 import com.cabinetmedical.backend.dto.FactureRequest;
 import com.cabinetmedical.backend.dto.FactureResponse;
 import com.cabinetmedical.backend.dto.PaiementRequest;
@@ -22,23 +23,30 @@ public class FactureController {
     private final FactureService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
     public List<FactureResponse> lister(@RequestParam(required = false) StatutFacture statut) { return service.lister(statut); }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
     public FactureResponse trouver(@PathVariable Long id) { return service.trouver(id); }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ACCUEIL')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'PHARMACIEN')")
     public FactureResponse creer(@Valid @RequestBody FactureRequest request,
                                  @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return service.creer(request, utilisateurConnecte);
     }
 
-    @PostMapping("/{id}/paiements")
+    @PostMapping("/{id}/annulation")
     @PreAuthorize("hasRole('ACCUEIL')")
+    public FactureResponse annuler(@PathVariable Long id, @Valid @RequestBody AnnulationFactureRequest request,
+                                   @AuthenticationPrincipal UserDetails utilisateurConnecte) {
+        return service.annuler(id, request, utilisateurConnecte);
+    }
+
+    @PostMapping("/{id}/paiements")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'PHARMACIEN')")
     public FactureResponse ajouterPaiement(@PathVariable Long id, @Valid @RequestBody PaiementRequest request,
                                            @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return service.ajouterPaiement(id, request, utilisateurConnecte);

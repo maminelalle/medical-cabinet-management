@@ -79,6 +79,27 @@ public class FactureService {
         return versResponse(facture);
     }
 
+    /**
+     * Annule une facture saisie par erreur. Refusee si un paiement a deja ete encaisse :
+     * un encaissement ne disparait pas, il doit d'abord etre rembourse hors application.
+     */
+    @Transactional
+    public FactureResponse annuler(Long factureId, AnnulationFactureRequest request, UserDetails utilisateurConnecte) {
+        Facture facture = trouverFacture(factureId);
+        if (facture.getStatut() == StatutFacture.ANNULEE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cette facture est déjà annulée");
+        }
+        if (paiementRepository.sumMontantByFactureId(factureId).compareTo(BigDecimal.ZERO) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Impossible d'annuler une facture qui a déjà reçu un paiement");
+        }
+        facture.setStatut(StatutFacture.ANNULEE);
+        facture.setMotifAnnulation(request.motif().trim());
+        facture.setDateAnnulation(java.time.Instant.now());
+        facture.setAnnuleePar(utilisateurRepository.findByEmailIgnoreCase(utilisateurConnecte.getUsername()).orElse(null));
+        return versResponse(factureRepository.save(facture));
+    }
+
     private void recalculerStatut(Facture facture, BigDecimal montantPaye) {
         if (montantPaye.compareTo(BigDecimal.ZERO) == 0) facture.setStatut(StatutFacture.EN_ATTENTE);
         else if (montantPaye.compareTo(facture.getMontantTotal()) >= 0) facture.setStatut(StatutFacture.PAYEE);

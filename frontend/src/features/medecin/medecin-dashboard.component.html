@@ -1,0 +1,45 @@
+<section class="doctor-dashboard">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">MÉDECIN / TABLEAU DE BORD</p>
+      <h1>Bonjour Dr. {{ auth.nomComplet() }}</h1>
+      <p class="subtitle">Votre activité médicale, les patients du jour et les prochaines consultations au même endroit.</p>
+    </div>
+    <div class="page-actions"><a class="soft-button" routerLink="/rendez-vous">Voir mon planning</a><a class="primary-button" routerLink="/patients">Mes patients</a></div>
+  </header>
+
+  @if (error) { <div class="alert danger"><span>×</span><div><strong>Tableau indisponible</strong>{{ error }}</div></div> }
+  @if (loading) { <section class="card loading-state">Chargement de votre activité...</section> } @else {
+    <section class="stats-grid">
+      <article class="stat-card"><span class="stat-icon blue">◷</span><div><span>Rendez-vous aujourd'hui</span><strong>{{ rendezVous.length }}</strong><small>{{ patientsDuJour }} patient(s) concernés</small></div></article>
+      <article class="stat-card"><span class="stat-icon teal">✓</span><div><span>Consultations terminées</span><strong>{{ termines }}</strong><small>comptes-rendus enregistrés</small></div></article>
+      <article class="stat-card"><span class="stat-icon orange">⌛</span><div><span>À prendre en charge</span><strong>{{ enAttente }}</strong><small>rendez-vous planifiés ou confirmés</small></div></article>
+      <article class="stat-card"><span class="stat-icon violet">♙</span><div><span>Patients suivis aujourd'hui</span><strong>{{ patientsDuJour }}</strong><small>{{ patients.length }} patient(s) visibles dans votre dossier</small></div></article>
+    </section>
+
+    <section class="doctor-grid">
+      <article class="card appointments-card">
+        <div class="card-heading"><div><h2>Consultations du jour</h2><p>{{ aujourdHui | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p></div><a class="row-action" routerLink="/rendez-vous" aria-label="Ouvrir le planning">→</a></div>
+        @if (prochains.length) {
+          <div class="doctor-list">
+            @for (item of prochains; track item.id) {
+              <div class="doctor-row">
+                <span class="time-block">{{ time(item.dateHeure) }}<small>{{ statusLabel(item.statut) }}</small></span>
+                <span class="patient-block"><strong>{{ item.patientPrenom }} {{ item.patientNom }}</strong><small>{{ item.motif || 'Consultation' }}</small></span>
+                <span class="row-actions">
+                  <a class="row-action" [routerLink]="['/dossier', item.patientId]" aria-label="Ouvrir le dossier">☰</a>
+                  @if (item.statut !== 'ANNULE' && item.statut !== 'ABSENT') {
+                    <a class="row-action" [routerLink]="['/rendez-vous', item.id, 'consultation']" aria-label="Ouvrir la consultation">✎</a>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">Aucun rendez-vous à traiter aujourd'hui.</div>
+        }
+      </article>
+      <article class="card quick-card"><div class="card-heading"><div><h2>Accès rapides</h2><p>Les outils du parcours médical</p></div></div><a class="quick-link" routerLink="/rendez-vous"><span>◷</span><strong>Mon planning</strong><small>Voir et mettre à jour les rendez-vous</small></a><a class="quick-link" routerLink="/patients"><span>♙</span><strong>Mes patients</strong><small>Rechercher un dossier patient</small></a><a class="quick-link" routerLink="/ordonnances"><span>℞</span><strong>Mes ordonnances</strong><small>Retrouver et réimprimer une ordonnance</small></a><a class="quick-link" routerLink="/catalogue"><span>▤</span><strong>Catalogue des actes</strong><small>Consulter les tarifs facturables</small></a><a class="quick-link" routerLink="/factures"><span>▣</span><strong>Facturation</strong><small>Consulter les factures du cabinet</small></a></article>
+    </section>
+  }
+</section>

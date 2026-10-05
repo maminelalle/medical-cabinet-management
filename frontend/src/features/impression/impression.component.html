@@ -1,0 +1,156 @@
+<section class="print-page">
+  @if (loading) { <div class="card loading-state">Préparation du document...</div> }
+  @else if (error) { <div class="card error-state"><strong>{{ error }}</strong><button class="soft-button" type="button" (click)="fermer()">Retour</button></div> }
+  @else {
+    <div class="print-actions">
+      <button class="soft-button" type="button" (click)="fermer()">← Retour</button>
+      <button class="primary-button" type="button" (click)="imprimer()">⎙ Imprimer ce document</button>
+    </div>
+
+    <article class="print-document">
+      <header class="print-header">
+        <div>
+          <strong>{{ cabinet.nom }}</strong>
+          <small>{{ cabinet.sousTitre }}{{ cabinet.adresse ? " · " + cabinet.adresse : "" }}{{ cabinet.telephone ? " · Tél. " + cabinet.telephone : "" }}</small>
+        </div>
+        <span>{{ titre }}</span>
+      </header>
+
+      <!-- FACTURE ------------------------------------------------------------ -->
+      @if (facture && type === 'facture') {
+        <div class="document-meta">
+          <p><span>Facture n°</span><strong>{{ reference('FAC', facture.id) }}</strong></p>
+          <p><span>Date</span><strong>{{ facture.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</strong></p>
+          <p><span>Statut</span><strong>{{ statutFacture(facture.statut) }}</strong></p>
+        </div>
+        <section class="person-line"><strong>{{ facture.patientPrenom }} {{ facture.patientNom }}</strong><span>Dossier patient n° {{ facture.patientId }}</span></section>
+        <table class="document-table">
+          <thead><tr><th>#</th><th>Désignation</th><th>Type</th><th class="right">Montant</th></tr></thead>
+          <tbody>
+            @for (ligne of facture.lignes; track ligne.id; let index = $index) {
+              <tr><td>{{ index + 1 }}</td><td>{{ ligne.libelle }}</td><td>{{ ligne.typeActe }}</td><td class="right">{{ ligne.montant | number:'1.0-2':'fr-FR' }} MRU</td></tr>
+            }
+          </tbody>
+        </table>
+        <div class="document-totals">
+          <p><span>Total facturé</span><strong>{{ facture.montantTotal | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+          <p><span>Déjà réglé</span><strong>{{ facture.montantPaye | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+          <p class="grand"><span>Reste à payer</span><strong>{{ facture.resteAPayer | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+        </div>
+        <p class="document-note">Merci de conserver cette facture. Tout règlement donne lieu à un reçu de paiement.</p>
+      }
+
+      <!-- RECU DE PAIEMENT ----------------------------------------------------- -->
+      @if (facture && type === 'recu') {
+        <div class="document-meta">
+          <p><span>Reçu n°</span><strong>{{ reference('REC', facture.id) }}</strong></p>
+          <p><span>Facture liée</span><strong>{{ reference('FAC', facture.id) }}</strong></p>
+          <p><span>Édité le</span><strong>{{ today | date:'dd/MM/yyyy':'':'fr-FR' }}</strong></p>
+        </div>
+        <section class="person-line"><strong>Reçu de : {{ facture.patientPrenom }} {{ facture.patientNom }}</strong><span>Dossier patient n° {{ facture.patientId }}</span></section>
+        @if (facture.paiements.length) {
+          <table class="document-table">
+            <thead><tr><th>Date</th><th>Moyen de paiement</th><th class="right">Montant</th></tr></thead>
+            <tbody>
+              @for (paiement of facture.paiements; track paiement.id) {
+                <tr><td>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td><td>{{ moyen(paiement.moyenPaiement) }}</td><td class="right">{{ paiement.montant | number:'1.0-2':'fr-FR' }} MRU</td></tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="document-note">Aucun paiement n'a encore été enregistré pour cette facture.</p>
+        }
+        <div class="document-totals">
+          <p><span>Montant de la facture</span><strong>{{ facture.montantTotal | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+          <p class="grand"><span>Total reçu</span><strong>{{ facture.montantPaye | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+          <p><span>Reste à payer</span><strong>{{ facture.resteAPayer | number:'1.0-2':'fr-FR' }} MRU</strong></p>
+        </div>
+        @if (facture.resteAPayer <= 0 && facture.montantPaye > 0) { <p class="stamp">Acquittée</p> }
+        <div class="signature"><span>Cachet et signature de la caisse</span></div>
+      }
+
+      <!-- ORDONNANCE ------------------------------------------------------------ -->
+      @if (ordonnance) {
+        <section class="doctor-block">
+          <strong>Dr. {{ ordonnance.medecinPrenom }} {{ ordonnance.medecinNom }}</strong>
+          <span>{{ ordonnance.specialite || 'Médecine générale' }}</span>
+          @if (ordonnance.numeroOrdre) { <span>N° d'ordre : {{ ordonnance.numeroOrdre }}</span> }
+        </section>
+        <div class="document-meta">
+          <p><span>Ordonnance n°</span><strong>{{ reference('ORD', ordonnance.id) }}</strong></p>
+          <p><span>Date</span><strong>{{ ordonnance.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</strong></p>
+        </div>
+        <section class="person-line">
+          <strong>{{ ordonnance.patientPrenom }} {{ ordonnance.patientNom }}</strong>
+          <span>{{ age(ordonnance.patientDateNaissance) !== null ? age(ordonnance.patientDateNaissance) + ' ans' : '' }} · né(e) le {{ ordonnance.patientDateNaissance | date:'dd/MM/yyyy':'':'fr-FR' }}</span>
+        </section>
+        <ol class="prescription-lines">
+          @for (ligne of ordonnance.lignes; track ligne.id) {
+            <li><strong>{{ ligne.medicament }}</strong><span>{{ ligne.posologie || 'Posologie non précisée' }} — {{ ligne.duree || 'durée libre' }}</span></li>
+          }
+        </ol>
+        @if (ordonnance.instructions) { <p class="document-note"><strong>Instructions :</strong> {{ ordonnance.instructions }}</p> }
+        <div class="signature"><span>Signature et cachet du médecin</span></div>
+      }
+
+      <!-- RECU DE RENDEZ-VOUS --------------------------------------------------- -->
+      @if (rendezVous) {
+        <p class="document-reference">Rendez-vous du {{ rendezVous.dateHeure | date:'dd/MM/yyyy à HH:mm':'':'fr-FR' }}</p>
+        <div class="queue-number">{{ rendezVous.numeroFile }}</div><p class="queue-label">Numéro de file</p>
+        <section class="person-line"><strong>{{ rendezVous.patientPrenom }} {{ rendezVous.patientNom }}</strong><span>Patient n° {{ rendezVous.patientId }}</span></section>
+        <div class="document-row"><span>Médecin</span><strong>Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</strong></div>
+        <div class="document-row"><span>Motif</span><strong>{{ rendezVous.motif || 'Consultation' }}</strong></div>
+        <p class="document-note">Présentez ce numéro à l'accueil et respectez l'ordre de passage.</p>
+      }
+
+      <!-- DOSSIER PATIENT ------------------------------------------------------- -->
+      @if (dossier) {
+        <section class="person-line">
+          <strong>{{ dossier.patient.prenom }} {{ dossier.patient.nom }}</strong>
+          <span>Dossier n° {{ dossier.patient.id }} · né(e) le {{ dossier.patient.dateNaissance | date:'dd/MM/yyyy':'':'fr-FR' }}</span>
+        </section>
+        <div class="document-meta">
+          <p><span>Téléphone</span><strong>{{ dossier.patient.telephone || '—' }}</strong></p>
+          <p><span>Email</span><strong>{{ dossier.patient.email || '—' }}</strong></p>
+          <p><span>Adresse</span><strong>{{ dossier.patient.adresse || '—' }}</strong></p>
+        </div>
+
+        <h2>Consultations et ordonnances ({{ dossier.consultations.length }})</h2>
+        @for (consultation of dossier.consultations; track consultation.id) {
+          <section class="dossier-entry">
+            <p class="entry-head"><strong>{{ consultation.dateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</strong> · Dr. {{ consultation.medecinPrenom }} {{ consultation.medecinNom }} · {{ consultation.motif || 'Consultation' }}</p>
+            <p class="report-text">{{ consultation.compteRendu ?? 'Compte-rendu réservé au médecin (secret médical).' }}</p>
+            @if (consultation.prescription) {
+              <ul>
+                @for (ligne of consultation.prescription.lignes; track ligne.id) { <li><strong>{{ ligne.medicament }}</strong> — {{ ligne.posologie || 'posologie libre' }} · {{ ligne.duree || 'durée libre' }}</li> }
+              </ul>
+            }
+          </section>
+        } @empty { <p class="document-note">Aucune consultation enregistrée.</p> }
+
+        <h2>Rendez-vous ({{ dossier.rendezVous.length }})</h2>
+        <table class="document-table">
+          <thead><tr><th>Date</th><th>Médecin</th><th>Motif</th><th>Statut</th></tr></thead>
+          <tbody>
+            @for (item of dossier.rendezVous; track item.id) {
+              <tr><td>{{ item.dateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td><td>Dr. {{ item.medecinPrenom }} {{ item.medecinNom }}</td><td>{{ item.motif || 'Consultation' }}</td><td>{{ statutRendezVous(item.statut) }}</td></tr>
+            } @empty { <tr><td colspan="4">Aucun rendez-vous.</td></tr> }
+          </tbody>
+        </table>
+
+        <h2>Factures ({{ dossier.factures.length }})</h2>
+        <table class="document-table">
+          <thead><tr><th>N°</th><th>Date</th><th>Statut</th><th class="right">Total</th><th class="right">Reste</th></tr></thead>
+          <tbody>
+            @for (item of dossier.factures; track item.id) {
+              <tr><td>{{ reference('FAC', item.id) }}</td><td>{{ item.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</td><td>{{ statutFacture(item.statut) }}</td><td class="right">{{ item.montantTotal | number:'1.0-2':'fr-FR' }}</td><td class="right">{{ item.resteAPayer | number:'1.0-2':'fr-FR' }}</td></tr>
+            } @empty { <tr><td colspan="5">Aucune facture.</td></tr> }
+          </tbody>
+        </table>
+        <p class="document-note">Document confidentiel — données de santé couvertes par le secret médical.</p>
+      }
+
+      <footer>{{ cabinet.nom }} · Document généré le {{ today | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</footer>
+    </article>
+  }
+</section>

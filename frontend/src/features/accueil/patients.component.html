@@ -9,9 +9,15 @@
           : 'Retrouvez rapidement les dossiers administratifs du cabinet.' }}
       </p>
     </div>
-    @if (!isMedecin) {
-      <button class="primary-button" type="button" (click)="startCreate()"><span>+</span> Nouveau patient</button>
-    }
+    <div class="page-actions">
+      <label class="soft-button file-button" [class.disabled]="importEnCours" title="Importer un dossier patient exporté (JSON)">
+        {{ importEnCours ? 'Import en cours...' : '⇪ Importer un dossier' }}
+        <input type="file" accept=".json,application/json" (change)="importerDossier($event)" [disabled]="importEnCours">
+      </label>
+      @if (isAccueil) {
+        <button class="primary-button" type="button" (click)="startCreate()"><span>+</span> Nouveau patient</button>
+      }
+    </div>
   </header>
 
   <section class="card table-card">
@@ -57,9 +63,9 @@
                 <td>{{ patient.email || 'Non renseigné' }}</td>
                 <td>
                   <div class="actions">
-                    @if (isMedecin) {
-                      <a class="row-action" [routerLink]="['/dossier', patient.id]" aria-label="Dossier médical">☰</a>
-                    } @else {
+                    <a class="row-action" [routerLink]="['/dossier', patient.id]" aria-label="Dossier patient" title="Dossier patient">☰</a>
+                    @if (isAccueil) {
+                      <a class="row-action" routerLink="/rendez-vous/nouveau" [queryParams]="{ patientId: patient.id }" aria-label="Prendre rendez-vous" title="Prendre rendez-vous">◷</a>
                       <button class="row-action" type="button" (click)="edit(patient)" aria-label="Modifier">✎</button>
                       <button class="row-action danger" type="button" (click)="remove(patient)" aria-label="Supprimer">⌫</button>
                     }

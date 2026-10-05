@@ -11,6 +11,14 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
 
 		List<RendezVous> findByPatientIdOrderByDateHeureDesc(Long patientId);
 
+		long countByPatientId(Long patientId);
+
+		java.util.Optional<RendezVous> findFirstByPatientIdAndMedecinIdAndDateHeure(Long patientId, Long medecinId,
+				java.time.LocalDateTime dateHeure);
+
 		boolean existsByMedecinIdAndDateHeureAndStatutNot(Long medecinId, java.time.LocalDateTime dateHeure,
 																											StatutRendezVous statut);
+
+		long countByDateHeureGreaterThanEqualAndDateHeureLessThan(java.time.LocalDateTime debut,
+				java.time.LocalDateTime fin);
 }

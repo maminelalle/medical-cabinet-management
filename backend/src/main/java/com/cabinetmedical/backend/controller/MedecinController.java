@@ -17,6 +17,6 @@ public class MedecinController {
     private final MedecinRepository repository;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
     public List<MedecinResponse> lister() { return repository.findAll().stream().map(MedecinResponse::from).toList(); }
 }

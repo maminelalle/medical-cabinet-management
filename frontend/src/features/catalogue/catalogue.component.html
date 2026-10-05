@@ -1,0 +1,111 @@
+<section class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">FINANCE / CATALOGUE DES ACTES</p>
+      <h1>Catalogue des actes facturables</h1>
+      <p class="subtitle">Référentiel utilisé lors de la création des factures : consultation, hospitalisation, acte chirurgical et autres actes.</p>
+    </div>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span class="stat-icon blue">▤</span>
+      <div>
+        <span>Actes au catalogue</span>
+        <strong>{{ actes.length }}</strong>
+        <small>disponibles pour la facturation</small>
+      </div>
+    </article>
+    <article class="stat-card">
+      <span class="stat-icon teal">◈</span>
+      <div>
+        <span>Types d'actes couverts</span>
+        <strong>{{ nombreTypes }}</strong>
+        <small>consultation, hospitalisation, chirurgie...</small>
+      </div>
+    </article>
+    <article class="stat-card">
+      <span class="stat-icon violet">₨</span>
+      <div>
+        <span>Montant moyen par défaut</span>
+        <strong>{{ format(montantMoyen) }}</strong>
+        <small>base de tarification</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="catalogue-layout">
+    <article class="card table-card">
+      <div class="table-heading">
+        <div>
+          <h2>Actes actifs</h2>
+          <p>{{ actes.length }} acte(s) dans le référentiel</p>
+        </div>
+        <button class="soft-button" type="button" (click)="charger()">↻ Actualiser</button>
+      </div>
+
+      @if (message) { <p class="message">{{ message }}</p> }
+
+      @if (loading) {
+        <div class="empty-state">Chargement du catalogue...</div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Libellé</th><th>Type</th><th>Montant par défaut</th></tr>
+            </thead>
+            <tbody>
+              @for (acte of actes; track acte.id) {
+                <tr>
+                  <td>
+                    <strong>{{ acte.libelle }}</strong>
+                    <small>Référence #{{ acte.id }}</small>
+                  </td>
+                  <td><span class="badge" [class]="classeType(acte.type)">{{ typeLabel(acte.type) }}</span></td>
+                  <td class="amount">{{ format(acte.montantDefaut) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="empty-cell">Aucun acte dans le catalogue.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+
+    @if (peutCreer) {
+      <form class="card" [formGroup]="form" (ngSubmit)="creer()">
+        <div class="section-heading">
+          <div>
+            <h2>Ajouter un acte</h2>
+            <p>Création réservée à la direction</p>
+          </div>
+        </div>
+        <label>Libellé *<input formControlName="libelle" placeholder="Consultation spécialisée"></label>
+        <label>
+          Type *
+          <select formControlName="type">
+            @for (type of types; track type) { <option [value]="type">{{ typeLabel(type) }}</option> }
+          </select>
+        </label>
+        <label>Montant par défaut (MRU) *<input type="number" min="0" step="100" formControlName="montantDefaut"></label>
+        <div class="form-actions">
+          <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter au catalogue' }}</button>
+        </div>
+      </form>
+    } @else {
+      <article class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Droits d'accès</h2>
+            <p>Consultation en lecture seule</p>
+          </div>
+        </div>
+        <p class="subtitle">
+          La création d'un acte est réservée à la direction. L'accueil utilise ce référentiel lors de la création
+          d'une facture : chaque ligne reprend le libellé, le type d'acte et le montant du catalogue.
+        </p>
+      </article>
+    }
+  </section>
+</section>

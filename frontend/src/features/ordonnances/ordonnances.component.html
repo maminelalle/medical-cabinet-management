@@ -1,0 +1,82 @@
+<section class="ordonnances-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">{{ breadcrumb }} / ORDONNANCES</p>
+      <h1>{{ isMedecin ? 'Mes ordonnances' : 'Ordonnances' }}</h1>
+      <p class="subtitle">
+        {{ isMedecin ? 'Retrouvez et réimprimez les ordonnances que vous avez rédigées.' : 'Toutes les ordonnances du cabinet, leur statut de délivrance et leur impression.' }}
+      </p>
+    </div>
+    @if (isPharmacien) { <a class="primary-button" routerLink="/pharmacie">Délivrer en pharmacie</a> }
+  </header>
+
+  <section class="stats-grid three">
+    <article class="stat-card"><span class="stat-icon blue">℞</span><div><span>Ordonnances</span><strong>{{ ordonnances.length }}</strong><small>au total</small></div></article>
+    <article class="stat-card"><span class="stat-icon orange">◷</span><div><span>À délivrer</span><strong>{{ nombreADelivrer }}</strong><small>non encore dispensées</small></div></article>
+    <article class="stat-card"><span class="stat-icon teal">✓</span><div><span>Ce mois-ci</span><strong>{{ nombreDuMois }}</strong><small>ordonnances rédigées</small></div></article>
+  </section>
+
+  <section class="ordonnances-layout">
+    <article class="card table-card">
+      <div class="table-heading">
+        <div><h2>Liste des ordonnances</h2><p>{{ filtrees.length }} ordonnance(s) affichée(s)</p></div>
+        <div class="filters">
+          <input type="search" [(ngModel)]="recherche" placeholder="Patient, médecin, médicament..." aria-label="Rechercher une ordonnance">
+          <select [(ngModel)]="statut" aria-label="Filtrer par statut">
+            <option value="">Tous les statuts</option>
+            <option value="a-delivrer">À délivrer</option>
+            <option value="delivree">Délivrées</option>
+          </select>
+          <button class="soft-button" type="button" (click)="charger()">↻</button>
+        </div>
+      </div>
+
+      @if (loading) { <div class="empty-state">Chargement des ordonnances...</div> }
+      @else if (error) { <div class="error-state"><span class="error-icon">!</span><strong>{{ error }}</strong><button class="soft-button" type="button" (click)="charger()">Réessayer</button></div> }
+      @else {
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Patient</th><th>Médecin</th><th>Médicaments</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+              @for (item of filtrees; track item.id) {
+                <tr [class.selected]="selection?.id === item.id" (click)="selection = item">
+                  <td class="time">{{ item.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</td>
+                  <td><strong>{{ item.patientPrenom }} {{ item.patientNom }}</strong></td>
+                  <td>Dr. {{ item.medecinPrenom }} {{ item.medecinNom }}</td>
+                  <td class="meds">{{ medicaments(item) }}</td>
+                  <td><span class="badge" [class]="item.delivree ? 'termine' : 'planifie'">{{ item.delivree ? 'Délivrée' : 'À délivrer' }}</span></td>
+                  <td><a class="row-action" [routerLink]="['/impression/ordonnance', item.id]" (click)="$event.stopPropagation()" aria-label="Imprimer l'ordonnance">⎙</a></td>
+                </tr>
+              } @empty { <tr><td colspan="6" class="empty-cell">Aucune ordonnance ne correspond à votre recherche.</td></tr> }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+
+    @if (selection) {
+      <article class="card detail-card">
+        <div class="card-heading">
+          <div><p class="breadcrumb">ORD-{{ selection.id.toString().padStart(4, '0') }}</p><h2>Détail de l'ordonnance</h2></div>
+          <button class="soft-button" type="button" (click)="selection = null">×</button>
+        </div>
+        <ul class="identity-list">
+          <li><span>Patient</span><strong>{{ selection.patientPrenom }} {{ selection.patientNom }}</strong></li>
+          <li><span>Médecin</span><strong>Dr. {{ selection.medecinPrenom }} {{ selection.medecinNom }}</strong></li>
+          <li><span>Spécialité</span><strong>{{ selection.specialite || 'Médecine générale' }}</strong></li>
+          <li><span>Date</span><strong>{{ selection.datePrescription | date:'d MMMM yyyy':'':'fr-FR' }}</strong></li>
+        </ul>
+        <div class="ordonnance">
+          @for (ligne of selection.lignes; track ligne.id) {
+            <div><span><strong>{{ ligne.medicament }}</strong><small>{{ ligne.posologie || 'Posologie non précisée' }}</small></span><span class="pill">{{ ligne.duree || 'Durée libre' }}</span></div>
+          }
+        </div>
+        @if (selection.instructions) { <p class="subtitle">Instructions : {{ selection.instructions }}</p> }
+        <div class="page-actions">
+          <a class="primary-button" [routerLink]="['/impression/ordonnance', selection.id]">⎙ Imprimer</a>
+          @if (peutOuvrirDossier) { <a class="soft-button" [routerLink]="['/dossier', selection.patientId]">Dossier patient</a> }
+        </div>
+      </article>
+    }
+  </section>
+</section>

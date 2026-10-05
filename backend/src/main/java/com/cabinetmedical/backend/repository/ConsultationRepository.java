@@ -10,6 +10,8 @@ import java.util.List;
 public interface ConsultationRepository extends JpaRepository<Consultation, Long> {
 	boolean existsByRendezVousId(Long rendezVousId);
 
+	java.util.Optional<Consultation> findByRendezVousId(Long rendezVousId);
+
 	@Query("select c from Consultation c join fetch c.rendezVous r join fetch r.patient join fetch r.medecin "
 			+ "where r.patient.id = :patientId order by r.dateHeure desc")
 	List<Consultation> findByPatientIdOrderByDateHeureDesc(@Param("patientId") Long patientId);

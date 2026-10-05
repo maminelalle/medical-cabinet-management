@@ -52,7 +52,7 @@
         <div class="prescription-lines" formArrayName="lignes">
           @for (ligne of lignes.controls; track ligne; let index = $index) {
             <div class="prescription-line" [formGroupName]="index">
-              <label>Médicament<input formControlName="medicament" placeholder="Paracétamol 500 mg"></label>
+              <label>Médicament<select formControlName="medicamentId"><option [ngValue]="0">Sélectionner un médicament...</option>@for (medicament of medicaments; track medicament.id) { <option [ngValue]="medicament.id">{{ medicament.nom }} {{ medicament.dosage || '' }} · {{ medicament.stockActuel }} disponible(s)</option> }</select></label>
               <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
               <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
               <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>
@@ -87,6 +87,7 @@
               <h2>Ordonnance du {{ consultation.prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</h2>
               <p>{{ consultation.prescription.lignes.length }} médicament(s) prescrit(s)</p>
             </div>
+            <a class="soft-button" [routerLink]="['/impression/ordonnance', consultation.prescription.id]">⎙ Imprimer l'ordonnance</a>
           </div>
           <div class="ordonnance">
             @for (item of consultation.prescription.lignes; track item.id) {
@@ -114,7 +115,7 @@
             <div class="prescription-lines" formArrayName="lignes">
               @for (ligne of lignes.controls; track ligne; let index = $index) {
                 <div class="prescription-line" [formGroupName]="index">
-                  <label>Médicament<input formControlName="medicament" placeholder="Paracétamol 500 mg"></label>
+                  <label>Médicament<select formControlName="medicamentId"><option [ngValue]="0">Sélectionner un médicament...</option>@for (medicament of medicaments; track medicament.id) { <option [ngValue]="medicament.id">{{ medicament.nom }} {{ medicament.dosage || '' }} · {{ medicament.stockActuel }} disponible(s)</option> }</select></label>
                   <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
                   <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
                   <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>

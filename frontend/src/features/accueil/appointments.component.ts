@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { messageErreur } from '../../core/http/erreur-api';
 import { AuthService } from '../../core/auth/auth.service';
 import { RendezVous, StatutRendezVous } from '../../core/models/rendez-vous';
 import { Medecin, RendezVousService } from '../../core/rendez-vous/rendez-vous.service';
@@ -13,9 +14,10 @@ export class AppointmentsComponent {
   readonly statuses: StatutRendezVous[] = ['PLANIFIE', 'CONFIRME', 'EN_COURS', 'TERMINE', 'ANNULE', 'ABSENT'];
   readonly isDoctor = this.auth.role() === 'MEDECIN';
   readonly isAccueil = this.auth.role() === 'ACCUEIL';
+  readonly isDirection = this.auth.role() === 'DIRECTION';
   appointments: RendezVous[] = [];
   doctors: Medecin[] = [];
-  date = new Date().toISOString().slice(0, 10);
+  date = inject(ActivatedRoute).snapshot.queryParamMap.get('date') ?? new Date().toISOString().slice(0, 10);
   status = '';
   medecinId: number | '' = '';
   loading = false;
@@ -51,7 +53,7 @@ export class AppointmentsComponent {
       error: (response) => {
         this.error = response.status === 403
           ? 'Ce rendez-vous ne concerne pas ce médecin.'
-          : 'Le changement de statut a échoué.';
+          : messageErreur(response, 'Le changement de statut a échoué.');
       },
       complete: () => { this.savingId = null; }
     });
@@ -62,7 +64,7 @@ export class AppointmentsComponent {
     return appointment.statut !== 'ANNULE' && appointment.statut !== 'ABSENT';
   }
 
-  get contextLabel(): string { return this.isDoctor ? 'MÉDECIN / PLANNING' : 'ACCUEIL / RENDEZ-VOUS'; }
+  get contextLabel(): string { return this.isDoctor ? 'MÉDECIN / PLANNING' : this.isDirection ? 'DIRECTION / RENDEZ-VOUS' : 'ACCUEIL / RENDEZ-VOUS'; }
   time(value: string): string { return new Date(value).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
   statusLabel(value: string): string { return value.replace('_', ' ').toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase()); }
 }

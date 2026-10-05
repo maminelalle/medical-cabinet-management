@@ -10,6 +10,7 @@ export interface RendezVous {
   medecinPrenom: string;
   dateHeure: string;
   motif?: string;
+  numeroFile: number;
   statut: StatutRendezVous;
   createdAt: string;
 }

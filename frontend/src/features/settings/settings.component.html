@@ -1,0 +1,15 @@
+<section class="settings-page">
+  <header class="page-heading"><div><p class="breadcrumb">SYSTÈME / MON COMPTE</p><h1>Mon compte</h1><p class="subtitle">Consultez votre identité applicative et les fonctionnalités associées à votre rôle.</p></div></header>
+  @if (message) { <div class="alert success"><span>✓</span><div><strong>Profil actualisé</strong>{{ message }}</div></div> }
+  <section class="settings-grid">
+    <article class="card profile-card"><div class="profile-hero"><span class="large-avatar">{{ auth.initiales() }}</span><div><h2>{{ auth.nomComplet() }}</h2><p>{{ auth.libelleRole() }}</p></div></div><dl><div><dt>Email de connexion</dt><dd>{{ auth.emailAffiche() }}</dd></div><div><dt>Rôle applicatif</dt><dd>{{ auth.libelleRole() }}</dd></div><div><dt>Session</dt><dd>Authentification JWT active</dd></div></dl><button class="soft-button" type="button" (click)="actualiserProfil()">↻ Actualiser le profil</button></article>
+    <article class="card">
+      <div class="card-heading"><div><h2>Droits et accès</h2><p>Fonctionnalités disponibles pour votre rôle (contrôlées par le serveur)</p></div></div>
+      <ul class="access-list">
+        @for (item of acces; track item.lien) {
+          <li><span>✓</span><div><a [routerLink]="item.lien"><strong>{{ item.titre }}</strong></a><small>{{ item.detail }}</small></div></li>
+        }
+      </ul>
+    </article>
+  </section>
+</section>

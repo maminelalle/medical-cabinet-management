@@ -11,6 +11,7 @@ import com.cabinetmedical.backend.entity.RendezVous;
 import com.cabinetmedical.backend.entity.StatutRendezVous;
 import com.cabinetmedical.backend.repository.ConsultationRepository;
 import com.cabinetmedical.backend.repository.LignePrescriptionRepository;
+import com.cabinetmedical.backend.repository.MedicamentRepository;
 import com.cabinetmedical.backend.repository.PrescriptionRepository;
 import com.cabinetmedical.backend.repository.RendezVousRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ConsultationService {
     private final ConsultationRepository consultationRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final RendezVousRepository rendezVousRepository;
+    private final MedicamentRepository medicamentRepository;
 
     @Transactional
     public ConsultationResponse creer(Long rendezVousId, ConsultationRequest request, UserDetails medecinConnecte) {
@@ -68,6 +70,10 @@ public class ConsultationService {
         request.lignes().forEach(item -> {
             LignePrescription ligne = new LignePrescription();
             ligne.setPrescription(prescription);
+            if (item.medicamentId() != null) {
+                ligne.setMedicamentReference(medicamentRepository.findById(item.medicamentId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Médicament introuvable")));
+            }
             ligne.setMedicament(item.medicament());
             ligne.setPosologie(item.posologie());
             ligne.setDuree(item.duree());

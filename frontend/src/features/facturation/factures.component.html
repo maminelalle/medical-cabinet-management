@@ -1,1 +1,125 @@
-<section class="billing-page"><header class="page-heading"><div><p class="breadcrumb">ACCUEIL / FACTURATION</p><h1>Factures et encaissements</h1><p class="subtitle">Suivez les règlements et le montant restant pour chaque patient.</p></div>@if (canCreate) { <a class="primary-button" routerLink="/factures/nouveau"><span>+</span> Nouvelle facture</a> }</header><section class="billing-layout"><article class="card list-card"><div class="filters"><div><h2>Liste des factures</h2><p>{{ invoices.length }} facture(s) affichée(s)</p></div><select [(ngModel)]="status" (change)="load()"><option value="">Tous les statuts</option>@for (item of statuses; track item) { <option [value]="item">{{ label(item) }}</option> }</select></div>@if (message && !selected) { <p class="message">{{ message }}</p> } @if (loading) { <div class="empty-state">Chargement des factures...</div> } @else { <div class="invoice-list">@for (invoice of invoices; track invoice.id) { <button type="button" class="invoice-row" [class.selected]="selected?.id === invoice.id" (click)="select(invoice)"><span class="invoice-number">FAC-{{ invoice.id.toString().padStart(3, '0') }}<small>{{ invoice.dateFacture }}</small></span><span class="patient"><strong>{{ invoice.patientPrenom }} {{ invoice.patientNom }}</strong><small>{{ invoice.lignes.length }} acte(s)</small></span><span class="amount"><strong>{{ format(invoice.montantTotal) }}</strong><small>Payé : {{ format(invoice.montantPaye) }}</small></span><span class="badge" [class]="invoice.statut.toLowerCase()">{{ label(invoice.statut) }}</span><span class="arrow">→</span></button> } @empty { <div class="empty-state">Aucune facture trouvée.</div> }</div> }</article>@if (selected) { <article class="card detail-card"><div class="detail-heading"><div><p class="breadcrumb">FACTURE FAC-{{ selected.id.toString().padStart(3, '0') }}</p><h2>Détail de la facture</h2></div><span class="badge" [class]="selected.statut.toLowerCase()">{{ label(selected.statut) }}</span></div><div class="patient-summary"><span class="patient-avatar">{{ selected.patientPrenom[0] }}{{ selected.patientNom[0] }}</span><div><strong>{{ selected.patientPrenom }} {{ selected.patientNom }}</strong><small>Facture du {{ selected.dateFacture }}</small></div></div><div class="line-items"><h3>Actes facturés</h3>@for (line of selected.lignes; track line.id) { <div><span>{{ line.libelle }}<small>{{ line.typeActe }}</small></span><strong>{{ format(line.montant) }}</strong></div> }</div><div class="totals"><span>Total facture <strong>{{ format(selected.montantTotal) }}</strong></span><span>Déjà payé <strong class="paid-text">{{ format(selected.montantPaye) }}</strong></span><span class="remaining">Reste à payer <strong>{{ format(selected.resteAPayer) }}</strong></span></div><div class="payment-box"><h3>Enregistrer un paiement</h3><div class="payment-fields"><label>Montant<input type="number" min="0.01" [max]="selected.resteAPayer" [(ngModel)]="paymentAmount"></label><label>Moyen<select [(ngModel)]="paymentMethod"><option>ESPECES</option><option>CARTE</option><option>VIREMENT</option></select></label></div><button class="primary-button payment-button" type="button" [disabled]="saving || selected.resteAPayer <= 0" (click)="pay()">{{ saving ? 'Enregistrement...' : 'Enregistrer le paiement' }}</button></div>@if (message) { <p class="message">{{ message }}</p> }</article> }</section></section>
+<section class="billing-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">FINANCE / FACTURATION</p>
+      <h1>Factures et encaissements</h1>
+      <p class="subtitle">Suivez les règlements, imprimez factures, reçus et ordonnances pour chaque patient.</p>
+    </div>
+    @if (canCreate) { <a class="primary-button" routerLink="/factures/nouveau"><span>+</span> Nouvelle facture</a> }
+  </header>
+
+  <section class="billing-layout">
+    <article class="card list-card">
+      <div class="filters">
+        <div><h2>Liste des factures</h2><p>{{ facturesAffichees.length }} facture(s) affichée(s)</p></div>
+        <div class="filter-controls">
+          <input type="search" [(ngModel)]="recherche" placeholder="Patient ou n° de facture" aria-label="Rechercher une facture">
+          <select [(ngModel)]="status" (change)="load()"><option value="">Tous les statuts</option>@for (item of statuses; track item) { <option [value]="item">{{ label(item) }}</option> }</select>
+        </div>
+      </div>
+      @if (message && !selected) { <p class="message">{{ message }}</p> }
+      @if (loading) { <div class="empty-state">Chargement des factures...</div> } @else {
+        <div class="invoice-list">
+          @for (invoice of facturesAffichees; track invoice.id) {
+            <button type="button" class="invoice-row" [class.selected]="selected?.id === invoice.id" (click)="select(invoice)">
+              <span class="invoice-number">FAC-{{ invoice.id.toString().padStart(3, '0') }}<small>{{ invoice.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</small></span>
+              <span class="patient"><strong>{{ invoice.patientPrenom }} {{ invoice.patientNom }}</strong><small>{{ invoice.lignes.length }} acte(s)</small></span>
+              <span class="amount"><strong>{{ format(invoice.montantTotal) }}</strong><small>Payé : {{ format(invoice.montantPaye) }}</small></span>
+              <span class="badge" [class]="invoice.statut.toLowerCase()">{{ label(invoice.statut) }}</span>
+              <span class="arrow">→</span>
+            </button>
+          } @empty { <div class="empty-state">Aucune facture trouvée.</div> }
+        </div>
+      }
+    </article>
+
+    @if (selected) {
+      <article class="card detail-card">
+        <div class="detail-heading">
+          <div><p class="breadcrumb">FACTURE FAC-{{ selected.id.toString().padStart(3, '0') }}</p><h2>Détail de la facture</h2></div>
+          <span class="badge" [class]="selected.statut.toLowerCase()">{{ label(selected.statut) }}</span>
+        </div>
+
+        <div class="patient-summary">
+          <span class="patient-avatar">{{ selected.patientPrenom[0] }}{{ selected.patientNom[0] }}</span>
+          <div><strong>{{ selected.patientPrenom }} {{ selected.patientNom }}</strong><small>Facture du {{ selected.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</small></div>
+          @if (peutOuvrirDossier) { <a class="soft-button dossier-link" [routerLink]="['/dossier', selected.patientId]">Dossier patient</a> }
+        </div>
+
+        <div class="line-items"><h3>Actes facturés</h3>@for (line of selected.lignes; track line.id) { <div><span>{{ line.libelle }}<small>{{ line.typeActe }}</small></span><strong>{{ format(line.montant) }}</strong></div> }</div>
+
+        <div class="totals">
+          <span>Total facture <strong>{{ format(selected.montantTotal) }}</strong></span>
+          <span>Déjà payé <strong class="paid-text">{{ format(selected.montantPaye) }}</strong></span>
+          <span class="remaining">Reste à payer <strong>{{ format(selected.resteAPayer) }}</strong></span>
+        </div>
+
+        @if (selected.paiements.length) {
+          <div class="line-items"><h3>Paiements enregistrés</h3>@for (paiement of selected.paiements; track paiement.id) { <div><span>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}<small>{{ moyen(paiement.moyenPaiement) }}</small></span><strong>{{ format(paiement.montant) }}</strong></div> }</div>
+        }
+
+        <div class="print-box">
+          <h3>Imprimer</h3>
+          <div class="print-options">
+            <a class="print-option" [routerLink]="['/impression/facture', selected.id]">
+              <span class="print-icon">▤</span><span><strong>Facture</strong><small>Détail des actes et montants</small></span><span class="print-go">⎙</span>
+            </a>
+            @if (selected.montantPaye > 0) {
+              <a class="print-option" [routerLink]="['/impression/recu', selected.id]">
+                <span class="print-icon">✓</span><span><strong>Reçu de paiement</strong><small>{{ selected.paiements.length }} paiement(s) · {{ format(selected.montantPaye) }}</small></span><span class="print-go">⎙</span>
+              </a>
+            } @else {
+              <span class="print-option disabled" title="Aucun paiement enregistré">
+                <span class="print-icon">✓</span><span><strong>Reçu de paiement</strong><small>Disponible après un paiement</small></span>
+              </span>
+            }
+            <div class="print-option" [class.disabled]="!ordonnances.length">
+              <span class="print-icon">℞</span>
+              <span>
+                <strong>Ordonnance</strong>
+                @if (ordonnances.length) {
+                  <select [(ngModel)]="ordonnanceId" aria-label="Choisir l'ordonnance à imprimer">
+                    @for (item of ordonnances; track item.id) { <option [ngValue]="item.id">{{ item.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }} · Dr. {{ item.medecinNom }} ({{ item.lignes.length }} médicament(s))</option> }
+                  </select>
+                } @else { <small>Aucune ordonnance pour ce patient</small> }
+              </span>
+              @if (ordonnanceId) { <a class="row-action" [routerLink]="['/impression/ordonnance', ordonnanceId]" aria-label="Imprimer l'ordonnance">⎙</a> }
+            </div>
+          </div>
+        </div>
+
+        @if (selected.statut === 'ANNULEE') {
+          <div class="alert danger"><span>×</span><div><strong>Facture annulée{{ selected.dateAnnulation ? ' le ' + (selected.dateAnnulation | date:'dd/MM/yyyy HH:mm':'':'fr-FR') : '' }}</strong>{{ selected.motifAnnulation || 'Motif non renseigné' }}</div></div>
+        }
+
+        @if (peutAnnuler) {
+          @if (annulationOuverte) {
+            <div class="cancel-box">
+              <h3>Annuler la facture</h3>
+              <label>Motif de l'annulation *<textarea rows="2" [(ngModel)]="motifAnnulation" maxlength="500" placeholder="Erreur de saisie, doublon, acte non réalisé..."></textarea></label>
+              <p class="cancel-note">L'annulation est définitive. La facture reste visible avec son motif pour la traçabilité.</p>
+              <div class="cancel-actions">
+                <button class="soft-button" type="button" (click)="fermerAnnulation()" [disabled]="saving">Retour</button>
+                <button class="soft-button danger" type="button" (click)="annuler()" [disabled]="saving || !motifAnnulation.trim()">{{ saving ? 'Annulation...' : 'Confirmer l’annulation' }}</button>
+              </div>
+            </div>
+          } @else {
+            <button class="link-button cancel-link" type="button" (click)="ouvrirAnnulation()">Annuler cette facture</button>
+          }
+        }
+
+        @if (canPay && selected.statut !== 'ANNULEE') {
+          <div class="payment-box">
+            <h3>Enregistrer un paiement</h3>
+            <div class="payment-fields">
+              <label>Montant<input type="number" min="0.01" [max]="selected.resteAPayer" [(ngModel)]="paymentAmount"></label>
+              <label>Moyen<select [(ngModel)]="paymentMethod"><option value="ESPECES">Espèces</option><option value="CARTE">Carte bancaire</option><option value="VIREMENT">Virement</option></select></label>
+            </div>
+            <button class="primary-button payment-button" type="button" [disabled]="saving || selected.resteAPayer <= 0" (click)="pay()">{{ saving ? 'Enregistrement...' : 'Enregistrer le paiement' }}</button>
+          </div>
+        }
+        @if (message) { <p class="message">{{ message }}</p> }
+      </article>
+    }
+  </section>
+</section>

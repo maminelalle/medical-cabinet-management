@@ -1,8 +1,9 @@
+import { environment } from '../../environments/environment';
 import { Component, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Patient } from '../../core/models/patient';
 import { FactureService, FactureCreateRequest } from '../../core/factures/facture.service';
@@ -15,6 +16,7 @@ export class NouvelleFactureComponent {
   private readonly http = inject(HttpClient);
   private readonly factureService = inject(FactureService);
   private readonly router = inject(Router);
+  private readonly patientPreselectionne = inject(ActivatedRoute).snapshot.queryParamMap.get('patientId') ?? '';
   patients: Patient[] = [];
   acts: CatalogueActe[] = [];
   loading = true;
@@ -27,7 +29,7 @@ export class NouvelleFactureComponent {
   });
 
   constructor() {
-    forkJoin({ patients: this.http.get<Patient[]>('http://localhost:8080/api/patients'), acts: this.http.get<CatalogueActe[]>('http://localhost:8080/api/actes-catalogue') }).subscribe({ next: (data) => { this.patients = data.patients; this.acts = data.acts; }, error: () => this.error = 'Impossible de charger les patients et le catalogue des actes.', complete: () => this.loading = false });
+    forkJoin({ patients: this.http.get<Patient[]>(`${environment.apiUrl}/patients`), acts: this.http.get<CatalogueActe[]>(`${environment.apiUrl}/actes-catalogue`) }).subscribe({ next: (data) => { this.patients = data.patients; this.acts = data.acts; if (this.patientPreselectionne) this.form.patchValue({ patientId: this.patientPreselectionne }); }, error: () => this.error = 'Impossible de charger les patients et le catalogue des actes.', complete: () => this.loading = false });
   }
   get lines(): FormArray { return this.form.controls.lignes; }
   get total(): number { return this.lines.controls.reduce((sum, line) => sum + Number(line.get('montant')?.value || 0), 0); }
@@ -35,5 +37,5 @@ export class NouvelleFactureComponent {
   addLine(): void { this.lines.push(this.newLine()); }
   removeLine(index: number): void { if (this.lines.length > 1) this.lines.removeAt(index); }
   chooseAct(index: number): void { const line = this.lines.at(index); const act = this.acts.find((item) => item.id === Number(line.get('catalogueActeId')?.value)); if (act) line.patchValue({ libelle: act.libelle, typeActe: act.type, montant: act.montantDefaut }); }
-  submit(): void { if (this.form.invalid) { this.form.markAllAsTouched(); return; } this.saving = true; this.error = ''; const value = this.form.getRawValue(); const request: FactureCreateRequest = { patientId: Number(value.patientId), dateFacture: value.dateFacture!, lignes: value.lignes.map((line) => ({ catalogueActeId: line.catalogueActeId ? Number(line.catalogueActeId) : undefined, libelle: line.libelle!, typeActe: line.typeActe!, montant: Number(line.montant) })) }; this.factureService.create(request).subscribe({ next: () => this.router.navigate(['/factures']), error: () => { this.error = 'La facture n’a pas pu être créée.'; this.saving = false; } }); }
+  submit(): void { if (this.form.invalid) { this.form.markAllAsTouched(); return; } this.saving = true; this.error = ''; const value = this.form.getRawValue(); const request: FactureCreateRequest = { patientId: Number(value.patientId), dateFacture: value.dateFacture!, lignes: value.lignes.map((line) => ({ catalogueActeId: line.catalogueActeId ? Number(line.catalogueActeId) : undefined, libelle: line.libelle!, typeActe: line.typeActe!, montant: Number(line.montant) })) }; this.factureService.create(request).subscribe({ next: (facture) => this.router.navigate(['/factures'], { queryParams: { id: facture.id } }), error: () => { this.error = 'La facture n’a pas pu être créée.'; this.saving = false; } }); }
 }

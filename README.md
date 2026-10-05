@@ -98,6 +98,17 @@ npm start
 
 Application disponible sur `http://localhost:4200`.
 
+### Configuration du frontend
+
+Le fichier `frontend/src/environments/environment.ts` centralise :
+
+- `apiUrl` : adresse de l'API (par défaut `http://localhost:8080/api`) ;
+- `cabinet` : nom, sous-titre, adresse et téléphone imprimés en en-tête des factures, reçus, ordonnances et dossiers.
+
+### Collection Postman
+
+`postman/cabinet-medical.postman_collection.json` contient les 53 requêtes de l'API, rangées en 8 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
+
 ## Comptes de démonstration
 
 La migration de seed crée les comptes suivants. Le mot de passe est `password` pour chacun.
@@ -109,6 +120,7 @@ La migration de seed crée les comptes suivants. Le mot de passe est `password` 
 | Médecin (cardiologie) | `cardio@test.local` | Planning personnel, consultations, prescriptions, dossiers |
 | Médecin (chirurgie) | `chirurgie@test.local` | Planning personnel, consultations, prescriptions, dossiers |
 | Direction | `direction@test.local` | Dashboard, indicateurs, lecture factures et actes |
+| Pharmacien | `pharmacien@test.local` | Stock, prescriptions à délivrer et dispensations |
 
 Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamais de mot de passe en clair).
 
@@ -198,6 +210,8 @@ Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamai
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien et `V11` le motif, la date et l'auteur de l'annulation d'une facture. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+
 ## Interface Angular livrée
 
 ### Design system
@@ -214,17 +228,23 @@ La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md
 |---|---|---|
 | `/login` | Tous | Connexion JWT |
 | `/accueil` | ACCUEIL | Dashboard accueil, KPI, rendez-vous et actions rapides |
-| `/patients` | ACCUEIL, MEDECIN | Liste et gestion administrative des patients |
+| `/medecin/dashboard` | MEDECIN | Tableau de bord médical, activité du jour et accès rapides |
+| `/patients` | ACCUEIL, MEDECIN, DIRECTION | Liste des patients, accès au dossier, import d'un dossier (JSON) ; création/modification réservées à l'accueil |
 | `/rendez-vous` | ACCUEIL, MEDECIN | Planning filtrable, état loading/error et planning médecin |
+| `/direction/rendez-vous` | DIRECTION | Planning global des rendez-vous en lecture seule |
 | `/rendez-vous/nouveau` | ACCUEIL | Création avec patient, médecin, date, heure et motif |
 | `/rendez-vous/:id/consultation` | MEDECIN | Compte-rendu de consultation et ordonnance |
-| `/dossier/:patientId` | MEDECIN | Dossier médical : historique, ordonnances, prochains rendez-vous |
-| `/factures` | ACCUEIL, DIRECTION | Liste, détail et encaissement |
+| `/dossier/:patientId` | ACCUEIL, MEDECIN, DIRECTION | Dossier complet (identité, consultations, ordonnances, rendez-vous, factures), export/import JSON et impression ; compte-rendu masqué pour l'accueil |
+| `/ordonnances` | Tous les rôles | Liste des ordonnances (le médecin ne voit que les siennes), statut de délivrance, impression |
+| `/impression/{type}/:id` | Selon document | Documents imprimables (`facture`, `recu`, `ordonnance`, `rendez-vous`, `dossier`) |
+| `/factures` | ACCUEIL, MEDECIN, PHARMACIEN, DIRECTION | Liste, recherche et détail ; depuis le détail : imprimer la facture, le reçu de paiement ou une ordonnance du patient ; encaissement accueil/pharmacie |
 | `/factures/nouveau` | ACCUEIL | Création d'une facture multi-actes |
 | `/direction/dashboard` | DIRECTION | Indicateurs réels, chiffre d'affaires par type d'acte, impayés, activité par médecin |
+| `/pharmacie` | PHARMACIEN, DIRECTION | Stock, alertes, prescriptions à délivrer et dispensation |
+| `/parametres` | Tous les rôles | Profil connecté, rôle et accès applicatifs |
 | `/design-system` | Tous | Vitrine des composants de l'interface |
 
-La redirection après connexion dépend du rôle : accueil vers `/accueil`, médecin vers `/rendez-vous`, direction vers `/direction/dashboard`.
+La redirection après connexion dépend du rôle : accueil vers `/accueil`, médecin vers `/medecin/dashboard`, direction vers `/direction/dashboard`.
 
 ## Endpoints REST
 
@@ -233,23 +253,42 @@ La redirection après connexion dépend du rôle : accueil vers `/accueil`, méd
 | Auth | `POST /api/auth/login` | Public |
 | Patients | `GET /api/patients`, `POST`, `PUT`, `DELETE` | Selon rôle |
 | Médecins | `GET /api/medecins` | ACCUEIL, MEDECIN |
-| Rendez-vous | `GET/POST /api/rendezvous` | ACCUEIL, MEDECIN selon action |
-| Rendez-vous | `PUT /api/rendezvous/{id}` | ACCUEIL |
-| Rendez-vous | `GET /api/rendezvous/{id}` | ACCUEIL, MEDECIN |
+| Rendez-vous | `GET /api/rendezvous` et `GET /api/rendezvous/{id}` | ACCUEIL, MEDECIN, DIRECTION en lecture |
+| Rendez-vous | `POST /api/rendezvous` | ACCUEIL |
+| Rendez-vous | `PUT /api/rendezvous/{id}` (rendez-vous planifié ou confirmé uniquement) | ACCUEIL |
 | Statut | `PATCH /api/rendezvous/{id}/statut` | ACCUEIL, MEDECIN |
 | Consultation | `POST /api/rendezvous/{id}/consultation` | MEDECIN propriétaire |
 | Consultation | `GET /api/consultations/{id}` | MEDECIN propriétaire |
 | Prescription | `POST /api/consultations/{id}/prescriptions` | MEDECIN propriétaire |
-| Dossier patient | `GET /api/patients/{id}/historique` | MEDECIN (ses patients) |
+| Dossier patient | `GET /api/patients/{id}/historique` | ACCUEIL (sans compte-rendu), MEDECIN (ses patients), DIRECTION |
+| Dossier patient | `POST /api/patients/import` | ACCUEIL, MEDECIN, DIRECTION |
+| Ordonnances | `GET /api/ordonnances?patientId=`, `GET /api/ordonnances/{id}` | ACCUEIL, MEDECIN (les siennes), PHARMACIEN, DIRECTION |
 | Dashboard | `GET /api/dashboard/consultations` | DIRECTION |
 | Dashboard | `GET /api/dashboard/chiffre-affaires` | DIRECTION |
 | Dashboard | `GET /api/dashboard/impayes` | DIRECTION |
 | Dashboard | `GET /api/dashboard/activite-medecins` | DIRECTION |
-| Catalogue | `GET /api/actes-catalogue` | ACCUEIL, DIRECTION |
+| Catalogue | `GET /api/actes-catalogue` | ACCUEIL, MEDECIN, DIRECTION |
 | Catalogue | `POST /api/actes-catalogue` | DIRECTION |
-| Factures | `GET /api/factures`, `GET /api/factures/{id}` | ACCUEIL, DIRECTION |
-| Factures | `POST /api/factures` | ACCUEIL |
-| Paiements | `POST /api/factures/{id}/paiements` | ACCUEIL |
+| Factures | `GET /api/factures`, `GET /api/factures/{id}` | ACCUEIL, MEDECIN, PHARMACIEN, DIRECTION |
+| Factures | `POST /api/factures` | ACCUEIL, PHARMACIEN |
+| Factures | `POST /api/factures/{id}/annulation` (motif obligatoire, refusée si un paiement existe) | ACCUEIL |
+| Paiements | `POST /api/factures/{id}/paiements` | ACCUEIL, PHARMACIEN |
+| Patients | `DELETE /api/patients/{id}` refusé (`409`) si le patient a un historique | ACCUEIL |
+| Pharmacie | `GET /api/pharmacie/medicaments` | MEDECIN, PHARMACIEN, DIRECTION |
+| Pharmacie | `GET /api/pharmacie/prescriptions` | PHARMACIEN, DIRECTION |
+| Pharmacie | `POST /api/pharmacie/medicaments`, `PATCH /api/pharmacie/medicaments/{id}/stock` | PHARMACIEN, DIRECTION |
+| Pharmacie | `POST /api/pharmacie/dispensations` | PHARMACIEN |
+| Pharmacie | `POST /api/pharmacie/medicaments/import` | PHARMACIEN, DIRECTION |
+
+### Format des erreurs
+
+Toutes les erreurs de l'API (`GlobalExceptionHandler`) ont le même format :
+
+```json
+{ "horodatage": "...", "statut": 409, "erreur": "Conflict", "message": "Seul un rendez-vous planifié ou confirmé peut être modifié", "chemin": "/api/rendezvous/12", "champs": {} }
+```
+
+`champs` détaille les erreurs de validation (champ → message). Le frontend affiche directement `message`.
 
 ## Vérifications effectuées
 
@@ -260,7 +299,15 @@ cd backend
 ./mvnw.cmd test
 ```
 
-Résultat : test de contexte Spring réussi, `BUILD SUCCESS`.
+Résultat : 10 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` vérifie à travers l'API réelle (JWT compris, base H2) :
+
+- paiement partiel puis complet, recalcul du statut, refus d'un paiement supérieur au reste dû (`422`) ;
+- annulation de facture : motif obligatoire, refus si déjà annulée ou déjà encaissée ;
+- droits par rôle (`403`) et refus d'un mauvais mot de passe (`401`) ;
+- accès au dossier limité aux patients du médecin, compte-rendu masqué pour l'accueil ;
+- refus de supprimer un patient qui a un historique ;
+- modification de rendez-vous : créneau occupé et statut non modifiable refusés ;
+- import de dossier puis réimport sans doublon.
 
 Frontend :
 
@@ -270,6 +317,13 @@ npm run build
 ```
 
 Résultat : compilation Angular réussie avec les routes lazy-loaded (planning, consultation, dossier patient, design system).
+
+## Scénario de démonstration final
+
+1. Se connecter avec `accueil@test.local` / `password`, rechercher un patient, ouvrir ou créer un rendez-vous, puis créer une facture multi-actes et enregistrer un paiement partiel.
+2. Se connecter avec `medecin@test.local` / `password`, ouvrir son planning, rédiger un compte-rendu avec plusieurs lignes de prescription, puis consulter le dossier médical et son historique.
+3. Se connecter avec `pharmacien@test.local` / `password`, ouvrir `/pharmacie`, préparer l'ordonnance du patient et confirmer la dispensation ; le stock diminue et la prescription disparaît de la liste à délivrer.
+4. Se connecter avec `direction@test.local` / `password`, consulter `/direction/dashboard` sur le mois ou l'année, vérifier les consultations par médecin, le chiffre d'affaires par type d'acte et les impayés, puis ouvrir le stock pharmacie en lecture.
 
 Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 
@@ -288,11 +342,11 @@ Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 | Dossier patient côté médecin (compte-rendu, prescription) | Terminé (API + écrans `/rendez-vous/:id/consultation` et `/dossier/:patientId`) |
 | Facturation multi-actes et paiements | Terminé (statut recalculé côté serveur) |
 | Tableau de bord direction | Terminé (4 endpoints agrégés sur données réelles) |
-| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`) |
+| Jeu de données de démonstration | Terminé (`V4__demo_data.sql` + pharmacie `V5` à `V10`) |
 
-## Extensions bonus (non commencées)
+## Extensions bonus
 
-Conformément à la consigne de cadrage, les modules bonus ne sont pas développés tant que le cœur n'est pas stabilisé :
+La pharmacie interne est livrée après stabilisation du cœur :
 
 - pharmacie interne (catalogue de médicaments, stock, dispensation liée à une prescription) ;
 - laboratoire (demande d'examen, résultat rattaché au dossier) ;
@@ -304,5 +358,5 @@ L'hospitalisation et l'acte chirurgical sont couverts comme **types d'actes fact
 Le cœur suit le parcours :
 
 ```text
-Patient -> Rendez-vous -> Consultation -> Prescription -> Facture -> Paiement -> Dashboard
+Patient -> Rendez-vous -> Consultation -> Prescription -> Pharmacie -> Facture -> Paiement -> Dashboard
 ```

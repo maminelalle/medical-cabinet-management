@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { Facture } from '../../core/models/facture';
 import { RendezVous } from '../../core/models/rendez-vous';
 import { FactureService } from '../../core/factures/facture.service';
@@ -9,17 +10,22 @@ import { RendezVousService } from '../../core/rendez-vous/rendez-vous.service';
 
 interface EncaissementJour { date: string; libelle: string; montant: number; }
 interface RepartitionPaiement { moyen: string; montant: number; pourcentage: number; couleur: string; }
+interface CaseCalendrier { jour: number | null; aujourdHui: boolean; rendezVous: number; titre: string; }
 
 @Component({ selector: 'app-dashboard', standalone: true, imports: [RouterLink], templateUrl: './dashboard.component.html', styleUrl: './dashboard.component.css' })
 export class DashboardComponent {
   private readonly service = inject(RendezVousService);
   private readonly factureService = inject(FactureService);
   private readonly patientService = inject(PatientService);
+  private readonly auth = inject(AuthService);
   private readonly couleursPaiement = ['var(--brand)', 'var(--accent)', 'var(--violet)', '#cbd5e1'];
   private readonly jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   readonly aujourdHui = new Date().toISOString().slice(0, 10);
+  readonly joursSemaine = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  private readonly mois = new Date();
   appointments: RendezVous[] = [];
+  rendezVousMois: RendezVous[] = [];
   factures: Facture[] = [];
   nombrePatients = 0;
   loading = true;
@@ -38,6 +44,50 @@ export class DashboardComponent {
       error: () => { this.appointments = []; this.factures = []; },
       complete: () => { this.loading = false; }
     });
+    this.chargerMois();
+  }
+
+  /** Charge les rendez-vous du mois en cours pour alimenter le calendrier. */
+  private chargerMois(): void {
+    const annee = this.mois.getFullYear();
+    const mois = String(this.mois.getMonth() + 1).padStart(2, '0');
+    const dernierJour = String(new Date(annee, this.mois.getMonth() + 1, 0).getDate()).padStart(2, '0');
+    this.service.listPeriode(`${annee}-${mois}-01`, `${annee}-${mois}-${dernierJour}`).subscribe({
+      next: (items) => { this.rendezVousMois = items; },
+      error: () => { this.rendezVousMois = []; }
+    });
+  }
+
+  get prenomAffiche(): string { return this.auth.prenom() || 'à vous'; }
+
+  get dateDuJour(): string {
+    const libelle = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return libelle.charAt(0).toUpperCase() + libelle.slice(1);
+  }
+
+  get moisLabel(): string {
+    const libelle = this.mois.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    return libelle.charAt(0).toUpperCase() + libelle.slice(1);
+  }
+
+  /** Grille du mois en cours : cases vides, numéro du jour, marqueur « aujourd'hui » et rendez-vous. */
+  get casesCalendrier(): CaseCalendrier[] {
+    const premierJour = new Date(this.mois.getFullYear(), this.mois.getMonth(), 1);
+    const dernierJour = new Date(this.mois.getFullYear(), this.mois.getMonth() + 1, 0).getDate();
+    const decalage = (premierJour.getDay() + 6) % 7;
+    const cases: CaseCalendrier[] = [];
+    for (let index = 0; index < decalage; index++) cases.push({ jour: null, aujourdHui: false, rendezVous: 0, titre: '' });
+    for (let jour = 1; jour <= dernierJour; jour++) {
+      const cle = `${this.mois.getFullYear()}-${String(this.mois.getMonth() + 1).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+      const nombre = this.rendezVousMois.filter((item) => item.dateHeure.slice(0, 10) === cle).length;
+      cases.push({
+        jour,
+        aujourdHui: cle === this.aujourdHui,
+        rendezVous: nombre,
+        titre: nombre === 1 ? '1 rendez-vous' : `${nombre} rendez-vous`
+      });
+    }
+    return cases;
   }
 
   get prochains(): RendezVous[] { return this.appointments.slice(0, 5); }

@@ -13,6 +13,8 @@ public class LignePrescription {
     private Long id;
     @ManyToOne(optional = false) @JoinColumn(name = "prescription_id")
     private Prescription prescription;
+    @ManyToOne @JoinColumn(name = "medicament_id")
+    private Medicament medicamentReference;
     @Column(nullable = false, length = 255)
     private String medicament;
     @Column(length = 255)

@@ -22,6 +22,8 @@ public class RendezVous {
     private LocalDateTime dateHeure;
     @Column(length = 500)
     private String motif;
+    @Column(name = "numero_file", nullable = false)
+    private Integer numeroFile;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
     private StatutRendezVous statut = StatutRendezVous.PLANIFIE;
     @ManyToOne @JoinColumn(name = "created_by")

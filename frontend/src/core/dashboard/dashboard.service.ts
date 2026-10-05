@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -6,7 +7,7 @@ import { ChiffreAffaires, DashboardConsultations, Impayes, MedecinActivite } fro
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private readonly http = inject(HttpClient);
-  private readonly url = 'http://localhost:8080/api/dashboard';
+  private readonly url = `${environment.apiUrl}/dashboard`;
 
   consultations(dateDebut?: string, dateFin?: string): Observable<DashboardConsultations> {
     return this.http.get<DashboardConsultations>(`${this.url}/consultations`, { params: this.parametres(dateDebut, dateFin) });

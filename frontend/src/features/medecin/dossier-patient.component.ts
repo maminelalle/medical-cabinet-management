@@ -1,8 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConsultationDossier, DossierPatient } from '../../core/models/consultation';
 import { ConsultationService } from '../../core/consultations/consultation.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { PatientService } from '../../core/patients/patient.service';
+import { exporterDossier, lireFichierDossier } from '../../core/patients/dossier-fichier';
+
+type Onglet = 'consultations' | 'ordonnances' | 'rendez-vous' | 'factures';
 
 @Component({
   selector: 'app-dossier-patient',
@@ -13,28 +18,72 @@ import { ConsultationService } from '../../core/consultations/consultation.servi
 })
 export class DossierPatientComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly service = inject(ConsultationService);
+  private readonly patientService = inject(PatientService);
+  private readonly auth = inject(AuthService);
+  readonly role = this.auth.role();
+  readonly isDirection = this.role === 'DIRECTION';
+  readonly isMedecin = this.role === 'MEDECIN';
+  readonly isAccueil = this.role === 'ACCUEIL';
 
-  readonly patientId = Number(this.route.snapshot.paramMap.get('patientId'));
+  patientId = Number(this.route.snapshot.paramMap.get('patientId'));
   dossier: DossierPatient | null = null;
+  onglet: Onglet = 'consultations';
   loading = true;
+  importEnCours = false;
   error = '';
+  message = '';
+  erreurAction = '';
 
-  constructor() { this.charger(); }
+  constructor() {
+    this.route.paramMap.subscribe((params) => {
+      this.patientId = Number(params.get('patientId'));
+      this.charger();
+    });
+  }
 
   charger(): void {
     this.loading = true;
     this.error = '';
     this.service.dossier(this.patientId).subscribe({
-      next: (dossier) => { this.dossier = dossier; },
+      next: (dossier) => { this.dossier = dossier; this.loading = false; },
       error: (response) => {
         this.error = response.status === 403
           ? 'Ce dossier médical ne fait pas partie de vos patients.'
-          : 'Le dossier médical est momentanément indisponible.';
+          : response.status === 404 ? 'Ce patient n’existe pas.' : 'Le dossier médical est momentanément indisponible.';
         this.loading = false;
-      },
-      complete: () => { this.loading = false; }
+      }
     });
+  }
+
+  exporter(): void {
+    if (!this.dossier) return;
+    exporterDossier(this.dossier, this.auth.emailAffiche());
+    this.message = 'Dossier exporté : le fichier JSON peut être réimporté dans l’application.';
+  }
+
+  async importer(evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!fichier) return;
+    this.message = '';
+    this.erreurAction = '';
+    try {
+      const contenu = await lireFichierDossier(fichier);
+      this.importEnCours = true;
+      this.patientService.importerDossier(contenu).subscribe({
+        next: (bilan) => {
+          this.importEnCours = false;
+          this.message = `${bilan.patientCree ? 'Nouveau patient créé' : 'Dossier fusionné'} : ${bilan.consultationsImportees} consultation(s), ${bilan.ordonnancesImportees} ordonnance(s), ${bilan.rendezVousImportes} rendez-vous et ${bilan.facturesImportees} facture(s) importés${bilan.elementsIgnores ? `, ${bilan.elementsIgnores} élément(s) ignoré(s)` : ''}.`;
+          if (bilan.patientId === this.patientId) this.charger(); else this.router.navigate(['/dossier', bilan.patientId]);
+        },
+        error: () => { this.importEnCours = false; this.erreurAction = 'L’import du dossier a échoué. Vérifiez le contenu du fichier.'; }
+      });
+    } catch (erreur) {
+      this.erreurAction = (erreur as Error).message;
+    }
   }
 
   get age(): number | null {
@@ -43,19 +92,15 @@ export class DossierPatientComponent {
     return Math.floor((Date.now() - new Date(naissance).getTime()) / 31557600000);
   }
 
-  get derniereConsultation(): ConsultationDossier | null {
-    return this.dossier?.consultations.length ? this.dossier.consultations[0] : null;
+  get consultationsAvecOrdonnance(): ConsultationDossier[] {
+    return this.dossier?.consultations.filter((consultation) => consultation.prescription !== null) ?? [];
   }
+  get totalFacture(): number { return this.dossier?.factures.reduce((total, facture) => total + Number(facture.montantTotal), 0) ?? 0; }
+  get totalRestant(): number { return this.dossier?.factures.reduce((total, facture) => total + Number(facture.resteAPayer), 0) ?? 0; }
 
-  get prochainRendezVous(): number {
-    return this.dossier?.prochainsRendezVous.length ?? 0;
-  }
-
-  get nombrePrescriptions(): number {
-    return this.dossier?.consultations.filter((consultation) => consultation.prescription !== null).length ?? 0;
-  }
-
+  format(valeur: number): string { return new Intl.NumberFormat('fr-FR').format(valeur) + ' MRU'; }
   statutLabel(statut: string): string {
     return statut.replace('_', ' ').toLowerCase().replace(/^\w/, (lettre) => lettre.toUpperCase());
   }
+  statutFacture(statut: string): string { return statut === 'PAYEE' ? 'Payée' : statut === 'PARTIELLE' ? 'Partielle' : statut === 'ANNULEE' ? 'Annulée' : 'En attente'; }
 }

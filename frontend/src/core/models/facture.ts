@@ -27,4 +27,6 @@ export interface Facture {
   statut: StatutFacture;
   lignes: LigneFacture[];
   paiements: Paiement[];
+  motifAnnulation?: string | null;
+  dateAnnulation?: string | null;
 }

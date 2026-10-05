@@ -23,17 +23,19 @@ public class RendezVousController {
     private final RendezVousService rendezVousService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
     public List<RendezVousResponse> rechercher(
             @RequestParam(required = false) Long medecinId,
             @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) LocalDate dateDebut,
+            @RequestParam(required = false) LocalDate dateFin,
             @RequestParam(required = false) StatutRendezVous statut,
             @AuthenticationPrincipal UserDetails utilisateurConnecte) {
-        return rendezVousService.rechercher(medecinId, date, statut, utilisateurConnecte);
+        return rendezVousService.rechercher(medecinId, date, dateDebut, dateFin, statut, utilisateurConnecte);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
     public RendezVousResponse trouver(@PathVariable Long id) {
         return rendezVousService.trouverRendezVous(id);
     }

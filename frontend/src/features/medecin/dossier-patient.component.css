@@ -44,3 +44,12 @@
 @media (max-width: 1180px) {
   .dossier-grid { grid-template-columns: minmax(0, 1fr); }
 }
+/* Onglets, actions et import */
+.identity-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.stats-list li strong.amount { font-size: var(--fs-sm); }
+.stats-list li strong.due { color: var(--warn-text); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); }
+.tabs button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+.tabs button span { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--bg-hover); font-size: var(--fs-label); }
+.tabs button.active { background: var(--brand-soft); color: var(--brand-dark); }
+.tabs button.active span { background: var(--bg-surface); }

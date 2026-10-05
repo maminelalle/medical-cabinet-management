@@ -1,10 +1,11 @@
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DossierPatient } from '../models/consultation';
 
 export interface ConsultationCreateRequest { compteRendu: string; }
-export interface PrescriptionLineRequest { medicament: string; posologie?: string; duree?: string; }
+export interface PrescriptionLineRequest { medicamentId?: number; medicament: string; posologie?: string; duree?: string; }
 export interface PrescriptionCreateRequest { datePrescription: string; instructions?: string; lignes: PrescriptionLineRequest[]; }
 export interface ConsultationResponse { id: number; rendezVousId: number; patientId: number; compteRendu: string; }
 export interface PrescriptionResponse {
@@ -18,7 +19,7 @@ export interface PrescriptionResponse {
 @Injectable({ providedIn: 'root' })
 export class ConsultationService {
   private readonly http = inject(HttpClient);
-  private readonly url = 'http://localhost:8080/api';
+  private readonly url = `${environment.apiUrl}`;
 
   /** POST /api/rendezvous/{id}/consultation : redige le compte-rendu et clot le rendez-vous. */
   creer(rendezVousId: number, request: ConsultationCreateRequest): Observable<ConsultationResponse> {

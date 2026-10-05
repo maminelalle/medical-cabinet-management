@@ -25,6 +25,12 @@ public class Facture {
     private StatutFacture statut = StatutFacture.EN_ATTENTE;
     @ManyToOne @JoinColumn(name = "created_by")
     private Utilisateur createdBy;
+    @Column(name = "motif_annulation", length = 500)
+    private String motifAnnulation;
+    @Column(name = "date_annulation")
+    private Instant dateAnnulation;
+    @ManyToOne @JoinColumn(name = "annulee_par")
+    private Utilisateur annuleePar;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
     @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)

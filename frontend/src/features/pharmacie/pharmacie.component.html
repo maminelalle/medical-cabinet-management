@@ -1,0 +1,41 @@
+<section class="pharmacie-page">
+  <header class="page-heading">
+    <div><p class="breadcrumb">FINANCE / PHARMACIE INTERNE</p><h1>Pharmacie interne</h1><p class="subtitle">Stock des médicaments et délivrance des prescriptions enregistrées par les médecins.</p></div>
+    <label class="soft-button file-button">Importer Excel<input type="file" accept=".xlsx,.xls" (change)="importerExcel($event)"></label>
+  </header>
+
+  @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
+  @if (error) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div> }
+
+  <section class="stats-grid">
+    <article class="stat-card"><span class="stat-icon blue">▤</span><div><span>Références actives</span><strong>{{ medicaments.length }}</strong><small>{{ stockTotal }} unités en stock</small></div></article>
+    <article class="stat-card"><span class="stat-icon orange">◷</span><div><span>Stocks sous le seuil</span><strong>{{ stocksBas }}</strong><small>réapprovisionnement à prévoir</small></div></article>
+    <article class="stat-card"><span class="stat-icon teal">✓</span><div><span>Ordonnances à délivrer</span><strong>{{ prescriptions.length }}</strong><small>prescriptions non dispensées</small></div></article>
+  </section>
+
+  <section class="pharmacie-grid">
+    <article class="card table-card">
+      <div class="table-heading"><div><h2>Stock disponible</h2><p>Prix achat, prix vente, fournisseur et expiration sont suivis par référence.</p></div><button class="soft-button" type="button" (click)="charger()">↻ Actualiser</button></div>
+      @if (loading) { <div class="empty-state">Chargement de la pharmacie...</div> } @else {
+        <div class="table-wrap"><table><thead><tr><th>Médicament</th><th>Stock</th><th>Prix achat</th><th>Prix vente</th><th>Expiration</th><th></th></tr></thead><tbody>
+          @for (item of medicaments; track item.id) {
+            <tr><td><strong>{{ item.nom }}</strong><small>{{ item.dosage || 'Dosage libre' }} · {{ item.forme || 'Présentation non précisée' }}{{ item.fournisseur ? ' · ' + item.fournisseur : '' }}</small></td><td><div class="stock-control">@if (peutAdministrer) { <input type="number" min="0" [(ngModel)]="item.stockActuel" [attr.aria-label]="'Stock de ' + item.nom"> }<span class="stock-badge" [class]="stockClasse(item)">{{ item.stockActuel }} u.</span></div></td><td class="amount">{{ format(item.prixAchat) }}</td><td class="amount">{{ format(item.prixVente) }}</td><td>{{ item.dateExpiration || 'Non renseignée' }}</td><td>@if (peutAdministrer) { <button class="row-action" type="button" (click)="mettreAJourStock(item)" aria-label="Enregistrer le stock">✓</button> }</td></tr>
+          } @empty { <tr><td colspan="6" class="empty-cell">Aucun médicament dans le stock.</td></tr> }
+        </tbody></table></div>
+      }
+    </article>
+
+    @if (peutAdministrer) {
+      <form class="card medicine-form" [formGroup]="form" (ngSubmit)="creerMedicament()"><div class="card-heading"><div><h2>Nouvelle référence</h2><p>Administration du catalogue pharmacie</p></div></div>
+        <label>Nom *<input formControlName="nom" placeholder="Amoxicilline"></label><div class="form-row"><label>Dosage<input formControlName="dosage" placeholder="500 mg"></label><label>Forme<input formControlName="forme" placeholder="Gélule"></label></div><div class="form-row"><label>Stock initial<input type="number" min="0" formControlName="stockActuel"></label><label>Seuil d'alerte<input type="number" min="0" formControlName="seuilAlerte"></label></div><div class="form-row"><label>Prix achat (MRU)<input type="number" min="0" step="1" formControlName="prixAchat"></label><label>Prix vente (MRU)<input type="number" min="0" step="1" formControlName="prixVente"></label></div><div class="form-row"><label>Fournisseur<input formControlName="fournisseur"></label><label>Date d'expiration<input type="date" formControlName="dateExpiration"></label></div><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter au stock' }}</button>
+      </form>
+    }
+  </section>
+
+  <section class="card prescriptions-card"><div class="table-heading"><div><h2>Prescriptions à délivrer</h2><p>La dispensation décrémente automatiquement le stock.</p></div></div>
+    @if (prescriptions.length) { <div class="prescription-list">@for (prescription of prescriptions; track prescription.id) { <article class="prescription-item"><div><strong>{{ prescription.patientPrenom }} {{ prescription.patientNom }}</strong><small>Prescription du {{ prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }} · {{ prescription.lignes.length }} ligne(s)</small><p>{{ prescriptionMedicaments(prescription) }}</p></div><button class="primary-button" type="button" (click)="preparer(prescription)">Préparer la délivrance</button></article> }</div> } @else { <div class="empty-state">Toutes les prescriptions sont à jour.</div> }
+  </section>
+
+  @if (selectedPrescription) { <section class="card dispense-card"><div class="card-heading"><div><h2>Délivrer l'ordonnance</h2><p>{{ selectedPrescription.patientPrenom }} {{ selectedPrescription.patientNom }} · prescription du {{ selectedPrescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</p></div><button class="soft-button" type="button" (click)="annulerPreparation()">Annuler</button></div><div class="dispense-lines">@for (ligne of lignes; track $index) { <div><span><strong>{{ ligne.libelle }}</strong><small>Choisissez la référence correspondante dans le stock</small></span><select [(ngModel)]="ligne.medicamentId"><option [ngValue]="0">Choisir...</option>@for (item of medicaments; track item.id) { <option [ngValue]="item.id">{{ item.nom }} {{ item.dosage || '' }} ({{ item.stockActuel }} u.)</option> }</select><input type="number" min="1" [(ngModel)]="ligne.quantite" aria-label="Quantité"></div> }</div><button class="primary-button" type="button" (click)="dispenser()" [disabled]="saving">{{ saving ? 'Validation...' : 'Confirmer la dispensation' }}</button></section> }
+  @if (facture) { <section class="card receipt-card"><div><p class="breadcrumb">REÇU PHARMACIE</p><h2>Facture FAC-{{ facture.id.toString().padStart(3, '0') }}</h2><p>{{ facture.patientPrenom }} {{ facture.patientNom }} · {{ facture.dateFacture }}</p></div><strong>{{ format(facture.montantTotal) }}</strong><div class="receipt-actions"><a class="soft-button" [routerLink]="['/impression/facture', facture.id]">⎙ Imprimer la facture</a><a class="primary-button" routerLink="/factures" [queryParams]="{ id: facture.id }">Encaisser / reçu</a></div></section> }
+</section>

@@ -6,7 +6,7 @@
       <p class="subtitle">
         {{ isDoctor
           ? 'Ouvrez le dossier de vos patients, rédigez les comptes-rendus et suivez les statuts de vos consultations.'
-          : 'Organisez les consultations, filtrez par médecin et mettez à jour le statut des rendez-vous.' }}
+          : isDirection ? 'Suivez l’activité des médecins et les rendez-vous du cabinet en lecture seule.' : 'Organisez les consultations, filtrez par médecin et mettez à jour le statut des rendez-vous.' }}
       </p>
     </div>
     @if (isAccueil) {
@@ -27,7 +27,7 @@
         </select>
       </label>
     } @else {
-      <label><span>Périmètre</span><input value="Mes rendez-vous" disabled></label>
+      <label><span>Périmètre</span><input [value]="isDirection ? 'Tous les médecins' : 'Mes rendez-vous'" disabled></label>
     }
     <label>
       <span>Statut</span>
@@ -90,7 +90,7 @@
                 <td><span class="badge" [class]="appointment.statut.toLowerCase()">{{ statusLabel(appointment.statut) }}</span></td>
                 <td>
                   <div class="actions">
-                    <select
+                    @if (!isDirection) { <select
                       class="statut-select"
                       [ngModel]="appointment.statut"
                       (ngModelChange)="changerStatut(appointment, $event)"
@@ -98,9 +98,15 @@
                       [attr.aria-label]="'Changer le statut du rendez-vous de ' + appointment.patientPrenom"
                     >
                       @for (item of statuses; track item) { <option [value]="item">{{ statusLabel(item) }}</option> }
-                    </select>
+                    </select> } @else { <span class="subtitle">Lecture seule</span> }
+                    <a class="row-action" [routerLink]="['/dossier', appointment.patientId]" aria-label="Dossier du patient" title="Dossier du patient">☰</a>
+                    @if (isAccueil && (appointment.statut === 'PLANIFIE' || appointment.statut === 'CONFIRME')) {
+                      <a class="row-action" [routerLink]="['/rendez-vous', appointment.id, 'modifier']" aria-label="Modifier ou reprogrammer" title="Modifier ou reprogrammer">✎</a>
+                    }
+                    @if (!isDoctor) {
+                      <a class="row-action" [routerLink]="['/impression/rendez-vous', appointment.id]" aria-label="Imprimer le reçu de rendez-vous" title="Imprimer le ticket de passage">⎙</a>
+                    }
                     @if (isDoctor) {
-                      <a class="row-action" [routerLink]="['/dossier', appointment.patientId]" aria-label="Dossier médical du patient">☰</a>
                       @if (estOuvert(appointment)) {
                         <a class="row-action" [routerLink]="['/rendez-vous', appointment.id, 'consultation']" aria-label="Ouvrir la consultation">✎</a>
                       }

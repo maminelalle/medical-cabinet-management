@@ -1,11 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { FactureService } from '../../core/factures/facture.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="app-shell" [class.is-collapsed]="collapsed()">
       <aside class="sidebar">
@@ -37,60 +39,58 @@ import { AuthService } from '../../core/auth/auth.service';
           </a>
 
           <p class="nav-label">Parcours patient</p>
-          @if (patientFlow) {
+          @if (role !== 'PHARMACIEN') {
             <a routerLink="/patients" routerLinkActive="active">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.2" /><path d="M4 19.5v-1.4A3.6 3.6 0 0 1 7.6 14.5h4.8a3.6 3.6 0 0 1 3.6 3.6v1.4" /><path d="M20 19.5v-1.3a3.4 3.4 0 0 0-2.6-3.3" /></svg></span>
-              <span class="nav-text">Patients</span>
+              <span class="nav-text">{{ role === 'MEDECIN' ? 'Mes patients' : 'Patients et dossiers' }}</span>
             </a>
-            <a routerLink="/rendez-vous" routerLinkActive="active">
+            <a [routerLink]="role === 'DIRECTION' ? '/direction/rendez-vous' : '/rendez-vous'" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 11h18" /></svg></span>
-              <span class="nav-text">Rendez-vous</span>
+              <span class="nav-text">{{ role === 'MEDECIN' ? 'Mon planning' : 'Rendez-vous' }}</span>
             </a>
-          } @else {
-            <span class="muted-link">
-              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 11h18" /></svg></span>
-              <span class="nav-text">Rendez-vous</span>
-              <em>Sur rendez-vous</em>
-            </span>
           }
+          <a routerLink="/ordonnances" routerLinkActive="active">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M14 3v5h5" /><path d="M9.5 12.5v5M9.5 12.5h2.2a1.6 1.6 0 0 1 0 3.2H9.5M11.4 15.7l2.6 2.8" /></svg></span>
+            <span class="nav-text">{{ role === 'MEDECIN' ? 'Mes ordonnances' : 'Ordonnances' }}</span>
+          </a>
 
           <p class="nav-label">Finance</p>
-          @if (billing) {
-            <a routerLink="/factures" routerLinkActive="active">
-              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1Z" /><path d="M9.5 8.5h5M9.5 12.5h5" /></svg></span>
-              <span class="nav-text">Facturation</span>
+          <a routerLink="/factures" routerLinkActive="active">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1Z" /><path d="M9.5 8.5h5M9.5 12.5h5" /></svg></span>
+            <span class="nav-text">Facturation</span>
+          </a>
+          @if (peutVoirCatalogue) {
+            <a routerLink="/catalogue" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5.5A1.5 1.5 0 0 1 5.5 4H16a1 1 0 0 1 1 1v14.5" /><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19V8" /><path d="M8 8h5M8 12h5" /></svg></span>
+              <span class="nav-text">Catalogue des actes</span>
             </a>
-          } @else {
-            <span class="muted-link">
-              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1Z" /><path d="M9.5 8.5h5M9.5 12.5h5" /></svg></span>
-              <span class="nav-text">Facturation</span>
-              <em>Bientôt</em>
-            </span>
           }
-          <span class="muted-link">
-            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5.5A1.5 1.5 0 0 1 5.5 4H16a1 1 0 0 1 1 1v14.5" /><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19V8" /><path d="M8 8h5M8 12h5" /></svg></span>
-            <span class="nav-text">Catalogue des actes</span>
-            <em>Bientôt</em>
-          </span>
+          @if (role === 'DIRECTION') {
+            <a routerLink="/pharmacie" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg></span>
+              <span class="nav-text">Pharmacie interne</span>
+            </a>
+          }
 
           <p class="nav-label">Système</p>
-          <a routerLink="/design-system" routerLinkActive="active">
-            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="9.2" cy="9.6" r="1.1" /><circle cx="14.8" cy="9.6" r="1.1" /><circle cx="10.4" cy="14.8" r="1.1" /><path d="M14.4 17.6c1-1.6 2.1-2.4 3.4-2.4" /></svg></span>
-            <span class="nav-text">Design system</span>
-          </a>
-          <span class="muted-link">
+          @if (role === 'DIRECTION') {
+            <a routerLink="/design-system" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="9.2" cy="9.6" r="1.1" /><circle cx="14.8" cy="9.6" r="1.1" /><circle cx="10.4" cy="14.8" r="1.1" /><path d="M14.4 17.6c1-1.6 2.1-2.4 3.4-2.4" /></svg></span>
+              <span class="nav-text">Design system</span>
+            </a>
+          }
+          <a routerLink="/parametres" routerLinkActive="active">
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h7M16 7h4M4 12h3M12 12h8M4 17h7M16 17h4" /><circle cx="13.5" cy="7" r="2.1" /><circle cx="9.5" cy="12" r="2.1" /><circle cx="13.5" cy="17" r="2.1" /></svg></span>
-            <span class="nav-text">Paramètres</span>
-            <em>Bientôt</em>
-          </span>
+            <span class="nav-text">{{ role === 'DIRECTION' ? 'Paramètres' : 'Mon compte' }}</span>
+          </a>
         </nav>
 
         <div class="sidebar-footer">
           <div class="sidebar-user">
-            <span class="avatar">{{ initials }}</span>
+            <span class="avatar">{{ auth.initiales() }}</span>
             <span>
-              <strong>{{ displayName }}</strong>
-              <small>{{ roleLabel }}</small>
+              <strong>{{ auth.nomComplet() }}</strong>
+              <small>{{ auth.libelleRole() }}</small>
             </span>
           </div>
           <button type="button" class="signout-button" (click)="logout()">
@@ -102,24 +102,41 @@ import { AuthService } from '../../core/auth/auth.service';
 
       <section class="main-area">
         <header class="topbar">
-          <div class="search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
-            <input placeholder="Rechercher un patient, un rendez-vous..." aria-label="Recherche globale">
-            <kbd>K</kbd>
-          </div>
+          @if (peutRechercher) {
+            <div class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+              <input
+                #champRecherche
+                [(ngModel)]="recherche"
+                (keyup.enter)="rechercher()"
+                placeholder="Rechercher un patient puis Entrée..."
+                aria-label="Recherche globale des patients"
+              >
+              <kbd>Ctrl K</kbd>
+            </div>
+          } @else {
+            <p class="topbar-context">{{ role === 'PHARMACIEN' ? 'Pharmacie · stock et ventes' : 'Direction · pilotage de l’activité du cabinet' }}</p>
+          }
           <div class="topbar-actions">
-            <button type="button" class="icon-button" aria-label="Notifications">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 4.4-1.5 5.6-1.5 5.6h15S18 13.4 18 9Z" /><path d="M10.4 18.4a2 2 0 0 0 3.2 0" /></svg>
-              <i></i>
-            </button>
-            <div class="profile">
-              <span class="avatar">{{ initials }}</span>
+            @if (billing) {
+              <button
+                type="button"
+                class="icon-button"
+                (click)="ouvrirFactures()"
+                [attr.aria-label]="facturesImpayees() + ' facture(s) restant à encaisser'"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 4.4-1.5 5.6-1.5 5.6h15S18 13.4 18 9Z" /><path d="M10.4 18.4a2 2 0 0 0 3.2 0" /></svg>
+                @if (facturesImpayees() > 0) { <i>{{ facturesImpayees() }}</i> }
+              </button>
+            }
+            <a class="profile" routerLink="/parametres" title="Mon compte">
+              <span class="avatar">{{ auth.initiales() }}</span>
               <span>
-                <strong>{{ displayName }}</strong>
-                <small>{{ email }}</small>
+                <strong>{{ auth.nomComplet() }}</strong>
+                <small>{{ auth.emailAffiche() }}</small>
               </span>
               <span class="chevron">⌄</span>
-            </div>
+            </a>
             <button type="button" class="ghost-button logout-button" (click)="logout()">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="m10 8-4 4 4 4M6 12h10" /></svg>
               Déconnexion
@@ -133,20 +150,49 @@ import { AuthService } from '../../core/auth/auth.service';
   styleUrl: './app-shell.component.css'
 })
 export class AppShellComponent {
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly factureService = inject(FactureService);
 
   readonly role = this.auth.role();
-  readonly roleLabel = this.auth.role() === 'MEDECIN' ? 'MÉDECIN' : this.auth.role() === 'DIRECTION' ? 'DIRECTION' : 'ACCUEIL / CAISSE';
-  readonly homeLink = this.role === 'DIRECTION' ? '/direction/dashboard' : this.role === 'MEDECIN' ? '/rendez-vous' : '/accueil';
-  readonly displayName = this.auth.role() === 'MEDECIN' ? 'Dr. Ahmed Diallo' : 'Aminata Diallo';
-  readonly email = this.auth.email() ?? 'contact@cabinet-medical.fr';
-  readonly initials = this.displayName.split(' ').map((part) => part[0]).join('').slice(0, 2);
-  readonly patientFlow = this.role !== 'DIRECTION';
-  readonly billing = this.role === 'ACCUEIL' || this.role === 'DIRECTION';
+  readonly homeLink = this.role === 'DIRECTION' ? '/direction/dashboard' : this.role === 'MEDECIN' ? '/medecin/dashboard' : this.role === 'PHARMACIEN' ? '/pharmacie' : '/accueil';
+  readonly billing = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'PHARMACIEN' || this.role === 'DIRECTION';
+  readonly peutRechercher = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'DIRECTION';
+  readonly peutVoirCatalogue = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'DIRECTION';
   readonly collapsed = signal(false);
+  readonly facturesImpayees = signal(0);
+  readonly champRecherche = viewChild<ElementRef<HTMLInputElement>>('champRecherche');
+  recherche = '';
+
+  constructor() {
+    if (this.billing) {
+      this.factureService.list().subscribe({
+        next: (factures) => this.facturesImpayees.set(factures.filter((facture) => Number(facture.resteAPayer) > 0).length),
+        error: () => this.facturesImpayees.set(0)
+      });
+    }
+  }
 
   toggleSidebar(): void { this.collapsed.update((value) => !value); }
+
+  /** Recherche globale : ouvre la liste des patients filtree sur le terme saisi. */
+  rechercher(): void {
+    const terme = this.recherche.trim();
+    if (!terme) { return; }
+    this.router.navigate(['/patients'], { queryParams: { q: terme } });
+    this.recherche = '';
+  }
+
+  ouvrirFactures(): void { this.router.navigate(['/factures']); }
+
+  /** Raccourci clavier Ctrl+K (ou Cmd+K) pour atteindre la recherche globale. */
+  @HostListener('window:keydown', ['$event'])
+  raccourciRecherche(evenement: KeyboardEvent): void {
+    if ((evenement.ctrlKey || evenement.metaKey) && evenement.key.toLowerCase() === 'k') {
+      evenement.preventDefault();
+      this.champRecherche()?.nativeElement.focus();
+    }
+  }
 
   logout(): void {
     this.auth.logout();
