@@ -22,27 +22,27 @@ public class DashboardController {
     private final DashboardService service;
 
     @GetMapping("/consultations")
-    @PreAuthorize("hasRole('DIRECTION')")
+    @PreAuthorize("hasAnyRole('DIRECTION', 'ADMIN')")
     public DashboardConsultationsResponse consultations(@RequestParam(required = false) LocalDate dateDebut,
                                                         @RequestParam(required = false) LocalDate dateFin) {
         return service.consultations(dateDebut, dateFin);
     }
 
     @GetMapping("/chiffre-affaires")
-    @PreAuthorize("hasRole('DIRECTION')")
+    @PreAuthorize("hasAnyRole('DIRECTION', 'ADMIN')")
     public ChiffreAffairesResponse chiffreAffaires(@RequestParam(required = false) LocalDate dateDebut,
                                                    @RequestParam(required = false) LocalDate dateFin) {
         return service.chiffreAffaires(dateDebut, dateFin);
     }
 
     @GetMapping("/impayes")
-    @PreAuthorize("hasRole('DIRECTION')")
+    @PreAuthorize("hasAnyRole('DIRECTION', 'ADMIN')")
     public ImpayesResponse impayes() {
         return service.impayes();
     }
 
     @GetMapping("/activite-medecins")
-    @PreAuthorize("hasRole('DIRECTION')")
+    @PreAuthorize("hasAnyRole('DIRECTION', 'ADMIN')")
     public List<MedecinActiviteResponse> activiteMedecins(@RequestParam(required = false) LocalDate dateDebut,
                                                           @RequestParam(required = false) LocalDate dateFin) {
         return service.activiteMedecins(dateDebut, dateFin);

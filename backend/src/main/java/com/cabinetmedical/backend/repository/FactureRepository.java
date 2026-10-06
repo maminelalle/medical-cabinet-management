@@ -11,4 +11,8 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
 	List<Facture> findByPatientIdOrderByDateFactureDesc(Long patientId);
 
 	long countByPatientId(Long patientId);
+
+	List<Facture> findByRendezVousId(Long rendezVousId);
+
+	List<Facture> findByActeProgrammeId(Long acteProgrammeId);
 }

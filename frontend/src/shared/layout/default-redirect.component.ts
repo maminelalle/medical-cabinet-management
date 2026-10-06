@@ -7,7 +7,7 @@ export class DefaultRedirectComponent {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   constructor() {
-    const destination = this.auth.role() === 'DIRECTION' ? '/direction/dashboard' : this.auth.role() === 'MEDECIN' ? '/medecin/dashboard' : this.auth.role() === 'PHARMACIEN' ? '/pharmacie' : '/accueil';
+    const destination = this.auth.role() === 'ADMIN' ? '/admin' : this.auth.role() === 'DIRECTION' ? '/direction/dashboard' : this.auth.role() === 'MEDECIN' ? '/medecin/dashboard' : this.auth.role() === 'PHARMACIEN' ? '/pharmacie' : '/accueil';
     this.router.navigateByUrl(destination);
   }
 }

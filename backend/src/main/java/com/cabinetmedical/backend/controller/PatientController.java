@@ -4,6 +4,8 @@ import com.cabinetmedical.backend.dto.DossierImportRequest;
 import com.cabinetmedical.backend.dto.DossierImportResponse;
 import com.cabinetmedical.backend.dto.DossierPatientResponse;
 import com.cabinetmedical.backend.service.DossierImportService;
+import com.cabinetmedical.backend.rapport.DossierPdfService;
+import org.springframework.http.ResponseEntity;
 import com.cabinetmedical.backend.dto.PatientRequest;
 import com.cabinetmedical.backend.dto.PatientResponse;
 import com.cabinetmedical.backend.service.DossierService;
@@ -25,30 +27,38 @@ public class PatientController {
     private final PatientService patientService;
     private final DossierService dossierService;
     private final DossierImportService dossierImportService;
+    private final DossierPdfService dossierPdfService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public List<PatientResponse> rechercher(@RequestParam(required = false) String q) {
         return patientService.rechercher(q);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public PatientResponse trouver(@PathVariable Long id) {
         return patientService.trouver(id);
     }
 
     /** Dossier complet du patient (sert aussi a l'export). Compte-rendu masque pour l'accueil. */
     @GetMapping("/{id}/historique")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public DossierPatientResponse historique(@PathVariable Long id,
                                              @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return dossierService.dossier(id, utilisateurConnecte);
     }
 
+    /** Dossier complet en PDF (JasperReports), memes droits que la consultation du dossier. */
+    @GetMapping("/{id}/dossier.pdf")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
+    public ResponseEntity<byte[]> dossierPdf(@PathVariable Long id, @AuthenticationPrincipal UserDetails utilisateurConnecte) {
+        return Pdf.reponse(dossierPdfService.generer(id, utilisateurConnecte), "dossier-patient-" + id + ".pdf");
+    }
+
     /** Importe un dossier patient exporte (JSON) : cree le patient ou fusionne son historique. */
     @PostMapping("/import")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public DossierImportResponse importer(@Valid @RequestBody DossierImportRequest request,
                                           @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return dossierImportService.importer(request, utilisateurConnecte);

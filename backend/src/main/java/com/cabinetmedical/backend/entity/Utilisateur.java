@@ -30,6 +30,18 @@ public class Utilisateur {
     @Column(nullable = false)
     private boolean actif = true;
 
+    @Column(length = 100)
+    private String nom;
+
+    @Column(length = 100)
+    private String prenom;
+
+    @Column(length = 30)
+    private String telephone;
+
+    @Column(name = "derniere_connexion")
+    private Instant derniereConnexion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }

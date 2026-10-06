@@ -1,7 +1,12 @@
 <section class="pharmacie-page">
   <header class="page-heading">
-    <div><p class="breadcrumb">FINANCE / PHARMACIE INTERNE</p><h1>Pharmacie interne</h1><p class="subtitle">Stock des médicaments et délivrance des prescriptions enregistrées par les médecins.</p></div>
-    <label class="soft-button file-button">Importer Excel<input type="file" accept=".xlsx,.xls" (change)="importerExcel($event)"></label>
+    <div><p class="breadcrumb">PHARMACIE INTERNE</p><h1>Pharmacie interne</h1><p class="subtitle">Stock, vente des ordonnances et suivi financier de la pharmacie.</p></div>
+    <div class="page-actions">
+      @if (peutAdministrer) { <label class="soft-button file-button">⇪ Importer Excel<input type="file" accept=".xlsx,.xls" (change)="importerExcel($event)"></label> }
+      <button class="soft-button" type="button" (click)="exporterExcel()">⇩ Excel</button>
+      <button class="soft-button" type="button" (click)="exporterPdf()">⇩ Inventaire PDF</button>
+      @if (peutAdministrer) { <button class="primary-button" type="button" (click)="onglet = 'stock'; formulaireOuvert = !formulaireOuvert">+ Nouvelle référence</button> }
+    </div>
   </header>
 
   @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
@@ -10,32 +15,168 @@
   <section class="stats-grid">
     <article class="stat-card"><span class="stat-icon blue">▤</span><div><span>Références actives</span><strong>{{ medicaments.length }}</strong><small>{{ stockTotal }} unités en stock</small></div></article>
     <article class="stat-card"><span class="stat-icon orange">◷</span><div><span>Stocks sous le seuil</span><strong>{{ stocksBas }}</strong><small>réapprovisionnement à prévoir</small></div></article>
-    <article class="stat-card"><span class="stat-icon teal">✓</span><div><span>Ordonnances à délivrer</span><strong>{{ prescriptions.length }}</strong><small>prescriptions non dispensées</small></div></article>
+    <article class="stat-card"><span class="stat-icon teal">℞</span><div><span>Ordonnances à délivrer</span><strong>{{ prescriptions.length }}</strong><small>prescrites par les médecins</small></div></article>
+    <article class="stat-card"><span class="stat-icon violet">₨</span><div><span>Ventes du mois</span><strong>{{ finances ? format(finances.chiffreVentes) : '—' }}</strong><small>onglet Finances</small></div></article>
   </section>
 
-  <section class="pharmacie-grid">
-    <article class="card table-card">
-      <div class="table-heading"><div><h2>Stock disponible</h2><p>Prix achat, prix vente, fournisseur et expiration sont suivis par référence.</p></div><button class="soft-button" type="button" (click)="charger()">↻ Actualiser</button></div>
-      @if (loading) { <div class="empty-state">Chargement de la pharmacie...</div> } @else {
-        <div class="table-wrap"><table><thead><tr><th>Médicament</th><th>Stock</th><th>Prix achat</th><th>Prix vente</th><th>Expiration</th><th></th></tr></thead><tbody>
-          @for (item of medicaments; track item.id) {
-            <tr><td><strong>{{ item.nom }}</strong><small>{{ item.dosage || 'Dosage libre' }} · {{ item.forme || 'Présentation non précisée' }}{{ item.fournisseur ? ' · ' + item.fournisseur : '' }}</small></td><td><div class="stock-control">@if (peutAdministrer) { <input type="number" min="0" [(ngModel)]="item.stockActuel" [attr.aria-label]="'Stock de ' + item.nom"> }<span class="stock-badge" [class]="stockClasse(item)">{{ item.stockActuel }} u.</span></div></td><td class="amount">{{ format(item.prixAchat) }}</td><td class="amount">{{ format(item.prixVente) }}</td><td>{{ item.dateExpiration || 'Non renseignée' }}</td><td>@if (peutAdministrer) { <button class="row-action" type="button" (click)="mettreAJourStock(item)" aria-label="Enregistrer le stock">✓</button> }</td></tr>
-          } @empty { <tr><td colspan="6" class="empty-cell">Aucun médicament dans le stock.</td></tr> }
-        </tbody></table></div>
+  <nav class="tabs" aria-label="Sections de la pharmacie">
+    <button type="button" [class.active]="onglet === 'stock'" (click)="changerOnglet('stock')">Stock <span>{{ medicaments.length }}</span></button>
+    <button type="button" [class.active]="onglet === 'ordonnances'" (click)="changerOnglet('ordonnances')">Ordonnances à délivrer <span>{{ prescriptions.length }}</span></button>
+    <button type="button" [class.active]="onglet === 'finances'" (click)="changerOnglet('finances')">Finances</button>
+  </nav>
+
+  @switch (onglet) {
+    @case ('stock') {
+      @if (formulaireOuvert && peutAdministrer) {
+        <form class="card medicine-form" [formGroup]="form" (ngSubmit)="creerMedicament()">
+          <div class="card-heading"><div><h2>Nouvelle référence</h2><p>Le stock initial est enregistré comme premier mouvement</p></div><button class="soft-button" type="button" (click)="formulaireOuvert = false">×</button></div>
+          <div class="form-row four">
+            <label>Nom *<input formControlName="nom" placeholder="Amoxicilline"></label>
+            <label>Dosage<input formControlName="dosage" placeholder="500 mg"></label>
+            <label>Forme<input formControlName="forme" placeholder="Gélule"></label>
+            <label>Famille<input formControlName="famille" list="familles" placeholder="Antibiotiques"><datalist id="familles">@for (item of familles; track item) { <option [value]="item"></option> }</datalist></label>
+            <label>Stock initial<input type="number" min="0" formControlName="stockActuel"></label>
+            <label>Seuil d'alerte<input type="number" min="0" formControlName="seuilAlerte"></label>
+            <label>Prix achat (MRU)<input type="number" min="0" formControlName="prixAchat"></label>
+            <label>Prix vente (MRU)<input type="number" min="0" formControlName="prixVente"></label>
+            <label>Fournisseur<input formControlName="fournisseur"></label>
+            <label>Date d'expiration<input type="date" formControlName="dateExpiration"></label>
+          </div>
+          <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter au stock' }}</button>
+        </form>
       }
-    </article>
 
-    @if (peutAdministrer) {
-      <form class="card medicine-form" [formGroup]="form" (ngSubmit)="creerMedicament()"><div class="card-heading"><div><h2>Nouvelle référence</h2><p>Administration du catalogue pharmacie</p></div></div>
-        <label>Nom *<input formControlName="nom" placeholder="Amoxicilline"></label><div class="form-row"><label>Dosage<input formControlName="dosage" placeholder="500 mg"></label><label>Forme<input formControlName="forme" placeholder="Gélule"></label></div><div class="form-row"><label>Stock initial<input type="number" min="0" formControlName="stockActuel"></label><label>Seuil d'alerte<input type="number" min="0" formControlName="seuilAlerte"></label></div><div class="form-row"><label>Prix achat (MRU)<input type="number" min="0" step="1" formControlName="prixAchat"></label><label>Prix vente (MRU)<input type="number" min="0" step="1" formControlName="prixVente"></label></div><div class="form-row"><label>Fournisseur<input formControlName="fournisseur"></label><label>Date d'expiration<input type="date" formControlName="dateExpiration"></label></div><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter au stock' }}</button>
-      </form>
+      <article class="card table-card">
+        <div class="table-heading">
+          <div><h2>Médicaments</h2><p>Cliquez sur un produit pour voir sa fiche complète, ses ventes et ses achats.</p></div>
+          <div class="filters">
+            <input type="search" [(ngModel)]="recherche" placeholder="Nom, dosage ou famille..." aria-label="Rechercher un médicament">
+            <select [(ngModel)]="famille" aria-label="Filtrer par famille"><option value="">Toutes les familles</option>@for (item of familles; track item) { <option [value]="item">{{ item }}</option> }</select>
+          </div>
+        </div>
+        @if (loading) { <div class="empty-state">Chargement de la pharmacie...</div> } @else {
+          <div class="table-wrap"><table><thead><tr><th>Médicament</th><th>Famille</th><th>Stock</th><th>Prix achat</th><th>Prix vente</th><th>Expiration</th><th></th></tr></thead><tbody>
+            @for (item of medicamentsFiltres; track item.id) {
+              <tr class="clickable" (click)="ouvrir(item)">
+                <td><strong>{{ item.nom }}</strong><small>{{ item.dosage || 'Dosage libre' }} · {{ item.forme || 'Forme non précisée' }}{{ item.fournisseur ? ' · ' + item.fournisseur : '' }}</small></td>
+                <td>{{ item.famille || '—' }}</td>
+                <td><span class="stock-badge" [class]="'stock-badge ' + stockClasse(item)">{{ item.stockActuel }} u.</span></td>
+                <td class="amount">{{ format(item.prixAchat) }}</td>
+                <td class="amount">{{ format(item.prixVente) }}</td>
+                <td>{{ item.dateExpiration ? (item.dateExpiration | date:'dd/MM/yyyy') : '—' }}</td>
+                <td><a class="row-action" [routerLink]="['/pharmacie/medicaments', item.id]" (click)="$event.stopPropagation()" aria-label="Fiche du médicament">→</a></td>
+              </tr>
+            } @empty { <tr><td colspan="7" class="empty-cell">Aucun médicament ne correspond à la recherche.</td></tr> }
+          </tbody></table></div>
+        }
+      </article>
     }
-  </section>
 
-  <section class="card prescriptions-card"><div class="table-heading"><div><h2>Prescriptions à délivrer</h2><p>La dispensation décrémente automatiquement le stock.</p></div></div>
-    @if (prescriptions.length) { <div class="prescription-list">@for (prescription of prescriptions; track prescription.id) { <article class="prescription-item"><div><strong>{{ prescription.patientPrenom }} {{ prescription.patientNom }}</strong><small>Prescription du {{ prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }} · {{ prescription.lignes.length }} ligne(s)</small><p>{{ prescriptionMedicaments(prescription) }}</p></div><button class="primary-button" type="button" (click)="preparer(prescription)">Préparer la délivrance</button></article> }</div> } @else { <div class="empty-state">Toutes les prescriptions sont à jour.</div> }
-  </section>
+    @case ('ordonnances') {
+      @if (derniereVente) {
+        <section class="card receipt-card">
+          <div><p class="breadcrumb">VENTE ENREGISTRÉE</p><h2>Facture FAC-{{ derniereVente.factureId.toString().padStart(3, '0') }} · {{ derniereVente.patient }}</h2><p>Payée par {{ derniereVente.moyen }}</p></div>
+          <strong>{{ format(derniereVente.total) }}</strong>
+          <div class="receipt-actions">
+            <a class="primary-button" [routerLink]="['/impression/recu', derniereVente.factureId]">⎙ Reçu</a>
+            <a class="soft-button" [routerLink]="['/impression/facture', derniereVente.factureId]">⎙ Facture</a>
+          </div>
+        </section>
+      }
 
-  @if (selectedPrescription) { <section class="card dispense-card"><div class="card-heading"><div><h2>Délivrer l'ordonnance</h2><p>{{ selectedPrescription.patientPrenom }} {{ selectedPrescription.patientNom }} · prescription du {{ selectedPrescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</p></div><button class="soft-button" type="button" (click)="annulerPreparation()">Annuler</button></div><div class="dispense-lines">@for (ligne of lignes; track $index) { <div><span><strong>{{ ligne.libelle }}</strong><small>Choisissez la référence correspondante dans le stock</small></span><select [(ngModel)]="ligne.medicamentId"><option [ngValue]="0">Choisir...</option>@for (item of medicaments; track item.id) { <option [ngValue]="item.id">{{ item.nom }} {{ item.dosage || '' }} ({{ item.stockActuel }} u.)</option> }</select><input type="number" min="1" [(ngModel)]="ligne.quantite" aria-label="Quantité"></div> }</div><button class="primary-button" type="button" (click)="dispenser()" [disabled]="saving">{{ saving ? 'Validation...' : 'Confirmer la dispensation' }}</button></section> }
-  @if (facture) { <section class="card receipt-card"><div><p class="breadcrumb">REÇU PHARMACIE</p><h2>Facture FAC-{{ facture.id.toString().padStart(3, '0') }}</h2><p>{{ facture.patientPrenom }} {{ facture.patientNom }} · {{ facture.dateFacture }}</p></div><strong>{{ format(facture.montantTotal) }}</strong><div class="receipt-actions"><a class="soft-button" [routerLink]="['/impression/facture', facture.id]">⎙ Imprimer la facture</a><a class="primary-button" routerLink="/factures" [queryParams]="{ id: facture.id }">Encaisser / reçu</a></div></section> }
+      @if (selectedPrescription) {
+        <section class="card dispense-card">
+          <div class="card-heading"><div><h2>Vendre l'ordonnance</h2><p>{{ selectedPrescription.patientPrenom }} {{ selectedPrescription.patientNom }} · prescription du {{ selectedPrescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</p></div><button class="soft-button" type="button" (click)="annulerPreparation()">Annuler</button></div>
+          <div class="dispense-lines">
+            @for (ligne of lignes; track $index) {
+              <div>
+                <span><strong>{{ ligne.libelle }}</strong><small>{{ ligne.posologie || 'Posologie libre' }}</small></span>
+                <select [(ngModel)]="ligne.medicamentId"><option [ngValue]="0">Choisir dans le stock...</option>@for (item of medicaments; track item.id) { <option [ngValue]="item.id" [disabled]="item.stockActuel === 0">{{ item.nom }} {{ item.dosage || '' }} ({{ item.stockActuel }} u. · {{ format(item.prixVente) }})</option> }</select>
+                <input type="number" min="1" [(ngModel)]="ligne.quantite" aria-label="Quantité">
+                <strong class="amount">{{ format(prixLigne(ligne)) }}</strong>
+              </div>
+            }
+          </div>
+          <div class="sale-payment">
+            <div class="sale-total"><span>Total à payer</span><strong>{{ format(totalVente) }}</strong></div>
+            <label>Moyen de paiement *<select [(ngModel)]="moyenPaiement">@for (moyen of moyens; track moyen.code) { <option [value]="moyen.code">{{ moyen.libelle }}</option> }</select></label>
+            <label>Référence {{ referenceObligatoire ? '*' : '(facultative)' }}<input [(ngModel)]="referencePaiement" [placeholder]="referenceObligatoire ? 'Code de la transaction' : 'N° de reçu'"></label>
+          </div>
+          <button class="primary-button" type="button" (click)="dispenser()" [disabled]="saving || !peutVendre">{{ saving ? 'Validation...' : 'Encaisser et délivrer' }}</button>
+          @if (!peutVendre) { <p class="hint">Seul le pharmacien peut enregistrer une vente.</p> }
+        </section>
+      }
+
+      <section class="card prescriptions-card">
+        <div class="table-heading"><div><h2>Ordonnances à délivrer</h2><p>Rédigées par les médecins ; la vente décrémente le stock et enregistre le paiement.</p></div></div>
+        @if (prescriptions.length) {
+          <div class="prescription-list">
+            @for (prescription of prescriptions; track prescription.id) {
+              <article class="prescription-item">
+                <div><strong>{{ prescription.patientPrenom }} {{ prescription.patientNom }}</strong><small>Prescription du {{ prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }} · {{ prescription.lignes.length }} ligne(s)</small><p>{{ prescriptionMedicaments(prescription) }}</p></div>
+                <div class="receipt-actions">
+                  <a class="soft-button" [routerLink]="['/impression/ordonnance', prescription.id]">⎙ Ordonnance</a>
+                  <button class="primary-button" type="button" (click)="preparer(prescription)">Préparer la vente</button>
+                </div>
+              </article>
+            }
+          </div>
+        } @else { <div class="empty-state">Toutes les ordonnances sont délivrées.</div> }
+      </section>
+    }
+
+    @case ('finances') {
+      <section class="card filters-card">
+        <label>Du<input type="date" [(ngModel)]="dateDebut"></label>
+        <label>Au<input type="date" [(ngModel)]="dateFin"></label>
+        <button class="primary-button" type="button" (click)="chargerFinances()">Afficher</button>
+      </section>
+      @if (finances) {
+        <section class="stats-grid">
+          <article class="stat-card"><span class="stat-icon teal">↗</span><div><span>Ventes</span><strong>{{ format(finances.chiffreVentes) }}</strong><small>{{ finances.nombreVentes }} ordonnance(s) vendue(s)</small></div></article>
+          <article class="stat-card"><span class="stat-icon orange">↘</span><div><span>Achats fournisseurs</span><strong>{{ format(finances.coutAchats) }}</strong><small>approvisionnements</small></div></article>
+          <article class="stat-card"><span class="stat-icon violet">≈</span><div><span>Marge brute</span><strong>{{ format(finances.margeBrute) }}</strong><small>ventes − coût d'achat des produits vendus</small></div></article>
+          <article class="stat-card"><span class="stat-icon blue">₨</span><div><span>Encaissé</span><strong>{{ format(finances.encaisse) }}</strong><small>reste {{ format(finances.resteAEncaisser) }}</small></div></article>
+        </section>
+        <section class="finance-grid">
+          <article class="card">
+            <div class="card-heading"><div><h2>Encaissements par moyen</h2><p>Ventes de la période</p></div></div>
+            <ul class="kv-list">
+              @for (item of finances.encaissementsParMoyen; track item.libelle) { <li><span>{{ libelleMoyen(item.libelle) }} <small>{{ item.nombre }} paiement(s)</small></span><strong>{{ format(item.montant) }}</strong></li> }
+              @empty { <li><span>Aucun encaissement</span></li> }
+            </ul>
+          </article>
+          <article class="card">
+            <div class="card-heading"><div><h2>Meilleures ventes</h2><p>En valeur</p></div></div>
+            <ul class="kv-list">
+              @for (item of finances.meilleuresVentes; track item.libelle) { <li><span>{{ item.libelle }} <small>{{ item.nombre }} unité(s)</small></span><strong>{{ format(item.montant) }}</strong></li> }
+              @empty { <li><span>Aucune vente</span></li> }
+            </ul>
+          </article>
+          <article class="card">
+            <div class="card-heading"><div><h2>Valeur du stock</h2><p>Aujourd'hui</p></div></div>
+            <ul class="kv-list">
+              <li><span>Au prix d'achat</span><strong>{{ format(finances.valeurStockAchat) }}</strong></li>
+              <li><span>Au prix de vente</span><strong>{{ format(finances.valeurStockVente) }}</strong></li>
+            </ul>
+          </article>
+        </section>
+        <article class="card table-card">
+          <div class="table-heading"><div><h2>Mouvements de la période</h2><p>Achats, ventes et ajustements</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Médicament</th><th>Quantité</th><th>Montant</th><th>Détail</th></tr></thead><tbody>
+            @for (mouvement of finances.mouvements; track mouvement.id) {
+              <tr>
+                <td>{{ mouvement.dateMouvement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td>
+                <td><span class="badge" [class]="'badge mvt-' + mouvement.type.toLowerCase()">{{ libelleMouvement(mouvement.type) }}</span></td>
+                <td><a [routerLink]="['/pharmacie/medicaments', mouvement.medicamentId]">{{ mouvement.medicament }}</a></td>
+                <td [class.negatif]="mouvement.quantite < 0">{{ mouvement.quantite > 0 ? '+' : '' }}{{ mouvement.quantite }}</td>
+                <td class="amount">{{ mouvement.montant != null ? format(mouvement.montant) : '—' }}</td>
+                <td><small>{{ mouvement.patient || mouvement.fournisseur || mouvement.commentaire || '' }}{{ mouvement.reference ? ' · réf. ' + mouvement.reference : '' }}</small></td>
+              </tr>
+            } @empty { <tr><td colspan="6" class="empty-cell">Aucun mouvement sur la période.</td></tr> }
+          </tbody></table></div>
+        </article>
+      } @else { <div class="card loading-state">Chargement des finances...</div> }
+    }
+  }
 </section>

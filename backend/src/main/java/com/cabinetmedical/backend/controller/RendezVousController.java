@@ -1,5 +1,6 @@
 package com.cabinetmedical.backend.controller;
 
+import com.cabinetmedical.backend.dto.CreneauResponse;
 import com.cabinetmedical.backend.dto.RendezVousRequest;
 import com.cabinetmedical.backend.dto.RendezVousResponse;
 import com.cabinetmedical.backend.dto.StatutRendezVousRequest;
@@ -23,7 +24,7 @@ public class RendezVousController {
     private final RendezVousService rendezVousService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public List<RendezVousResponse> rechercher(
             @RequestParam(required = false) Long medecinId,
             @RequestParam(required = false) LocalDate date,
@@ -34,8 +35,23 @@ public class RendezVousController {
         return rendezVousService.rechercher(medecinId, date, dateDebut, dateFin, statut, utilisateurConnecte);
     }
 
+    /** Grille des creneaux d'un medecin pour une journee (libres, passes, occupes). */
+    @GetMapping("/creneaux")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
+    public List<CreneauResponse> creneaux(@RequestParam Long medecinId, @RequestParam LocalDate date,
+                                          @RequestParam(required = false) Integer dureeMinutes) {
+        return rendezVousService.creneaux(medecinId, date, dureeMinutes);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ACCUEIL')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimer(@PathVariable Long id) {
+        rendezVousService.supprimer(id);
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public RendezVousResponse trouver(@PathVariable Long id) {
         return rendezVousService.trouverRendezVous(id);
     }

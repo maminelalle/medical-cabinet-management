@@ -30,6 +30,22 @@
       "value": ""
     },
     {
+      "key": "token_ADMIN",
+      "value": ""
+    },
+    {
+      "key": "acteId",
+      "value": ""
+    },
+    {
+      "key": "utilisateurId",
+      "value": ""
+    },
+    {
+      "key": "dateActe",
+      "value": "2026-10-09"
+    },
+    {
       "key": "patientId",
       "value": "1"
     },
@@ -59,7 +75,7 @@
     },
     {
       "key": "dateDuJour",
-      "value": "2026-10-05"
+      "value": "2026-10-06"
     }
   ],
   "item": [
@@ -247,6 +263,51 @@
           ]
         },
         {
+          "name": "Connexion ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Enregistre le jeton dans la variable token_ADMIN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.local\",\n  \"motDePasse\": \"{{motDePasse}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "if (pm.response.code < 300) { pm.collectionVariables.set('token_ADMIN', pm.response.json().token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Mauvais mot de passe (401)",
           "request": {
             "method": "POST",
@@ -320,6 +381,50 @@
               ]
             }
           }
+        },
+        {
+          "name": "Signal de présence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "ping"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_MEDECIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -561,6 +666,40 @@
           }
         },
         {
+          "name": "Dossier complet en PDF (JasperReports)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/{{patientId}}/dossier.pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                "{{patientId}}",
+                "dossier.pdf"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Dossier refusé au pharmacien (403)",
           "request": {
             "method": "GET",
@@ -761,6 +900,94 @@
           }
         },
         {
+          "name": "Créneaux libres du médecin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/rendezvous/creneaux?medecinId={{medecinId}}&date={{dateDuJour}}&dureeMinutes=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rendezvous",
+                "creneaux"
+              ],
+              "query": [
+                {
+                  "key": "medecinId",
+                  "value": "{{medecinId}}"
+                },
+                {
+                  "key": "date",
+                  "value": "{{dateDuJour}}"
+                },
+                {
+                  "key": "dureeMinutes",
+                  "value": "30"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rendez-vous + création rapide du patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/rendezvous",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rendezvous"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nouveauPatient\": {\n    \"nom\": \"Rapide\",\n    \"prenom\": \"Patient\",\n    \"dateNaissance\": \"1992-06-01\",\n    \"telephone\": \"36 11 22 33\"\n  },\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:00:00\",\n  \"dureeMinutes\": 15,\n  \"motif\": \"Première visite\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Créer un rendez-vous",
           "request": {
             "method": "POST",
@@ -792,7 +1019,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patientId\": {{patientId}},\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:30:00\",\n  \"motif\": \"Consultation Postman\"\n}",
+              "raw": "{\n  \"patientId\": {{patientId}},\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:30:00\",\n  \"dureeMinutes\": 30,\n  \"motif\": \"Consultation Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -808,6 +1035,58 @@
                 "exec": [
                   "pm.test('Statut 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
                   "if (pm.response.code < 300) { pm.collectionVariables.set('rendezVousId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créneau déjà réservé (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/rendezvous",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rendezvous"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": {{patientId}},\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:30:00\",\n  \"dureeMinutes\": 30,\n  \"motif\": \"Doublon\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 409', () => pm.response.to.have.status(409));"
                 ]
               }
             }
@@ -1260,6 +1539,224 @@
       ]
     },
     {
+      "name": "3b. Actes programmés",
+      "item": [
+        {
+          "name": "Programmer une chirurgie",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/actes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "actes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_MEDECIN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": {{patientId}},\n  \"consultationId\": {{consultationId}},\n  \"type\": \"CHIRURGIE\",\n  \"intitule\": \"Cure de hernie\",\n  \"details\": \"À jeun depuis minuit\",\n  \"dateHeure\": \"{{dateActe}}T14:00:00\",\n  \"dureeMinutes\": 120,\n  \"lieu\": \"Bloc 1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "if (pm.response.code < 300) { pm.collectionVariables.set('acteId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actes vus par l’accueil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/actes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "actes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Détail de l’acte",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/actes/{{acteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "actes",
+                "{{acteId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_MEDECIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Facturer l’acte (accueil)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "factures"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": {{patientId}},\n  \"dateFacture\": \"{{dateDuJour}}\",\n  \"acteProgrammeId\": {{acteId}},\n  \"lignes\": [\n    {\n      \"libelle\": \"Cure de hernie\",\n      \"typeActe\": \"CHIRURGIE\",\n      \"montant\": 45000\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Annulation refusée : acte facturé (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/actes/{{acteId}}/annulation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "actes",
+                "{{acteId}}",
+                "annulation"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "4. Catalogue des actes",
       "item": [
         {
@@ -1444,6 +1941,47 @@
               }
             }
           ]
+        },
+        {
+          "name": "Facture du rendez-vous payée par Bankily",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/factures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "factures"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": {{patientId}},\n  \"dateFacture\": \"{{dateDuJour}}\",\n  \"rendezVousId\": {{rendezVousId}},\n  \"lignes\": [\n    {\n      \"libelle\": \"Consultation\",\n      \"typeActe\": \"CONSULTATION\",\n      \"montant\": 1500\n    }\n  ],\n  \"paiement\": {\n    \"montant\": 1500,\n    \"moyenPaiement\": \"BANKILY\",\n    \"reference\": \"BK-000123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         },
         {
           "name": "Lister les factures",
@@ -1646,6 +2184,60 @@
           ]
         },
         {
+          "name": "Paiement Masrvi sans référence (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/factures/{{factureId}}/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "factures",
+                "{{factureId}}",
+                "paiements"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 100,\n  \"moyenPaiement\": \"MASRVI\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Solde",
           "request": {
             "method": "POST",
@@ -1679,7 +2271,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"montant\": 1500,\n  \"moyenPaiement\": \"CARTE\"\n}",
+              "raw": "{\n  \"montant\": 1500,\n  \"moyenPaiement\": \"CARTE\",\n  \"reference\": \"TPE-4521\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2051,7 +2643,85 @@
           }
         },
         {
-          "name": "Délivrer une ordonnance",
+          "name": "Approvisionnement fournisseur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pharmacie/medicaments/{{medicamentId}}/approvisionnements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pharmacie",
+                "medicaments",
+                "{{medicamentId}}",
+                "approvisionnements"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_PHARMACIEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantite\": 20,\n  \"prixAchatUnitaire\": 22,\n  \"fournisseur\": \"Pharma Sud\",\n  \"reference\": \"BL-77\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Fiche produit (ventes, achats, mouvements)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pharmacie/medicaments/{{medicamentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pharmacie",
+                "medicaments",
+                "{{medicamentId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_PHARMACIEN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendre une ordonnance (paiement obligatoire)",
           "request": {
             "method": "POST",
             "header": [
@@ -2083,7 +2753,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"prescriptionId\": {{prescriptionId}},\n  \"lignes\": [\n    {\n      \"medicamentId\": {{medicamentId}},\n      \"quantite\": 1\n    }\n  ]\n}",
+              "raw": "{\n  \"prescriptionId\": {{prescriptionId}},\n  \"lignes\": [\n    {\n      \"medicamentId\": {{medicamentId}},\n      \"quantite\": 1\n    }\n  ],\n  \"moyenPaiement\": \"SEDAD\",\n  \"referencePaiement\": \"SD-9988\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2091,11 +2761,467 @@
               }
             }
           }
+        },
+        {
+          "name": "Finances de la pharmacie",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pharmacie/finances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pharmacie",
+                "finances"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_PHARMACIEN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inventaire PDF (JasperReports)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pharmacie/medicaments/inventaire.pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pharmacie",
+                "medicaments",
+                "inventaire.pdf"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_PHARMACIEN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "7. Tableau de bord direction",
+      "name": "7. Administration",
+      "item": [
+        {
+          "name": "Tableau de bord administrateur",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tableau-de-bord",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "tableau-de-bord"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "utilisateurs"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer un compte accueil",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "utilisateurs"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"caisse.postman@test.local\",\n  \"nom\": \"Postman\",\n  \"prenom\": \"Caisse\",\n  \"role\": \"ACCUEIL\",\n  \"motDePasse\": \"motdepasse1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "if (pm.response.code < 300) { pm.collectionVariables.set('utilisateurId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Désactiver le compte",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/utilisateurs/{{utilisateurId}}/statut",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "utilisateurs",
+                "{{utilisateurId}}",
+                "statut"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actif\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sessions ouvertes et appareils",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sessions?periode=actives",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "periode",
+                  "value": "actives"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Journal d’activité (7 jours)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/journal?jours=7",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "journal"
+              ],
+              "query": [
+                {
+                  "key": "jours",
+                  "value": "7"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rôles et permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "permissions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Coordonnées du cabinet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parametres-cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parametres-cabinet"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Présence des médecins",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/medecins/presence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "medecins",
+                "presence"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ACCUEIL}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Administration refusée à la direction (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/utilisateurs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "utilisateurs"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_DIRECTION}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Tableau de bord direction",
       "item": [
         {
           "name": "Consultations de la période",

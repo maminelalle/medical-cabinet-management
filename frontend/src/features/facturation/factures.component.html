@@ -3,32 +3,39 @@
     <div>
       <p class="breadcrumb">FINANCE / FACTURATION</p>
       <h1>Factures et encaissements</h1>
-      <p class="subtitle">Suivez les règlements, imprimez factures, reçus et ordonnances pour chaque patient.</p>
+      <p class="subtitle">Les factures à payer d’un côté, les factures payées de l’autre.</p>
     </div>
     @if (canCreate) { <a class="primary-button" routerLink="/factures/nouveau"><span>+</span> Nouvelle facture</a> }
   </header>
 
-  <section class="billing-layout">
+  <nav class="billing-tabs" aria-label="Factures par état">
+    <button type="button" class="tab a-payer" [class.active]="onglet === 'a-payer'" (click)="changerOnglet('a-payer')">
+      <span>À payer</span><strong>{{ aPayer.length }}</strong><small>{{ format(totalAPayer) }} restant</small>
+    </button>
+    <button type="button" class="tab payees" [class.active]="onglet === 'payees'" (click)="changerOnglet('payees')">
+      <span>Payées</span><strong>{{ payees.length }}</strong><small>{{ format(totalPaye) }} encaissés</small>
+    </button>
+    <button type="button" class="tab annulees" [class.active]="onglet === 'annulees'" (click)="changerOnglet('annulees')">
+      <span>Annulées</span><strong>{{ annulees.length }}</strong><small>conservées pour la traçabilité</small>
+    </button>
+  </nav>
+
+  <section class="billing-layout" [class.avec-detail]="!!selected">
     <article class="card list-card">
-      <div class="filters">
-        <div><h2>Liste des factures</h2><p>{{ facturesAffichees.length }} facture(s) affichée(s)</p></div>
-        <div class="filter-controls">
-          <input type="search" [(ngModel)]="recherche" placeholder="Patient ou n° de facture" aria-label="Rechercher une facture">
-          <select [(ngModel)]="status" (change)="load()"><option value="">Tous les statuts</option>@for (item of statuses; track item) { <option [value]="item">{{ label(item) }}</option> }</select>
-        </div>
-      </div>
-      @if (message && !selected) { <p class="message">{{ message }}</p> }
+      @if (erreur && !selected) { <p class="error">{{ erreur }}</p> }
       @if (loading) { <div class="empty-state">Chargement des factures...</div> } @else {
         <div class="invoice-list">
           @for (invoice of facturesAffichees; track invoice.id) {
             <button type="button" class="invoice-row" [class.selected]="selected?.id === invoice.id" (click)="select(invoice)">
               <span class="invoice-number">FAC-{{ invoice.id.toString().padStart(3, '0') }}<small>{{ invoice.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</small></span>
-              <span class="patient"><strong>{{ invoice.patientPrenom }} {{ invoice.patientNom }}</strong><small>{{ invoice.lignes.length }} acte(s)</small></span>
-              <span class="amount"><strong>{{ format(invoice.montantTotal) }}</strong><small>Payé : {{ format(invoice.montantPaye) }}</small></span>
+              <span class="patient"><strong>{{ invoice.patientPrenom }} {{ invoice.patientNom }}</strong><small>{{ libelleOrigine(invoice) }}</small></span>
+              <span class="amount"><strong>{{ format(invoice.montantTotal) }}</strong><small>{{ invoice.statut === 'PAYEE' ? 'Payée' : 'Reste : ' + format(invoice.resteAPayer) }}</small></span>
               <span class="badge" [class]="invoice.statut.toLowerCase()">{{ label(invoice.statut) }}</span>
               <span class="arrow">→</span>
             </button>
-          } @empty { <div class="empty-state">Aucune facture trouvée.</div> }
+          } @empty {
+            <div class="empty-state">{{ onglet === 'a-payer' ? 'Aucune facture à encaisser.' : onglet === 'payees' ? 'Aucune facture payée.' : 'Aucune facture annulée.' }}</div>
+          }
         </div>
       }
     </article>
@@ -42,8 +49,17 @@
 
         <div class="patient-summary">
           <span class="patient-avatar">{{ selected.patientPrenom[0] }}{{ selected.patientNom[0] }}</span>
-          <div><strong>{{ selected.patientPrenom }} {{ selected.patientNom }}</strong><small>Facture du {{ selected.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}</small></div>
+          <div>
+            <strong>{{ selected.patientPrenom }} {{ selected.patientNom }}</strong>
+            <small>Facture du {{ selected.dateFacture | date:'dd/MM/yyyy':'':'fr-FR' }}{{ selected.creePar ? ' · par ' + selected.creePar : '' }}</small>
+          </div>
           @if (peutOuvrirDossier) { <a class="soft-button dossier-link" [routerLink]="['/dossier', selected.patientId]">Dossier patient</a> }
+        </div>
+
+        <div class="origin-line">
+          <span>Origine</span>
+          <strong>{{ libelleOrigine(selected) }}</strong>
+          @if (selected.rendezVousDateHeure) { <small>Rendez-vous du {{ selected.rendezVousDateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</small> }
         </div>
 
         <div class="line-items"><h3>Actes facturés</h3>@for (line of selected.lignes; track line.id) { <div><span>{{ line.libelle }}<small>{{ line.typeActe }}</small></span><strong>{{ format(line.montant) }}</strong></div> }</div>
@@ -55,8 +71,37 @@
         </div>
 
         @if (selected.paiements.length) {
-          <div class="line-items"><h3>Paiements enregistrés</h3>@for (paiement of selected.paiements; track paiement.id) { <div><span>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}<small>{{ moyen(paiement.moyenPaiement) }}</small></span><strong>{{ format(paiement.montant) }}</strong></div> }</div>
+          <div class="line-items payments">
+            <h3>Paiements enregistrés</h3>
+            @for (paiement of selected.paiements; track paiement.id) {
+              <div>
+                <span>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }} · {{ libelleMoyen(paiement.moyenPaiement) }}
+                  <small>{{ paiement.reference ? 'Réf. ' + paiement.reference : 'Sans référence' }}{{ paiement.enregistrePar ? ' · ' + paiement.enregistrePar : '' }}</small>
+                </span>
+                <strong>{{ format(paiement.montant) }}</strong>
+              </div>
+            }
+          </div>
         }
+
+        @if (canPay && selected.statut !== 'ANNULEE' && selected.resteAPayer > 0) {
+          <div class="payment-box">
+            <h3>Encaisser un paiement</h3>
+            <div class="payment-fields">
+              <label>Moyen
+                <select [(ngModel)]="paymentMethod">@for (moyen of moyens; track moyen.code) { <option [value]="moyen.code">{{ moyen.libelle }}</option> }</select>
+              </label>
+              <label>Montant<input type="number" min="1" [max]="selected.resteAPayer" [(ngModel)]="paymentAmount"></label>
+              <label class="full">Référence {{ referenceObligatoire ? '*' : '(facultative)' }}
+                <input [(ngModel)]="paymentReference" [placeholder]="referenceObligatoire ? 'Code de la transaction ' + libelleMoyen(paymentMethod) : 'N° de reçu'">
+              </label>
+            </div>
+            <button class="primary-button payment-button" type="button" [disabled]="saving" (click)="pay()">{{ saving ? 'Enregistrement...' : 'Enregistrer le paiement' }}</button>
+          </div>
+        }
+
+        @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
+        @if (erreur) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ erreur }}</div></div> }
 
         <div class="print-box">
           <h3>Imprimer</h3>
@@ -107,18 +152,6 @@
             <button class="link-button cancel-link" type="button" (click)="ouvrirAnnulation()">Annuler cette facture</button>
           }
         }
-
-        @if (canPay && selected.statut !== 'ANNULEE') {
-          <div class="payment-box">
-            <h3>Enregistrer un paiement</h3>
-            <div class="payment-fields">
-              <label>Montant<input type="number" min="0.01" [max]="selected.resteAPayer" [(ngModel)]="paymentAmount"></label>
-              <label>Moyen<select [(ngModel)]="paymentMethod"><option value="ESPECES">Espèces</option><option value="CARTE">Carte bancaire</option><option value="VIREMENT">Virement</option></select></label>
-            </div>
-            <button class="primary-button payment-button" type="button" [disabled]="saving || selected.resteAPayer <= 0" (click)="pay()">{{ saving ? 'Enregistrement...' : 'Enregistrer le paiement' }}</button>
-          </div>
-        }
-        @if (message) { <p class="message">{{ message }}</p> }
       </article>
     }
   </section>

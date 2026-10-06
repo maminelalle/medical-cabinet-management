@@ -1,0 +1,123 @@
+<section class="pharmacie-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">PHARMACIE / FICHE PRODUIT</p>
+      <h1>{{ detail ? detail.medicament.nom + ' ' + (detail.medicament.dosage || '') : 'Fiche produit' }}</h1>
+      <p class="subtitle">{{ detail?.medicament?.famille || 'Famille non renseignée' }} · {{ detail?.medicament?.forme || 'Forme non précisée' }}</p>
+    </div>
+    <div class="page-actions">
+      <a class="soft-button" routerLink="/pharmacie">← Stock</a>
+      @if (peutAdministrer && detail) {
+        <button class="primary-button" type="button" (click)="ouvrir('achat')">+ Approvisionner</button>
+        <button class="soft-button" type="button" (click)="ouvrir('inventaire')">Corriger l'inventaire</button>
+        <button class="soft-button" type="button" (click)="ouvrir('modifier')">✎ Modifier la fiche</button>
+      }
+    </div>
+  </header>
+
+  @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
+  @if (error) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div> }
+
+  @if (loading) { <section class="card loading-state">Chargement de la fiche...</section> }
+  @else if (detail) {
+    @switch (panneau) {
+      @case ('achat') {
+        <form class="card medicine-form" [formGroup]="achat" (ngSubmit)="approvisionner()">
+          <div class="card-heading"><div><h2>Approvisionnement</h2><p>Achat fournisseur : entrée en stock et coût d'achat</p></div></div>
+          <div class="form-row four">
+            <label>Quantité reçue *<input type="number" min="1" formControlName="quantite"></label>
+            <label>Prix d'achat unitaire (MRU) *<input type="number" min="0" formControlName="prixAchatUnitaire"></label>
+            <label>Fournisseur<input formControlName="fournisseur"></label>
+            <label>Référence (bon de livraison)<input formControlName="reference"></label>
+            <label>Nouvelle date d'expiration<input type="date" formControlName="dateExpiration"></label>
+          </div>
+          <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer l’achat' }}</button>
+        </form>
+      }
+      @case ('inventaire') {
+        <section class="card medicine-form">
+          <div class="card-heading"><div><h2>Correction d'inventaire</h2><p>Stock théorique : {{ detail.medicament.stockActuel }} u. L’écart est tracé.</p></div></div>
+          <div class="form-row">
+            <label>Stock compté *<input type="number" min="0" [(ngModel)]="stockCompte"></label>
+            <label>Raison de l'écart<input [(ngModel)]="commentaireInventaire" placeholder="Casse, péremption, erreur de comptage..."></label>
+          </div>
+          <button class="primary-button" type="button" (click)="corrigerStock()" [disabled]="saving">Enregistrer l'inventaire</button>
+        </section>
+      }
+      @case ('modifier') {
+        <form class="card medicine-form" [formGroup]="fiche" (ngSubmit)="modifierFiche()">
+          <div class="card-heading"><div><h2>Modifier la fiche</h2><p>Le stock se modifie par un approvisionnement ou un inventaire</p></div></div>
+          <div class="form-row four">
+            <label>Nom *<input formControlName="nom"></label>
+            <label>Dosage<input formControlName="dosage"></label>
+            <label>Forme<input formControlName="forme"></label>
+            <label>Famille<input formControlName="famille"></label>
+            <label>Seuil d'alerte<input type="number" min="0" formControlName="seuilAlerte"></label>
+            <label>Prix achat<input type="number" min="0" formControlName="prixAchat"></label>
+            <label>Prix vente<input type="number" min="0" formControlName="prixVente"></label>
+            <label>Fournisseur<input formControlName="fournisseur"></label>
+            <label>Date d'expiration<input type="date" formControlName="dateExpiration"></label>
+          </div>
+          <button class="primary-button" type="submit" [disabled]="saving">Enregistrer</button>
+        </form>
+      }
+    }
+
+    <section class="stats-grid">
+      <article class="stat-card"><span class="stat-icon blue">▤</span><div><span>Stock actuel</span><strong><span class="stock-badge" [class]="'stock-badge ' + stockClasse()">{{ detail.medicament.stockActuel }} u.</span></strong><small>seuil d'alerte {{ detail.medicament.seuilAlerte }}</small></div></article>
+      <article class="stat-card"><span class="stat-icon teal">↗</span><div><span>Ventes</span><strong>{{ format(detail.chiffreVentes) }}</strong><small>{{ detail.quantiteVendue }} unité(s) vendue(s)</small></div></article>
+      <article class="stat-card"><span class="stat-icon orange">↘</span><div><span>Achats</span><strong>{{ format(detail.coutAchats) }}</strong><small>{{ detail.quantiteAchetee }} unité(s) achetée(s)</small></div></article>
+      <article class="stat-card"><span class="stat-icon violet">≈</span><div><span>Marge brute</span><strong>{{ format(detail.margeBrute) }}</strong><small>sur les ventes</small></div></article>
+    </section>
+
+    <section class="finance-grid">
+      <article class="card">
+        <div class="card-heading"><div><h2>Informations</h2><p>Fiche produit</p></div></div>
+        <ul class="kv-list">
+          <li><span>Famille</span><strong>{{ detail.medicament.famille || '—' }}</strong></li>
+          <li><span>Forme / dosage</span><strong>{{ detail.medicament.forme || '—' }} · {{ detail.medicament.dosage || '—' }}</strong></li>
+          <li><span>Fournisseur</span><strong>{{ detail.medicament.fournisseur || '—' }}</strong></li>
+          <li><span>Expiration</span><strong>{{ detail.medicament.dateExpiration ? (detail.medicament.dateExpiration | date:'dd/MM/yyyy') : '—' }}</strong></li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="card-heading"><div><h2>Prix</h2><p>Unitaires</p></div></div>
+        <ul class="kv-list">
+          <li><span>Prix d'achat</span><strong>{{ format(detail.medicament.prixAchat) }}</strong></li>
+          <li><span>Prix de vente</span><strong>{{ format(detail.medicament.prixVente) }}</strong></li>
+          <li><span>Marge unitaire</span><strong>{{ format(detail.medicament.prixVente - detail.medicament.prixAchat) }}</strong></li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="card-heading"><div><h2>Valeur et activité</h2><p>Stock et derniers mouvements</p></div></div>
+        <ul class="kv-list">
+          <li><span>Valeur (achat)</span><strong>{{ format(detail.valeurStockAchat) }}</strong></li>
+          <li><span>Valeur (vente)</span><strong>{{ format(detail.valeurStockVente) }}</strong></li>
+          <li><span>Dernière vente</span><strong>{{ detail.derniereVente ? (detail.derniereVente | date:'dd/MM/yyyy') : '—' }}</strong></li>
+          <li><span>Dernier achat</span><strong>{{ detail.dernierAchat ? (detail.dernierAchat | date:'dd/MM/yyyy') : '—' }}</strong></li>
+        </ul>
+      </article>
+    </section>
+
+    <article class="card table-card">
+      <div class="table-heading"><div><h2>Mouvements de stock</h2><p>{{ detail.mouvements.length }} mouvement(s) : ventes, achats, ajustements</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Quantité</th><th>Stock après</th><th>Prix unit.</th><th>Montant</th><th>Détail</th><th>Par</th></tr></thead><tbody>
+        @for (mouvement of detail.mouvements; track mouvement.id) {
+          <tr>
+            <td>{{ mouvement.dateMouvement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td>
+            <td><span class="badge" [class]="'badge mvt-' + mouvement.type.toLowerCase()">{{ libelleMouvement(mouvement.type) }}</span></td>
+            <td [class.negatif]="mouvement.quantite < 0">{{ mouvement.quantite > 0 ? '+' : '' }}{{ mouvement.quantite }}</td>
+            <td>{{ mouvement.stockApres }}</td>
+            <td class="amount">{{ mouvement.prixUnitaire != null ? format(mouvement.prixUnitaire) : '—' }}</td>
+            <td class="amount">{{ mouvement.montant != null ? format(mouvement.montant) : '—' }}</td>
+            <td>
+              <small>{{ mouvement.patient ? 'Vente à ' + mouvement.patient : mouvement.fournisseur || mouvement.commentaire || '' }}{{ mouvement.reference ? ' · réf. ' + mouvement.reference : '' }}</small>
+              @if (mouvement.factureId) { <a [routerLink]="['/impression/facture', mouvement.factureId]">FAC-{{ mouvement.factureId.toString().padStart(3, '0') }}</a> }
+            </td>
+            <td><small>{{ mouvement.utilisateur || '—' }}</small></td>
+          </tr>
+        } @empty { <tr><td colspan="8" class="empty-cell">Aucun mouvement.</td></tr> }
+      </tbody></table></div>
+    </article>
+  }
+</section>

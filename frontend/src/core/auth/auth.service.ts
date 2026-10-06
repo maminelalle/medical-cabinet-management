@@ -1,7 +1,7 @@
 import { environment } from '../../environments/environment';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, of, tap } from 'rxjs';
 
 interface LoginResponse { token: string; email: string; role: string; }
 
@@ -40,6 +40,7 @@ export class AuthService {
     const role = profil?.role ?? this.role();
     if (role === 'MEDECIN') return profil?.specialite ? `MÉDECIN · ${profil.specialite}` : 'MÉDECIN';
     if (role === 'PHARMACIEN') return 'PHARMACIEN';
+    if (role === 'ADMIN') return 'ADMINISTRATEUR';
     return role === 'DIRECTION' ? 'DIRECTION' : 'ACCUEIL / CAISSE';
   });
 
@@ -64,6 +65,18 @@ export class AuthService {
     });
   }
 
+  /** Deconnexion : ferme la session cote serveur (journalisee), puis efface la session locale. */
+  deconnecter(): Observable<void> {
+    return this.http.post<void>(`${this.api}/auth/logout`, {}).pipe(
+      catchError(() => of(undefined)),
+      tap(() => this.logout())
+    );
+  }
+
+  /** Signal de presence : met a jour la derniere activite de la session (presence des medecins, administration). */
+  ping(): Observable<void> { return this.http.get<void>(`${this.api}/auth/ping`); }
+
+  /** Efface la session locale sans appel serveur (jeton expire ou revoque). */
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('role');

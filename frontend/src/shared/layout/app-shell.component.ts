@@ -1,4 +1,6 @@
-import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -44,9 +46,13 @@ import { FactureService } from '../../core/factures/facture.service';
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.2" /><path d="M4 19.5v-1.4A3.6 3.6 0 0 1 7.6 14.5h4.8a3.6 3.6 0 0 1 3.6 3.6v1.4" /><path d="M20 19.5v-1.3a3.4 3.4 0 0 0-2.6-3.3" /></svg></span>
               <span class="nav-text">{{ role === 'MEDECIN' ? 'Mes patients' : 'Patients et dossiers' }}</span>
             </a>
-            <a [routerLink]="role === 'DIRECTION' ? '/direction/rendez-vous' : '/rendez-vous'" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <a [routerLink]="lectureSeule ? '/direction/rendez-vous' : '/rendez-vous'" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 11h18" /></svg></span>
               <span class="nav-text">{{ role === 'MEDECIN' ? 'Mon planning' : 'Rendez-vous' }}</span>
+            </a>
+            <a routerLink="/actes" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M12 8v8M8 12h8" /></svg></span>
+              <span class="nav-text">{{ role === 'MEDECIN' ? 'Mes actes programmés' : 'Actes programmés' }}</span>
             </a>
           }
           <a routerLink="/ordonnances" routerLinkActive="active">
@@ -65,15 +71,43 @@ import { FactureService } from '../../core/factures/facture.service';
               <span class="nav-text">Catalogue des actes</span>
             </a>
           }
-          @if (role === 'DIRECTION') {
+          @if (lectureSeule) {
             <a routerLink="/pharmacie" routerLinkActive="active">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg></span>
               <span class="nav-text">Pharmacie interne</span>
             </a>
           }
 
+          @if (role === 'ADMIN') {
+            <p class="nav-label">Administration</p>
+            <a routerLink="/direction/dashboard" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 16V9M12 16V5M17 16v-4" /></svg></span>
+              <span class="nav-text">Indicateurs direction</span>
+            </a>
+            <a routerLink="/admin/utilisateurs" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19v-1a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v1" /><path d="M17 8v6M14 11h6" /></svg></span>
+              <span class="nav-text">Utilisateurs</span>
+            </a>
+            <a routerLink="/admin/sessions" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg></span>
+              <span class="nav-text">Connexions et appareils</span>
+            </a>
+            <a routerLink="/admin/journal" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></svg></span>
+              <span class="nav-text">Journal d’activité</span>
+            </a>
+            <a routerLink="/admin/permissions" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg></span>
+              <span class="nav-text">Rôles et permissions</span>
+            </a>
+            <a routerLink="/admin/cabinet" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11" /><path d="M10 20v-5h4v5" /></svg></span>
+              <span class="nav-text">Coordonnées du cabinet</span>
+            </a>
+          }
+
           <p class="nav-label">Système</p>
-          @if (role === 'DIRECTION') {
+          @if (lectureSeule) {
             <a routerLink="/design-system" routerLinkActive="active">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="9.2" cy="9.6" r="1.1" /><circle cx="14.8" cy="9.6" r="1.1" /><circle cx="10.4" cy="14.8" r="1.1" /><path d="M14.4 17.6c1-1.6 2.1-2.4 3.4-2.4" /></svg></span>
               <span class="nav-text">Design system</span>
@@ -81,7 +115,7 @@ import { FactureService } from '../../core/factures/facture.service';
           }
           <a routerLink="/parametres" routerLinkActive="active">
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h7M16 7h4M4 12h3M12 12h8M4 17h7M16 17h4" /><circle cx="13.5" cy="7" r="2.1" /><circle cx="9.5" cy="12" r="2.1" /><circle cx="13.5" cy="17" r="2.1" /></svg></span>
-            <span class="nav-text">{{ role === 'DIRECTION' ? 'Paramètres' : 'Mon compte' }}</span>
+            <span class="nav-text">Mon compte</span>
           </a>
         </nav>
 
@@ -115,7 +149,7 @@ import { FactureService } from '../../core/factures/facture.service';
               <kbd>Ctrl K</kbd>
             </div>
           } @else {
-            <p class="topbar-context">{{ role === 'PHARMACIEN' ? 'Pharmacie · stock et ventes' : 'Direction · pilotage de l’activité du cabinet' }}</p>
+            <p class="topbar-context">{{ role === 'PHARMACIEN' ? 'Pharmacie · stock et ventes' : role === 'ADMIN' ? 'Administration · comptes, sessions et activité' : 'Direction · pilotage de l’activité du cabinet' }}</p>
           }
           <div class="topbar-actions">
             @if (billing) {
@@ -155,16 +189,20 @@ export class AppShellComponent {
   private readonly factureService = inject(FactureService);
 
   readonly role = this.auth.role();
-  readonly homeLink = this.role === 'DIRECTION' ? '/direction/dashboard' : this.role === 'MEDECIN' ? '/medecin/dashboard' : this.role === 'PHARMACIEN' ? '/pharmacie' : '/accueil';
-  readonly billing = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'PHARMACIEN' || this.role === 'DIRECTION';
-  readonly peutRechercher = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'DIRECTION';
-  readonly peutVoirCatalogue = this.role === 'ACCUEIL' || this.role === 'MEDECIN' || this.role === 'DIRECTION';
+  readonly homeLink = this.role === 'ADMIN' ? '/admin' : this.role === 'DIRECTION' ? '/direction/dashboard' : this.role === 'MEDECIN' ? '/medecin/dashboard' : this.role === 'PHARMACIEN' ? '/pharmacie' : '/accueil';
+  /** Direction et administration consultent sans modifier le parcours patient. */
+  readonly lectureSeule = this.role === 'DIRECTION' || this.role === 'ADMIN';
+  readonly billing = this.role !== null;
+  readonly peutRechercher = this.role !== 'PHARMACIEN';
+  readonly peutVoirCatalogue = this.role !== 'PHARMACIEN';
   readonly collapsed = signal(false);
   readonly facturesImpayees = signal(0);
   readonly champRecherche = viewChild<ElementRef<HTMLInputElement>>('champRecherche');
   recherche = '';
 
   constructor() {
+    // Signal de presence toutes les minutes : alimente "en ligne" (administration) et la presence des medecins.
+    interval(60000).pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(() => this.auth.ping().subscribe({ error: () => undefined }));
     if (this.billing) {
       this.factureService.list().subscribe({
         next: (factures) => this.facturesImpayees.set(factures.filter((facture) => Number(facture.resteAPayer) > 0).length),
@@ -194,8 +232,8 @@ export class AppShellComponent {
     }
   }
 
+  /** Deconnexion : la session est fermee cote serveur (et journalisee). */
   logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
+    this.auth.deconnecter().subscribe(() => this.router.navigate(['/login']));
   }
 }

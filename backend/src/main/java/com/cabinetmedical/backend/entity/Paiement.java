@@ -22,6 +22,9 @@ public class Paiement {
     private Instant datePaiement = Instant.now();
     @Column(name = "moyen_paiement", length = 50)
     private String moyenPaiement;
+    /** Reference de la transaction (obligatoire hors especes : Bankily, Masrvi, Sedad, carte, virement). */
+    @Column(length = 100)
+    private String reference;
     @ManyToOne @JoinColumn(name = "enregistre_par")
     private Utilisateur enregistrePar;
 }

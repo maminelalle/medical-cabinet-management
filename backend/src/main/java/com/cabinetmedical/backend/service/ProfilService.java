@@ -25,6 +25,6 @@ public class ProfilService {
                 .map(medecin -> new ProfilResponse(utilisateur.getId(), utilisateur.getEmail(),
                         utilisateur.getRole().name(), medecin.getNom(), medecin.getPrenom(), medecin.getSpecialite()))
                 .orElseGet(() -> new ProfilResponse(utilisateur.getId(), utilisateur.getEmail(),
-                        utilisateur.getRole().name(), null, null, null));
+                        utilisateur.getRole().name(), utilisateur.getNom(), utilisateur.getPrenom(), null));
     }
 }

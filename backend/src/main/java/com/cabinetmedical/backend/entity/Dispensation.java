@@ -21,6 +21,8 @@ public class Dispensation {
     private Patient patient;
     @ManyToOne(optional = false) @JoinColumn(name = "dispensee_par")
     private Utilisateur dispenseePar;
+    @OneToOne @JoinColumn(name = "facture_id")
+    private Facture facture;
     @Column(name = "date_dispensation", nullable = false)
     private Instant dateDispensation = Instant.now();
     @OneToMany(mappedBy = "dispensation", cascade = CascadeType.ALL, orphanRemoval = true)

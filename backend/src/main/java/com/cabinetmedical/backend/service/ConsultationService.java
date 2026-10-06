@@ -36,12 +36,14 @@ public class ConsultationService {
         if (consultationRepository.existsByRendezVousId(rendezVousId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Une consultation existe déjà pour ce rendez-vous");
         }
-        if (rendezVous.getStatut() == StatutRendezVous.ANNULE || rendezVous.getStatut() == StatutRendezVous.ABSENT) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce rendez-vous ne peut pas donner lieu à une consultation");
+        // Le medecin demarre d'abord la consultation (EN_COURS) ; l'enregistrement du compte-rendu la termine.
+        if (rendezVous.getStatut() != StatutRendezVous.EN_COURS && rendezVous.getStatut() != StatutRendezVous.TERMINE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Démarrez la consultation avant de rédiger le compte-rendu");
         }
         Consultation consultation = new Consultation();
         consultation.setRendezVous(rendezVous);
         consultation.setCompteRendu(request.compteRendu());
+        if (rendezVous.getFinConsultation() == null) rendezVous.setFinConsultation(java.time.Instant.now());
         rendezVous.setStatut(StatutRendezVous.TERMINE);
         return ConsultationResponse.from(consultationRepository.save(consultation));
     }

@@ -17,14 +17,14 @@ public class OrdonnanceController {
     private final OrdonnanceService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION', 'ADMIN')")
     public List<OrdonnanceResponse> lister(@RequestParam(required = false) Long patientId,
                                            @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return service.lister(patientId, utilisateurConnecte);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION', 'ADMIN')")
     public OrdonnanceResponse trouver(@PathVariable Long id, @AuthenticationPrincipal UserDetails utilisateurConnecte) {
         return service.trouver(id, utilisateurConnecte);
     }

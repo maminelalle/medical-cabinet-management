@@ -1,82 +1,17 @@
 package com.cabinetmedical.backend;
 
-import com.cabinetmedical.backend.entity.Medecin;
-import com.cabinetmedical.backend.entity.Patient;
-import com.cabinetmedical.backend.entity.Role;
-import com.cabinetmedical.backend.entity.Utilisateur;
-import com.cabinetmedical.backend.repository.*;
-import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Tests de bout en bout des regles metier, a travers l'API reelle (securite JWT comprise) sur une base H2.
- */
-@SpringBootTest
-class ParcoursMetierIntegrationTest {
-    private static final String MOT_DE_PASSE = "password";
-
-    @Autowired private WebApplicationContext contexte;
-    @Autowired private PasswordEncoder encodeur;
-    @Autowired private UtilisateurRepository utilisateurRepository;
-    @Autowired private MedecinRepository medecinRepository;
-    @Autowired private PatientRepository patientRepository;
-    @Autowired private RendezVousRepository rendezVousRepository;
-    @Autowired private ConsultationRepository consultationRepository;
-    @Autowired private PrescriptionRepository prescriptionRepository;
-    @Autowired private DispensationRepository dispensationRepository;
-    @Autowired private FactureRepository factureRepository;
-    @Autowired private PaiementRepository paiementRepository;
-    @Autowired private LigneFactureRepository ligneFactureRepository;
-
-    private MockMvc mvc;
-    private Medecin medecin;
-    private Medecin autreMedecin;
-    private Patient patient;
-
-    @BeforeEach
-    void preparerDonnees() {
-        mvc = MockMvcBuilders.webAppContextSetup(contexte).apply(springSecurity()).build();
-        dispensationRepository.deleteAll();
-        prescriptionRepository.deleteAll();
-        consultationRepository.deleteAll();
-        paiementRepository.deleteAll();
-        ligneFactureRepository.deleteAll();
-        factureRepository.deleteAll();
-        rendezVousRepository.deleteAll();
-        patientRepository.deleteAll();
-        medecinRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-
-        utilisateur("accueil@test.local", Role.ACCUEIL);
-        utilisateur("direction@test.local", Role.DIRECTION);
-        utilisateur("pharmacien@test.local", Role.PHARMACIEN);
-        medecin = medecin("medecin@test.local", "Dupont", "Marie");
-        autreMedecin = medecin("cardio@test.local", "Martin", "Paul");
-
-        patient = new Patient();
-        patient.setNom("Diallo");
-        patient.setPrenom("Aminata");
-        patient.setDateNaissance(LocalDate.of(1987, 4, 12));
-        patient = patientRepository.save(patient);
-    }
+/** Regles metier du coeur : facturation, droits, dossier, patients, rendez-vous, import. */
+class ParcoursMetierIntegrationTest extends IntegrationTestBase {
 
     // --- Facturation ---------------------------------------------------------------------------
 
@@ -125,16 +60,11 @@ class ParcoursMetierIntegrationTest {
     @Test
     void chaqueRoleEstLimiteASonPerimetre() throws Exception {
         String medecinJeton = connexion("medecin@test.local");
-        String pharmacien = connexion("pharmacien@test.local");
-        String direction = connexion("direction@test.local");
-
-        mvc.perform(post("/api/factures").header("Authorization", medecinJeton).contentType(MediaType.APPLICATION_JSON)
-                        .content(factureJson("100")))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.statut").value(403));
-        mvc.perform(get("/api/dashboard/impayes").header("Authorization", medecinJeton)).andExpect(status().isForbidden());
-        mvc.perform(get("/api/dashboard/impayes").header("Authorization", direction)).andExpect(status().isOk());
-        mvc.perform(get("/api/patients/" + patient.getId() + "/historique").header("Authorization", pharmacien))
+        envoyer("POST", "/api/factures", medecinJeton, factureJson("100"))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.statut").value(403));
+        envoyer("GET", "/api/dashboard/impayes", medecinJeton, null).andExpect(status().isForbidden());
+        envoyer("GET", "/api/dashboard/impayes", connexion("direction@test.local"), null).andExpect(status().isOk());
+        envoyer("GET", "/api/patients/" + patient.getId() + "/historique", connexion("pharmacien@test.local"), null)
                 .andExpect(status().isForbidden());
     }
 
@@ -149,16 +79,14 @@ class ParcoursMetierIntegrationTest {
     @Test
     void leMedecinNAccedeQuAuxDossiersDeSesPatientsEtLAccueilNeVoitPasLeCompteRendu() throws Exception {
         String accueil = connexion("accueil@test.local");
-        long rendezVousId = creerRendezVous(accueil, medecin.getId(), LocalDateTime.now().minusDays(1).withNano(0));
-        mvc.perform(post("/api/rendezvous/" + rendezVousId + "/consultation").header("Authorization", connexion("medecin@test.local"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"compteRendu\":\"Examen normal\"}"))
-                .andExpect(status().isCreated());
+        long rendezVousId = creerRendezVous(accueil, medecin.getId(), LocalDateTime.now().minusDays(1).withHour(10).withMinute(0).withSecond(0).withNano(0));
+        consulter(connexion("medecin@test.local"), rendezVousId, "Examen normal");
 
         String chemin = "/api/patients/" + patient.getId() + "/historique";
-        mvc.perform(get(chemin).header("Authorization", connexion("medecin@test.local"))).andExpect(status().isOk())
+        envoyer("GET", chemin, connexion("medecin@test.local"), null).andExpect(status().isOk())
                 .andExpect(jsonPath("$.consultations[0].compteRendu").value("Examen normal"));
-        mvc.perform(get(chemin).header("Authorization", connexion("cardio@test.local"))).andExpect(status().isForbidden());
-        mvc.perform(get(chemin).header("Authorization", accueil)).andExpect(status().isOk())
+        envoyer("GET", chemin, connexion("cardio@test.local"), null).andExpect(status().isForbidden());
+        envoyer("GET", chemin, accueil, null).andExpect(status().isOk())
                 .andExpect(jsonPath("$.compteRenduMasque").value(true))
                 .andExpect(jsonPath("$.consultations[0].compteRendu").doesNotExist());
     }
@@ -169,32 +97,27 @@ class ParcoursMetierIntegrationTest {
     void unPatientAvecHistoriqueNePeutPasEtreSupprime() throws Exception {
         String accueil = connexion("accueil@test.local");
         creerFacture(accueil, "100");
-        mvc.perform(delete("/api/patients/" + patient.getId()).header("Authorization", accueil))
+        envoyer("DELETE", "/api/patients/" + patient.getId(), accueil, null)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("historique")));
 
-        Patient sansHistorique = new Patient();
-        sansHistorique.setNom("Sans");
-        sansHistorique.setPrenom("Historique");
-        sansHistorique.setDateNaissance(LocalDate.of(2000, 1, 1));
-        long id = patientRepository.save(sansHistorique).getId();
-        mvc.perform(delete("/api/patients/" + id).header("Authorization", accueil)).andExpect(status().isNoContent());
+        long id = nouveauPatient("Sans", "Historique").getId();
+        envoyer("DELETE", "/api/patients/" + id, accueil, null).andExpect(status().isNoContent());
     }
 
     @Test
     void seulUnRendezVousPlanifieOuConfirmePeutEtreModifie() throws Exception {
         String accueil = connexion("accueil@test.local");
-        LocalDateTime creneau = LocalDateTime.now().plusDays(3).withHour(9).withMinute(0).withSecond(0).withNano(0);
-        long rendezVousId = creerRendezVous(accueil, medecin.getId(), creneau);
-        long autreId = creerRendezVous(accueil, medecin.getId(), creneau.plusHours(1));
+        LocalDateTime debut = creneau(3, 9, 0);
+        long rendezVousId = creerRendezVous(accueil, medecin.getId(), debut);
+        long autreId = creerRendezVous(accueil, medecin.getId(), debut.plusHours(1));
 
-        modifierRendezVous(accueil, rendezVousId, autreMedecin.getId(), creneau.plusDays(1)).andExpect(status().isOk())
+        modifier(accueil, rendezVousId, autreMedecin.getId(), debut.plusDays(1)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.medecinId").value(autreMedecin.getId()));
-        modifierRendezVous(accueil, autreId, autreMedecin.getId(), creneau.plusDays(1)).andExpect(status().isConflict());
+        modifier(accueil, autreId, autreMedecin.getId(), debut.plusDays(1)).andExpect(status().isConflict());
 
-        mvc.perform(patch("/api/rendezvous/" + autreId + "/statut").header("Authorization", accueil)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"statut\":\"ANNULE\"}")).andExpect(status().isOk());
-        modifierRendezVous(accueil, autreId, medecin.getId(), creneau.plusDays(2)).andExpect(status().isConflict())
+        envoyer("PATCH", "/api/rendezvous/" + autreId + "/statut", accueil, "{\"statut\":\"ANNULE\"}").andExpect(status().isOk());
+        modifier(accueil, autreId, medecin.getId(), debut.plusDays(2)).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("planifié ou confirmé")));
     }
 
@@ -213,92 +136,35 @@ class ParcoursMetierIntegrationTest {
                    "paiements":[{"montant":1500,"datePaiement":"2026-01-10T10:30:00Z","moyenPaiement":"ESPECES"}]}]}
                 """;
 
-        importer(accueil, dossier).andExpect(status().isOk())
+        envoyer("POST", "/api/patients/import", accueil, dossier).andExpect(status().isOk())
                 .andExpect(jsonPath("$.patientCree").value(true))
                 .andExpect(jsonPath("$.consultationsImportees").value(1))
                 .andExpect(jsonPath("$.ordonnancesImportees").value(1))
                 .andExpect(jsonPath("$.facturesImportees").value(1));
-        importer(accueil, dossier).andExpect(status().isOk())
+        envoyer("POST", "/api/patients/import", accueil, dossier).andExpect(status().isOk())
                 .andExpect(jsonPath("$.patientCree").value(false))
                 .andExpect(jsonPath("$.consultationsImportees").value(0))
                 .andExpect(jsonPath("$.rendezVousImportes").value(0))
                 .andExpect(jsonPath("$.facturesImportees").value(0));
-        importer(accueil, "{\"patient\":{\"nom\":\"\"}}").andExpect(status().isBadRequest());
+        envoyer("POST", "/api/patients/import", accueil, "{\"patient\":{\"nom\":\"\"}}").andExpect(status().isBadRequest());
     }
 
-    // --- Outils ------------------------------------------------------------------------------
-
-    private void utilisateur(String email, Role role) {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setEmail(email);
-        utilisateur.setMotDePasse(encodeur.encode(MOT_DE_PASSE));
-        utilisateur.setRole(role);
-        utilisateurRepository.save(utilisateur);
+    @Test
+    void leDossierSExporteEnPdf() throws Exception {
+        String accueil = connexion("accueil@test.local");
+        creerFacture(accueil, "1500");
+        var reponse = envoyer("GET", "/api/patients/" + patient.getId() + "/dossier.pdf", accueil, null)
+                .andExpect(status().isOk()).andReturn().getResponse();
+        org.assertj.core.api.Assertions.assertThat(reponse.getContentType()).isEqualTo("application/pdf");
+        org.assertj.core.api.Assertions.assertThat(new String(reponse.getContentAsByteArray(), 0, 5)).isEqualTo("%PDF-");
     }
 
-    private Medecin medecin(String email, String nom, String prenom) {
-        utilisateur(email, Role.MEDECIN);
-        Medecin nouveau = new Medecin();
-        nouveau.setUtilisateur(utilisateurRepository.findByEmailIgnoreCase(email).orElseThrow());
-        nouveau.setNom(nom);
-        nouveau.setPrenom(prenom);
-        return medecinRepository.save(nouveau);
+    private org.springframework.test.web.servlet.ResultActions annulation(String jeton, long factureId, String motif) throws Exception {
+        return envoyer("POST", "/api/factures/" + factureId + "/annulation", jeton, "{\"motif\":\"" + motif + "\"}");
     }
 
-    private String connexion(String email) throws Exception {
-        String reponse = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"motDePasse\":\"" + MOT_DE_PASSE + "\"}"))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        return "Bearer " + JsonPath.read(reponse, "$.token");
+    private org.springframework.test.web.servlet.ResultActions modifier(String jeton, long id, long medecinId, LocalDateTime dateHeure) throws Exception {
+        return envoyer("PUT", "/api/rendezvous/" + id, jeton, rendezVousJson(patient.getId(), medecinId, dateHeure));
     }
 
-    private String factureJson(String... montants) {
-        StringBuilder lignes = new StringBuilder();
-        for (String montant : montants) {
-            if (!lignes.isEmpty()) lignes.append(',');
-            lignes.append("{\"libelle\":\"Acte\",\"typeActe\":\"CONSULTATION\",\"montant\":").append(montant).append('}');
-        }
-        return "{\"patientId\":" + patient.getId() + ",\"dateFacture\":\"" + LocalDate.now() + "\",\"lignes\":[" + lignes + "]}";
-    }
-
-    private long creerFacture(String jeton, String... montants) throws Exception {
-        String reponse = mvc.perform(post("/api/factures").header("Authorization", jeton)
-                        .contentType(MediaType.APPLICATION_JSON).content(factureJson(montants)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.statut").value("EN_ATTENTE"))
-                .andReturn().getResponse().getContentAsString();
-        return ((Number) JsonPath.read(reponse, "$.id")).longValue();
-    }
-
-    private ResultActions paiement(String jeton, long factureId, String montant) throws Exception {
-        return mvc.perform(post("/api/factures/" + factureId + "/paiements").header("Authorization", jeton)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"montant\":" + montant + ",\"moyenPaiement\":\"ESPECES\"}"));
-    }
-
-    private ResultActions annulation(String jeton, long factureId, String motif) throws Exception {
-        return mvc.perform(post("/api/factures/" + factureId + "/annulation").header("Authorization", jeton)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"motif\":\"" + motif + "\"}"));
-    }
-
-    private long creerRendezVous(String jeton, long medecinId, LocalDateTime dateHeure) throws Exception {
-        String reponse = mvc.perform(post("/api/rendezvous").header("Authorization", jeton).contentType(MediaType.APPLICATION_JSON)
-                        .content(rendezVousJson(medecinId, dateHeure)))
-                .andExpect(status().is2xxSuccessful()).andReturn().getResponse().getContentAsString();
-        return ((Number) JsonPath.read(reponse, "$.id")).longValue();
-    }
-
-    private ResultActions modifierRendezVous(String jeton, long id, long medecinId, LocalDateTime dateHeure) throws Exception {
-        return mvc.perform(put("/api/rendezvous/" + id).header("Authorization", jeton)
-                .contentType(MediaType.APPLICATION_JSON).content(rendezVousJson(medecinId, dateHeure)));
-    }
-
-    private String rendezVousJson(long medecinId, LocalDateTime dateHeure) {
-        return "{\"patientId\":" + patient.getId() + ",\"medecinId\":" + medecinId
-                + ",\"dateHeure\":\"" + dateHeure + "\",\"motif\":\"Contrôle\"}";
-    }
-
-    private ResultActions importer(String jeton, String contenu) throws Exception {
-        return mvc.perform(post("/api/patients/import").header("Authorization", jeton)
-                .contentType(MediaType.APPLICATION_JSON).content(contenu));
-    }
 }

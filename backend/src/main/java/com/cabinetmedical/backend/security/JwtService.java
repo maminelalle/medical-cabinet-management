@@ -23,14 +23,26 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
+    public long getExpirationMs() { return expirationMs; }
+
     public String generateToken(UserDetails user) {
+        return generateToken(user, null);
+    }
+
+    /** {@code sessionId} = identifiant de la session ouverte (claim "jti"), verifie a chaque requete. */
+    public String generateToken(UserDetails user, String sessionId) {
         return Jwts.builder()
+                .id(sessionId)
                 .subject(user.getUsername())
                 .claim("role", user.getAuthorities().iterator().next().getAuthority())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
                 .compact();
+    }
+
+    public String extractSessionId(String token) {
+        return extractClaim(token, Claims::getId);
     }
 
     public String extractUsername(String token) {

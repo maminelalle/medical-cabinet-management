@@ -1,0 +1,49 @@
+.actes-page { display: grid; gap: 18px; }
+.billing-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.billing-tabs .tab { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--border); border-top-width: 3px; border-radius: var(--radius-md); background: var(--bg-surface); font: inherit; text-align: left; cursor: pointer; }
+.billing-tabs .tab span { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 800; letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.billing-tabs .tab strong { color: var(--text-strong); font-size: 24px; font-weight: 800; }
+.billing-tabs .tab small { color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
+.billing-tabs .a-venir { border-top-color: var(--brand); }
+.billing-tabs .realises { border-top-color: var(--accent); }
+.billing-tabs .annules { border-top-color: var(--border-strong); }
+.billing-tabs .tous { border-top-color: var(--violet); }
+.billing-tabs .tab.active { box-shadow: var(--shadow-card); border-color: var(--brand); }
+
+.actes-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+.actes-layout.avec-detail { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.acte-list { display: grid; gap: 8px; }
+.acte-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); font: inherit; text-align: left; cursor: pointer; }
+.acte-item:hover { background: var(--bg-subtle); }
+.acte-item.selected { border-color: #bfdbfe; background: var(--brand-soft); }
+.date-bloc { display: grid; place-items: center; min-width: 56px; padding: 6px; border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.date-bloc strong { color: var(--text-strong); font-size: var(--fs-sm); text-transform: capitalize; }
+.date-bloc small { color: var(--brand-dark); font-weight: 800; }
+.infos { display: grid; gap: 3px; min-width: 0; }
+.infos strong { overflow: hidden; color: var(--text-strong); font-size: var(--fs-sm); text-overflow: ellipsis; white-space: nowrap; }
+.infos small { color: var(--text-soft); font-size: var(--fs-label); }
+.facture { color: var(--warn-text); font-size: var(--fs-label); font-weight: 800; white-space: nowrap; }
+.facture.ok { color: var(--accent-text); }
+.badge.planifie { background: var(--brand-soft); color: var(--brand-dark); }
+.badge.realise { background: var(--accent-soft); color: var(--accent-text); }
+
+.detail-card { display: grid; gap: 16px; }
+.kv-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.kv-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border-soft); font-size: var(--fs-sm); }
+.kv-list span { color: var(--text-muted); }
+.kv-list strong { color: var(--text-strong); text-align: right; }
+.bloc { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-subtle); }
+.bloc h3 { margin-bottom: 6px; color: var(--text-soft); font-size: var(--fs-label); font-weight: 800; text-transform: uppercase; }
+.bloc p { color: var(--text); font-size: var(--fs-sm); line-height: 1.6; white-space: pre-line; }
+.bloc.resultat.reussi { border-color: #bbf7d0; background: var(--accent-soft); }
+.bloc.resultat.partiel { border-color: #fde68a; background: var(--warn-soft); }
+.bloc.resultat.echec { border-color: #fecaca; background: var(--danger-soft); }
+.actions-bar { display: flex; flex-wrap: wrap; gap: 10px; }
+.panneau { display: grid; gap: 12px; padding: 16px; border: 1px solid #bfdbfe; border-radius: var(--radius-md); background: var(--brand-soft); }
+.panneau.danger { border-color: #fecaca; background: var(--danger-soft); }
+.panneau label { display: grid; gap: 6px; font-size: var(--fs-xs); font-weight: 700; }
+.choix-resultat { display: flex; flex-wrap: wrap; gap: 18px; }
+.choix-resultat label { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); }
+
+@media (max-width: 1100px) { .actes-layout.avec-detail { grid-template-columns: minmax(0, 1fr); } .billing-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .acte-item { grid-template-columns: auto minmax(0, 1fr); } }

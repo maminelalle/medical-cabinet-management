@@ -6,8 +6,12 @@ import { ConsultationService } from '../../core/consultations/consultation.servi
 import { AuthService } from '../../core/auth/auth.service';
 import { PatientService } from '../../core/patients/patient.service';
 import { exporterDossier, lireFichierDossier } from '../../core/patients/dossier-fichier';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { telecharger } from '../../core/http/telechargement';
+import { libelleResultat, libelleStatutActe, libelleTypeActe } from '../../core/models/acte';
 
-type Onglet = 'consultations' | 'ordonnances' | 'rendez-vous' | 'factures';
+type Onglet = 'consultations' | 'ordonnances' | 'actes' | 'rendez-vous' | 'factures';
 
 @Component({
   selector: 'app-dossier-patient',
@@ -22,6 +26,10 @@ export class DossierPatientComponent {
   private readonly service = inject(ConsultationService);
   private readonly patientService = inject(PatientService);
   private readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
+  readonly libelleTypeActe = libelleTypeActe;
+  readonly libelleStatutActe = libelleStatutActe;
+  readonly libelleResultat = libelleResultat;
   readonly role = this.auth.role();
   readonly isDirection = this.role === 'DIRECTION';
   readonly isMedecin = this.role === 'MEDECIN';
@@ -57,6 +65,19 @@ export class DossierPatientComponent {
     });
   }
 
+  /** Export du dossier complet en PDF, genere par le serveur (JasperReports). */
+  exporterPdf(): void {
+    if (!this.dossier) return;
+    const patient = this.dossier.patient;
+    this.erreurAction = '';
+    telecharger(this.http, `${environment.apiUrl}/patients/${patient.id}/dossier.pdf`, `dossier-${patient.nom}-${patient.prenom}.pdf`.toLowerCase())
+      .subscribe({
+        next: () => this.message = 'Dossier exporté en PDF.',
+        error: () => this.erreurAction = 'L’export PDF du dossier a échoué.'
+      });
+  }
+
+  /** Export de transfert (JSON) : seul format reimportable dans l'application. */
   exporter(): void {
     if (!this.dossier) return;
     exporterDossier(this.dossier, this.auth.emailAffiche());

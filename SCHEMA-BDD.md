@@ -35,12 +35,22 @@ erDiagram
     FACTURES ||--o{ LIGNES_FACTURE : "regroupe"
     FACTURES ||--o{ PAIEMENTS : "encaisse"
     CATALOGUE_ACTES ||--o{ LIGNES_FACTURE : "reprend le tarif"
+    RENDEZ_VOUS ||--o{ FACTURES : "est facture par"
+    PATIENTS ||--o{ ACTES_PROGRAMMES : "subit"
+    MEDECINS ||--o{ ACTES_PROGRAMMES : "programme"
+    CONSULTATIONS ||--o{ ACTES_PROGRAMMES : "decide"
+    ACTES_PROGRAMMES ||--o{ FACTURES : "est facture par"
+    DISPENSATIONS ||--o| FACTURES : "genere"
+    MEDICAMENTS ||--o{ MOUVEMENTS_STOCK : "historique"
+    DISPENSATIONS ||--o{ MOUVEMENTS_STOCK : "sorties de vente"
+    UTILISATEURS ||--o{ SESSIONS_UTILISATEUR : "se connecte"
+    UTILISATEURS ||--o{ JOURNAL_ACTIVITE : "agit"
 
     UTILISATEURS {
         bigint id PK
         varchar email UK
         varchar mot_de_passe "hash BCrypt"
-        varchar role "ACCUEIL | MEDECIN | DIRECTION | PHARMACIEN"
+        varchar role "ACCUEIL | MEDECIN | DIRECTION | PHARMACIEN | ADMIN"
         boolean actif
         timestamptz created_at
     }
@@ -150,14 +160,67 @@ erDiagram
         bigint facture_id FK
         numeric montant
         timestamptz date_paiement
-        varchar moyen_paiement "ESPECES | CARTE | VIREMENT"
+        varchar moyen_paiement "ESPECES | BANKILY | MASRVI | SEDAD | CARTE | VIREMENT | CHEQUE"
+        varchar reference "obligatoire hors especes"
         bigint enregistre_par FK
+    }
+    ACTES_PROGRAMMES {
+        bigint id PK
+        bigint patient_id FK
+        bigint medecin_id FK
+        bigint consultation_id FK "nullable"
+        varchar type "CHIRURGIE | TRAITEMENT | EXAMEN | HOSPITALISATION | SOINS | AUTRE"
+        varchar intitule
+        text details
+        timestamp date_heure
+        int duree_minutes
+        varchar statut "PLANIFIE | REALISE | ANNULE"
+        varchar resultat "REUSSI | PARTIEL | ECHEC"
+        text compte_rendu
+    }
+    MOUVEMENTS_STOCK {
+        bigint id PK
+        bigint medicament_id FK
+        varchar type "ENTREE_INITIALE | ACHAT | VENTE | AJUSTEMENT"
+        int quantite "signee"
+        int stock_apres
+        numeric montant
+        bigint dispensation_id FK "nullable"
+        bigint utilisateur_id FK
+    }
+    SESSIONS_UTILISATEUR {
+        bigint id PK
+        bigint utilisateur_id FK
+        varchar jeton_id UK "claim jti du JWT"
+        varchar adresse_ip
+        varchar appareil
+        varchar navigateur
+        timestamptz derniere_activite
+        timestamptz date_fin
+        varchar motif_fin "DECONNEXION | REVOQUEE | EXPIREE"
+    }
+    JOURNAL_ACTIVITE {
+        bigint id PK
+        bigint utilisateur_id FK
+        varchar action
+        varchar description "jamais de donnee medicale"
+        varchar adresse_ip
+        timestamptz date_action
+    }
+    PARAMETRES_CABINET {
+        bigint id PK "ligne unique"
+        varchar nom
+        varchar adresse
+        varchar telephone
     }
 ```
 
 ## Règles de gestion portées par le schéma
 
-- **Un rendez-vous = un créneau médecin** : unicité applicative contrôlée par `RendezVousService.verifierCreneauDisponible` (409 si le créneau est déjà pris hors rendez-vous annulé).
+- **Un rendez-vous = un créneau médecin** : chaque rendez-vous et chaque acte programmé occupe `[date_heure, date_heure + duree_minutes[` ; `DisponibiliteService` refuse (409) tout chevauchement avec un rendez-vous non annulé / non absent ou un acte planifié du même médecin.
+- **Facture reliée à son origine** : `factures.rendez_vous_id`, `factures.acte_programme_id` ou `dispensations.facture_id` ; une seule facture non annulée par rendez-vous ou par acte. Un rendez-vous ou un acte facturé ne peut être annulé qu'après annulation de sa facture.
+- **Stock tracé** : tout changement de `medicaments.stock_actuel` (stock initial, achat, vente, correction d'inventaire) crée une ligne `mouvements_stock` avec le stock résultant et la valeur.
+- **Sessions** : le JWT porte l'identifiant de session (`jti`) ; une session fermée (déconnexion, révocation par l'administrateur, compte désactivé) invalide son jeton.
 - **Un rendez-vous honoré donne au plus une consultation** : `consultations.rendez_vous_id` est `UNIQUE` ; la création clôture le rendez-vous (`TERMINE`).
 - **Une consultation porte au plus une ordonnance** : `prescriptions.consultation_id` est `UNIQUE`.
 - **Une facture regroupe plusieurs actes** : relation un-à-plusieurs `factures → lignes_facture` ; chaque ligne porte `libelle`, `type_acte` et `montant` (le type d'acte couvre consultation, hospitalisation, acte chirurgical, etc.).

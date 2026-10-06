@@ -25,6 +25,11 @@ public class Facture {
     private StatutFacture statut = StatutFacture.EN_ATTENTE;
     @ManyToOne @JoinColumn(name = "created_by")
     private Utilisateur createdBy;
+    /** Origine de la facture : un rendez-vous, un acte programme, ou une dispensation (lien porte par Dispensation). */
+    @ManyToOne @JoinColumn(name = "rendez_vous_id")
+    private RendezVous rendezVous;
+    @ManyToOne @JoinColumn(name = "acte_programme_id")
+    private ActeProgramme acteProgramme;
     @Column(name = "motif_annulation", length = 500)
     private String motifAnnulation;
     @Column(name = "date_annulation")

@@ -11,7 +11,7 @@
       <header class="print-header">
         <div>
           <strong>{{ cabinet.nom }}</strong>
-          <small>{{ cabinet.sousTitre }}{{ cabinet.adresse ? " · " + cabinet.adresse : "" }}{{ cabinet.telephone ? " · Tél. " + cabinet.telephone : "" }}</small>
+          <small>{{ cabinet.sousTitre }}{{ cabinet.adresse ? " · " + cabinet.adresse : "" }}{{ cabinet.telephone ? " · Tél. " + cabinet.telephone : "" }}{{ cabinet.email ? " · " + cabinet.email : "" }}</small>
         </div>
         <span>{{ titre }}</span>
       </header>
@@ -50,10 +50,10 @@
         <section class="person-line"><strong>Reçu de : {{ facture.patientPrenom }} {{ facture.patientNom }}</strong><span>Dossier patient n° {{ facture.patientId }}</span></section>
         @if (facture.paiements.length) {
           <table class="document-table">
-            <thead><tr><th>Date</th><th>Moyen de paiement</th><th class="right">Montant</th></tr></thead>
+            <thead><tr><th>Date</th><th>Moyen de paiement</th><th>Référence</th><th class="right">Montant</th></tr></thead>
             <tbody>
               @for (paiement of facture.paiements; track paiement.id) {
-                <tr><td>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td><td>{{ moyen(paiement.moyenPaiement) }}</td><td class="right">{{ paiement.montant | number:'1.0-2':'fr-FR' }} MRU</td></tr>
+                <tr><td>{{ paiement.datePaiement | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</td><td>{{ moyen(paiement.moyenPaiement) }}</td><td>{{ paiement.reference || "—" }}</td><td class="right">{{ paiement.montant | number:'1.0-2':'fr-FR' }} MRU</td></tr>
               }
             </tbody>
           </table>
@@ -101,6 +101,34 @@
         <div class="document-row"><span>Médecin</span><strong>Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</strong></div>
         <div class="document-row"><span>Motif</span><strong>{{ rendezVous.motif || 'Consultation' }}</strong></div>
         <p class="document-note">Présentez ce numéro à l'accueil et respectez l'ordre de passage.</p>
+      }
+
+      <!-- ACTE PROGRAMME -------------------------------------------------------- -->
+      @if (acte) {
+        <section class="doctor-block">
+          <strong>Dr. {{ acte.medecinPrenom }} {{ acte.medecinNom }}</strong>
+          <span>{{ acte.specialite || 'Médecine générale' }}</span>
+        </section>
+        <div class="document-meta">
+          <p><span>Acte n°</span><strong>{{ reference('ACT', acte.id) }}</strong></p>
+          <p><span>Type</span><strong>{{ libelleTypeActe(acte.type) }}</strong></p>
+          <p><span>Statut</span><strong>{{ libelleStatutActe(acte.statut) }}{{ acte.resultat ? ' · ' + libelleResultat(acte.resultat) : '' }}</strong></p>
+        </div>
+        <section class="person-line">
+          <strong>{{ acte.patientPrenom }} {{ acte.patientNom }}</strong>
+          <span>né(e) le {{ acte.patientDateNaissance | date:'dd/MM/yyyy':'':'fr-FR' }}</span>
+        </section>
+        <h2>{{ acte.intitule }}</h2>
+        <div class="document-row"><span>Date et heure</span><strong>{{ acte.dateHeure | date:'EEEE d MMMM yyyy à HH:mm':'':'fr-FR' }}</strong></div>
+        <div class="document-row"><span>Durée prévue</span><strong>{{ acte.dureeMinutes }} minutes</strong></div>
+        <div class="document-row"><span>Lieu</span><strong>{{ acte.lieu || 'À préciser' }}</strong></div>
+        @if (acte.details) { <h2>Détails et consignes</h2><p class="report-text">{{ acte.details }}</p> }
+        @if (acte.statut === 'REALISE') {
+          <h2>Compte-rendu · réalisé le {{ acte.dateRealisation | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</h2>
+          <p class="report-text">{{ acte.compteRendu ?? 'Compte-rendu réservé au médecin (secret médical).' }}</p>
+        }
+        @if (acte.statut === 'ANNULE') { <p class="document-note"><strong>Acte annulé :</strong> {{ acte.motifAnnulation }}</p> }
+        <div class="signature"><span>Signature et cachet du médecin</span></div>
       }
 
       <!-- DOSSIER PATIENT ------------------------------------------------------- -->

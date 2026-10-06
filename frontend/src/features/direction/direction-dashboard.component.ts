@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PresenceMedecinsComponent } from '../../shared/presence/presence-medecins.component';
 import { forkJoin } from 'rxjs';
 import { ChiffreAffaires, DashboardConsultations, Impayes } from '../../core/models/dashboard';
 import { DashboardService } from '../../core/dashboard/dashboard.service';
@@ -7,7 +8,7 @@ import { DashboardService } from '../../core/dashboard/dashboard.service';
 @Component({
   selector: 'app-direction-dashboard',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, PresenceMedecinsComponent],
   templateUrl: './direction-dashboard.component.html',
   styleUrl: './direction-dashboard.component.css'
 })

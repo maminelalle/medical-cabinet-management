@@ -12,5 +12,6 @@ public record DossierPatientResponse(
         List<RendezVousResponse> prochainsRendezVous,
         List<RendezVousResponse> rendezVous,
         List<FactureResponse> factures,
+        List<ActeProgrammeResponse> actes,
         boolean compteRenduMasque
 ) {}

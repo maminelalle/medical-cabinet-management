@@ -1,0 +1,100 @@
+<section class="actes-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">PARCOURS PATIENT / ACTES PROGRAMMÉS</p>
+      <h1>{{ isMedecin ? 'Mes actes programmés' : 'Actes programmés' }}</h1>
+      <p class="subtitle">
+        {{ isMedecin ? 'Chirurgies, traitements et examens programmés : enregistrez le résultat et le rapport une fois l’acte réalisé.'
+          : 'Chirurgies, traitements et examens programmés par les médecins : organisation, facturation et suivi.' }}
+      </p>
+    </div>
+    @if (isMedecin) { <a class="soft-button" routerLink="/rendez-vous">Programmer depuis une consultation</a> }
+  </header>
+
+  @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
+  @if (error) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div> }
+
+  <nav class="billing-tabs" aria-label="Actes par statut">
+    <button type="button" class="tab a-venir" [class.active]="statut === 'PLANIFIE'" (click)="statut = 'PLANIFIE'"><span>À venir</span><strong>{{ compte('PLANIFIE') }}</strong><small>planifiés</small></button>
+    <button type="button" class="tab realises" [class.active]="statut === 'REALISE'" (click)="statut = 'REALISE'"><span>Réalisés</span><strong>{{ compte('REALISE') }}</strong><small>{{ aFacturer }} à facturer</small></button>
+    <button type="button" class="tab annules" [class.active]="statut === 'ANNULE'" (click)="statut = 'ANNULE'"><span>Annulés</span><strong>{{ compte('ANNULE') }}</strong><small>avec motif</small></button>
+    <button type="button" class="tab tous" [class.active]="statut === ''" (click)="statut = ''"><span>Tous</span><strong>{{ actes.length }}</strong><small>historique complet</small></button>
+  </nav>
+
+  <section class="actes-layout" [class.avec-detail]="!!selection">
+    <article class="card list-card">
+      @if (loading) { <div class="empty-state">Chargement des actes...</div> } @else {
+        <div class="acte-list">
+          @for (item of filtres; track item.id) {
+            <button type="button" class="acte-item" [class.selected]="selection?.id === item.id" (click)="choisir(item)">
+              <span class="date-bloc"><strong>{{ item.dateHeure | date:'dd MMM':'':'fr-FR' }}</strong><small>{{ item.dateHeure | date:'HH:mm' }}</small></span>
+              <span class="infos">
+                <strong>{{ libelleTypeActe(item.type) }} · {{ item.intitule }}</strong>
+                <small>{{ item.patientPrenom }} {{ item.patientNom }} · Dr. {{ item.medecinNom }}{{ item.lieu ? ' · ' + item.lieu : '' }}</small>
+              </span>
+              <span class="badge" [class]="'badge ' + item.statut.toLowerCase()">{{ libelleStatutActe(item.statut) }}</span>
+              <span class="facture" [class.ok]="!!item.factureId">{{ libelleFacture(item) }}</span>
+            </button>
+          } @empty { <div class="empty-state">Aucun acte dans cette catégorie.</div> }
+        </div>
+      }
+    </article>
+
+    @if (selection) {
+      <article class="card detail-card">
+        <div class="card-heading">
+          <div><p class="breadcrumb">{{ libelleTypeActe(selection.type) }}</p><h2>{{ selection.intitule }}</h2></div>
+          <span class="badge" [class]="'badge ' + selection.statut.toLowerCase()">{{ libelleStatutActe(selection.statut) }}</span>
+        </div>
+        <ul class="kv-list">
+          <li><span>Patient</span><strong>{{ selection.patientPrenom }} {{ selection.patientNom }}</strong></li>
+          <li><span>Médecin</span><strong>Dr. {{ selection.medecinPrenom }} {{ selection.medecinNom }}</strong></li>
+          <li><span>Date et heure</span><strong>{{ selection.dateHeure | date:'EEEE d MMMM yyyy à HH:mm':'':'fr-FR' }}</strong></li>
+          <li><span>Durée prévue</span><strong>{{ selection.dureeMinutes }} min</strong></li>
+          <li><span>Lieu</span><strong>{{ selection.lieu || '—' }}</strong></li>
+          <li><span>Facture</span><strong>{{ libelleFacture(selection) }}</strong></li>
+        </ul>
+        @if (selection.details) { <div class="bloc"><h3>Détails et consignes</h3><p>{{ selection.details }}</p></div> }
+        @if (selection.statut === 'REALISE') {
+          <div class="bloc resultat" [class]="'bloc resultat ' + (selection.resultat || '').toLowerCase()">
+            <h3>Réalisé le {{ selection.dateRealisation | date:'dd/MM/yyyy à HH:mm':'':'fr-FR' }} · {{ libelleResultat(selection.resultat) }}</h3>
+            <p>{{ selection.compteRendu ?? (selection.compteRenduMasque ? 'Rapport réservé au médecin (secret médical).' : '—') }}</p>
+          </div>
+        }
+        @if (selection.statut === 'ANNULE') { <div class="bloc"><h3>Motif d'annulation</h3><p>{{ selection.motifAnnulation }}</p></div> }
+
+        <div class="actions-bar">
+          <a class="soft-button" [routerLink]="['/impression/acte', selection.id]">⎙ Imprimer</a>
+          <a class="soft-button" [routerLink]="['/dossier', selection.patientId]">Dossier patient</a>
+          @if (isAccueil && selection.statut !== 'ANNULE' && !selection.factureId) {
+            <a class="primary-button" routerLink="/factures/nouveau" [queryParams]="{ acteProgrammeId: selection.id }">▤ Générer la facture</a>
+          }
+          @if (selection.factureId && !isMedecin) { <a class="soft-button" routerLink="/factures" [queryParams]="{ id: selection.factureId }">Voir la facture</a> }
+          @if (isMedecin && selection.statut === 'PLANIFIE') { <button class="primary-button" type="button" (click)="ouvrir('realisation')">✓ Enregistrer la réalisation</button> }
+          @if ((isMedecin || isAccueil) && selection.statut === 'PLANIFIE' && !selection.factureId) { <button class="soft-button danger" type="button" (click)="ouvrir('annulation')">Annuler l'acte</button> }
+        </div>
+
+        @if (panneau === 'realisation') {
+          <div class="panneau">
+            <h3>Compte-rendu de l'acte</h3>
+            <div class="choix-resultat">
+              <label><input type="radio" name="resultat" value="REUSSI" [(ngModel)]="resultat"> Réussi</label>
+              <label><input type="radio" name="resultat" value="PARTIEL" [(ngModel)]="resultat"> Partiel</label>
+              <label><input type="radio" name="resultat" value="ECHEC" [(ngModel)]="resultat"> Échec</label>
+            </div>
+            <label>Date et heure de réalisation (vide = maintenant)<input type="datetime-local" [(ngModel)]="dateRealisation"></label>
+            <label>Rapport détaillé *<textarea rows="6" [(ngModel)]="compteRendu" placeholder="Déroulement, constatations, complications, suites et recommandations..."></textarea></label>
+            <button class="primary-button" type="button" (click)="realiser()" [disabled]="saving">Enregistrer</button>
+          </div>
+        }
+        @if (panneau === 'annulation') {
+          <div class="panneau danger">
+            <h3>Annuler l'acte</h3>
+            <label>Motif *<input [(ngModel)]="motif" placeholder="Report à la demande du patient, contre-indication..."></label>
+            <button class="soft-button danger" type="button" (click)="annuler()" [disabled]="saving">Confirmer l'annulation</button>
+          </div>
+        }
+      </article>
+    }
+  </section>
+</section>

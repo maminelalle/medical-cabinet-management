@@ -20,6 +20,9 @@ public class Medicament {
     private String dosage;
     @Column(length = 100)
     private String forme;
+    /** Famille therapeutique (antalgiques, antibiotiques...) pour la recherche par le medecin. */
+    @Column(length = 100)
+    private String famille;
     @Column(name = "stock_actuel", nullable = false)
     private Integer stockActuel;
     @Column(name = "seuil_alerte", nullable = false)

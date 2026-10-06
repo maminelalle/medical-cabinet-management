@@ -1,0 +1,44 @@
+/* Espace d'administration - styles partages */
+.admin-page { display: grid; gap: 18px; }
+.admin-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.table-card { padding: 0; overflow: hidden; }
+.table-card .table-heading { padding: 22px 22px 0; }
+.table-card .table-wrap { margin-top: 16px; }
+.table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 22px; }
+.table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 22px; }
+td small, .muted { display: block; margin-top: 2px; color: var(--text-soft); font-size: var(--fs-label); }
+.table-heading .filters { gap: 10px; }
+.table-heading .filters select, .table-heading .filters input { width: auto; min-width: 170px; }
+
+.etat { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--bg-hover); color: var(--text-muted); font-size: var(--fs-label); font-weight: 800; white-space: nowrap; }
+.etat::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.etat.en_ligne, .etat.oui { background: var(--accent-soft); color: var(--accent-text); }
+.etat.inactive { background: var(--warn-soft); color: var(--warn-text); }
+.etat.revoquee, .etat.non, .etat.desactive { background: var(--danger-soft); color: var(--danger-text); }
+.role { display: inline-block; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--brand-soft); color: var(--brand-dark); font-size: var(--fs-label); font-weight: 800; }
+.role.medecin { background: var(--accent-soft); color: var(--accent-text); }
+.role.pharmacien { background: var(--violet-soft); color: var(--violet-text); }
+.role.direction { background: var(--warn-soft); color: var(--warn-text); }
+.role.admin { background: var(--ink); color: #fff; }
+
+.liste-presence { display: grid; gap: 8px; margin-top: 14px; }
+.liste-presence > div { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.liste-presence > div > span:nth-child(2) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.liste-presence strong { color: var(--text-strong); font-size: var(--fs-sm); }
+.journal-list { display: grid; margin: 14px 0 0; padding: 0; list-style: none; }
+.journal-list li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--border-soft); font-size: var(--fs-sm); }
+.journal-list time { color: var(--brand-dark); font-weight: 800; }
+.journal-list strong { color: var(--text-strong); }
+
+.form-card { display: grid; gap: 16px; }
+.form-card label { display: grid; gap: 6px; color: var(--text); font-size: var(--fs-xs); font-weight: 700; }
+.form-quatre { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.actions-ligne { display: flex; flex-wrap: wrap; gap: 6px; }
+.petit { min-height: 32px; padding: 5px 10px; font-size: var(--fs-label); }
+.permission-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.permission-grid ul { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.permission-grid li { display: flex; gap: 8px; color: var(--text); font-size: var(--fs-sm); }
+.permission-grid li::before { content: '✓'; color: var(--accent-text); font-weight: 800; }
+
+@media (max-width: 1100px) { .admin-grid { grid-template-columns: minmax(0, 1fr); } .form-quatre { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .form-quatre { grid-template-columns: minmax(0, 1fr); } }

@@ -18,7 +18,10 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
+    public static final String ATTRIBUT_SESSION = "cabinet.sessionId";
+
     private final UtilisateurDetailsService detailsService;
+    private final SessionService sessionService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -34,7 +37,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtService.extractUsername(token);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails user = detailsService.loadUserByUsername(username);
-                if (jwtService.isValid(token, user)) {
+                String sessionId = jwtService.extractSessionId(token);
+                // Une session fermee (deconnexion, revocation par l'administrateur) invalide son jeton.
+                boolean sessionValide = sessionId == null || sessionService.valider(sessionId);
+                if (user.isEnabled() && sessionValide && jwtService.isValid(token, user)) {
+                    request.setAttribute(ATTRIBUT_SESSION, sessionId);
                     var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);

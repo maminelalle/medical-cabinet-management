@@ -1,38 +1,62 @@
-.pharmacie-page { display: grid; gap: 20px; }
-.file-button { position: relative; overflow: hidden; cursor: pointer; }
-.file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.pharmacie-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, .8fr); gap: 18px; align-items: start; }
+.pharmacie-page { display: grid; gap: 18px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); }
+.tabs button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+.tabs button span { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--bg-hover); font-size: var(--fs-label); }
+.tabs button.active { background: var(--brand-soft); color: var(--brand-dark); }
+
 .table-card, .prescriptions-card { padding: 0; overflow: hidden; }
 .table-card .table-heading, .prescriptions-card .table-heading { padding: 22px 22px 0; }
 .table-card .table-wrap { margin-top: 18px; }
 .table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 22px; }
 .table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 22px; }
+.table-card td small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); }
 .table-card .amount { white-space: nowrap; font-weight: 800; color: var(--text-strong); }
-.stock-control { display: flex; align-items: center; gap: 8px; }
-.stock-control input { width: 72px; padding: 7px 8px; }
-.stock-badge { min-width: 58px; text-align: center; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 800; }
+.table-heading .filters { gap: 10px; }
+.table-heading .filters input { width: auto; min-width: 230px; }
+.table-heading .filters select { width: auto; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--brand-soft); }
+.negatif { color: var(--danger-text); font-weight: 800; }
+
+.stock-badge { display: inline-block; min-width: 58px; text-align: center; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 800; }
 .stock-badge.ok { color: #16704c; background: #e6f7ef; }
 .stock-badge.warning { color: #a25b13; background: #fff1dc; }
 .stock-badge.critical { color: #a93636; background: #ffe5e5; }
+.badge.mvt-vente { background: var(--accent-soft); color: var(--accent-text); }
+.badge.mvt-achat { background: var(--brand-soft); color: var(--brand-dark); }
+.badge.mvt-ajustement { background: var(--warn-soft); color: var(--warn-text); }
+
 .medicine-form, .dispense-card { display: grid; gap: 16px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.prescriptions-card { margin-top: 0; }
+.form-row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .prescription-list { display: grid; gap: 1px; margin-top: 18px; background: var(--border); }
 .prescription-item { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 18px 22px; background: var(--bg-surface); }
 .prescription-item small, .dispense-lines small { display: block; color: var(--text-muted); margin-top: 4px; }
 .prescription-item p { margin: 7px 0 0; color: var(--text-muted); font-size: 13px; }
 .dispense-lines { display: grid; gap: 10px; }
-.dispense-lines > div { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) 90px; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
-.dispense-lines select, .dispense-lines input { width: 100%; }
-.receipt-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.dispense-lines > div { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.2fr) 90px 110px; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.dispense-lines .amount { text-align: right; white-space: nowrap; }
+.sale-payment { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: end; padding: 16px; border: 1px solid #bbf7d0; border-radius: var(--radius-md); background: var(--accent-soft); }
+.sale-payment label { display: grid; gap: 6px; font-size: var(--fs-xs); font-weight: 700; }
+.sale-total span { display: block; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; }
+.sale-total strong { color: var(--text-strong); font-size: 22px; }
+.receipt-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; border-color: #bbf7d0; }
 .receipt-card h2, .receipt-card p { margin: 0; }
 .receipt-card > strong { font-size: 22px; color: var(--text-strong); white-space: nowrap; }
-@media (max-width: 1000px) { .pharmacie-grid { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .form-row, .dispense-lines > div { grid-template-columns: 1fr; } .prescription-item { align-items: flex-start; flex-direction: column; } }
-@media print {
-	.sidebar, .topbar, .page-heading, .stats-grid, .pharmacie-grid, .prescriptions-card, .alert, .dispense-card { display: none !important; }
-	.page-content, .main-area { padding: 0; margin: 0; }
-	.receipt-card { display: block; border: 0; box-shadow: none; }
-	.receipt-card button { display: none; }
-}
 .receipt-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.hint { color: var(--text-soft); font-size: var(--fs-xs); }
+
+.filters-card { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; }
+.filters-card label { display: grid; gap: 6px; font-size: var(--fs-xs); font-weight: 700; }
+.finance-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.kv-list { display: grid; margin: 14px 0 0; padding: 0; list-style: none; }
+.kv-list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-soft); font-size: var(--fs-sm); }
+.kv-list small { color: var(--text-soft); font-size: var(--fs-label); }
+.kv-list strong { color: var(--text-strong); white-space: nowrap; }
+
+@media (max-width: 1100px) { .form-row.four, .finance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .form-row, .form-row.four, .finance-grid, .dispense-lines > div, .sale-payment { grid-template-columns: 1fr; }
+  .prescription-item { align-items: flex-start; flex-direction: column; }
+  .table-heading .filters input { min-width: 0; width: 100%; }
+}

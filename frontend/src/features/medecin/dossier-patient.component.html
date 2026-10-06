@@ -12,7 +12,8 @@
           {{ importEnCours ? 'Import...' : '⇪ Importer' }}
           <input type="file" accept=".json,application/json" (change)="importer($event)" [disabled]="importEnCours">
         </label>
-        <button class="soft-button" type="button" (click)="exporter()">⇩ Exporter</button>
+        <button class="soft-button" type="button" (click)="exporterPdf()" title="Dossier complet en PDF">⇩ Exporter PDF</button>
+        <button class="soft-button" type="button" (click)="exporter()" title="Fichier de transfert réimportable dans l’'application">⇩ Transfert (JSON)</button>
         <a class="primary-button" [routerLink]="['/impression/dossier', dossier.patient.id]">⎙ Imprimer le dossier</a>
       }
     </div>
@@ -89,6 +90,7 @@
           <button type="button" [class.active]="onglet === 'consultations'" (click)="onglet = 'consultations'">Consultations <span>{{ dossier.consultations.length }}</span></button>
           <button type="button" [class.active]="onglet === 'ordonnances'" (click)="onglet = 'ordonnances'">Ordonnances <span>{{ consultationsAvecOrdonnance.length }}</span></button>
           <button type="button" [class.active]="onglet === 'rendez-vous'" (click)="onglet = 'rendez-vous'">Rendez-vous <span>{{ dossier.rendezVous.length }}</span></button>
+          <button type="button" [class.active]="onglet === 'actes'" (click)="onglet = 'actes'">Actes <span>{{ dossier.actes.length }}</span></button>
           <button type="button" [class.active]="onglet === 'factures'" (click)="onglet = 'factures'">Factures <span>{{ dossier.factures.length }}</span></button>
         </nav>
 
@@ -184,6 +186,28 @@
                 </table>
               </div>
             </article>
+          }
+
+          @case ('actes') {
+            @for (acte of dossier.actes; track acte.id) {
+              <article class="card timeline-item">
+                <div class="timeline-head">
+                  <div>
+                    <h3>{{ libelleTypeActe(acte.type) }} · {{ acte.intitule }}</h3>
+                    <p>{{ acte.dateHeure | date:'EEEE d MMMM yyyy · HH:mm':'':'fr-FR' }} · {{ acte.dureeMinutes }} min{{ acte.lieu ? ' · ' + acte.lieu : '' }} · Dr. {{ acte.medecinPrenom }} {{ acte.medecinNom }}</p>
+                  </div>
+                  <div class="timeline-meta">
+                    <span class="badge" [class]="acte.statut === 'REALISE' ? 'termine' : acte.statut === 'ANNULE' ? 'annule' : 'planifie'">{{ libelleStatutActe(acte.statut) }}{{ acte.resultat ? ' · ' + libelleResultat(acte.resultat) : '' }}</span>
+                    <a class="row-action" [routerLink]="['/impression/acte', acte.id]" aria-label="Imprimer l'acte">⎙</a>
+                    <a class="row-action" routerLink="/actes" [queryParams]="{ id: acte.id }" aria-label="Ouvrir l'acte">→</a>
+                  </div>
+                </div>
+                @if (acte.details) { <p class="subtitle">{{ acte.details }}</p> }
+                @if (acte.compteRendu) { <p class="report-text">{{ acte.compteRendu }}</p> }
+              </article>
+            } @empty {
+              <div class="empty-state">Aucun acte programmé pour ce patient.</div>
+            }
           }
 
           @case ('factures') {

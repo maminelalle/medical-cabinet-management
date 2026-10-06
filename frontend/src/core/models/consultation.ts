@@ -1,3 +1,4 @@
+import { ActeProgramme } from './acte';
 import { Facture } from './facture';
 import { Patient } from './patient';
 import { RendezVous } from './rendez-vous';
@@ -41,6 +42,7 @@ export interface DossierPatient {
   prochainsRendezVous: RendezVous[];
   rendezVous: RendezVous[];
   factures: Facture[];
+  actes: ActeProgramme[];
   compteRenduMasque: boolean;
 }
 

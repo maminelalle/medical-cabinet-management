@@ -18,7 +18,7 @@ public class CatalogueActeController {
     private final CatalogueActeService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
     public List<CatalogueActeResponse> lister() { return service.lister(); }
 
     @PostMapping

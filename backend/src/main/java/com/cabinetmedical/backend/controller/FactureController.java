@@ -23,11 +23,11 @@ public class FactureController {
     private final FactureService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION', 'ADMIN')")
     public List<FactureResponse> lister(@RequestParam(required = false) StatutFacture statut) { return service.lister(statut); }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'PHARMACIEN', 'DIRECTION', 'ADMIN')")
     public FactureResponse trouver(@PathVariable Long id) { return service.trouver(id); }
 
     @PostMapping

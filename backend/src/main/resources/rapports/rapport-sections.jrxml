@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Rapport generique : lignes regroupees par section (dossier patient, inventaire pharmacie...). -->
+<jasperReport name="rapport-sections" language="java" pageWidth="595" pageHeight="842" columnWidth="535"
+              leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30" whenNoDataType="AllSectionsNoDetail">
+	<parameter name="cabinetNom" class="java.lang.String"/>
+	<parameter name="cabinetInfos" class="java.lang.String"/>
+	<parameter name="titre" class="java.lang.String"/>
+	<parameter name="sousTitre" class="java.lang.String"/>
+	<parameter name="genereLe" class="java.lang.String"/>
+	<parameter name="mention" class="java.lang.String"/>
+	<field name="section" class="java.lang.String"/>
+	<field name="libelle" class="java.lang.String"/>
+	<field name="detail" class="java.lang.String"/>
+	<field name="valeur" class="java.lang.String"/>
+	<group name="section">
+		<expression><![CDATA[$F{section}]]></expression>
+		<groupHeader>
+			<band height="34">
+				<element kind="textField" x="0" y="12" width="535" height="18" fontName="DejaVu Sans" fontSize="11.0" bold="true" forecolor="#1D4ED8">
+					<expression><![CDATA[$F{section}]]></expression>
+				</element>
+				<element kind="line" x="0" y="31" width="535" height="1" forecolor="#CBD5E1"/>
+			</band>
+		</groupHeader>
+	</group>
+	<title height="92">
+		<element kind="textField" x="0" y="0" width="330" height="22" fontName="DejaVu Sans" fontSize="15.0" bold="true" forecolor="#0F172A">
+			<expression><![CDATA[$P{cabinetNom}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="22" width="330" height="16" fontName="DejaVu Sans" fontSize="8.5" forecolor="#64748B" textAdjust="StretchHeight">
+			<expression><![CDATA[$P{cabinetInfos}]]></expression>
+		</element>
+		<element kind="textField" x="330" y="0" width="205" height="22" fontName="DejaVu Sans" fontSize="13.0" bold="true" forecolor="#1D4ED8" hTextAlign="Right">
+			<expression><![CDATA[$P{titre}]]></expression>
+		</element>
+		<element kind="line" x="0" y="44" width="535" height="1" forecolor="#0F172A"/>
+		<element kind="textField" x="0" y="52" width="535" height="18" fontName="DejaVu Sans" fontSize="11.0" bold="true" forecolor="#0F172A" textAdjust="StretchHeight">
+			<expression><![CDATA[$P{sousTitre}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="72" width="535" height="14" fontName="DejaVu Sans" fontSize="8.0" forecolor="#64748B">
+			<expression><![CDATA["Document généré le " + $P{genereLe}]]></expression>
+		</element>
+	</title>
+	<detail>
+		<band height="22">
+			<element kind="textField" x="0" y="3" width="175" height="16" fontName="DejaVu Sans" fontSize="9.0" bold="true" forecolor="#0F172A" textAdjust="StretchHeight">
+				<expression><![CDATA[$F{libelle}]]></expression>
+			</element>
+			<element kind="textField" x="180" y="3" width="265" height="16" fontName="DejaVu Sans" fontSize="9.0" forecolor="#334155" textAdjust="StretchHeight">
+				<expression><![CDATA[$F{detail}]]></expression>
+			</element>
+			<element kind="textField" x="450" y="3" width="85" height="16" fontName="DejaVu Sans" fontSize="9.0" bold="true" forecolor="#0F172A" hTextAlign="Right" textAdjust="StretchHeight">
+				<expression><![CDATA[$F{valeur}]]></expression>
+			</element>
+		</band>
+	</detail>
+	<pageFooter height="26">
+		<element kind="line" x="0" y="4" width="535" height="1" forecolor="#CBD5E1"/>
+		<element kind="textField" x="0" y="8" width="430" height="14" fontName="DejaVu Sans" fontSize="7.5" forecolor="#64748B">
+			<expression><![CDATA[$P{mention}]]></expression>
+		</element>
+		<element kind="textField" x="430" y="8" width="105" height="14" fontName="DejaVu Sans" fontSize="7.5" forecolor="#64748B" hTextAlign="Right">
+			<expression><![CDATA["Page " + $V{PAGE_NUMBER}]]></expression>
+		</element>
+	</pageFooter>
+</jasperReport>

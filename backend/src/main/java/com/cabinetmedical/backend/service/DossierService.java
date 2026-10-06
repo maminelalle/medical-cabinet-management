@@ -1,5 +1,7 @@
 package com.cabinetmedical.backend.service;
 
+import com.cabinetmedical.backend.dto.ActeProgrammeResponse;
+import com.cabinetmedical.backend.repository.ActeProgrammeRepository;
 import com.cabinetmedical.backend.dto.ConsultationDossierResponse;
 import com.cabinetmedical.backend.dto.DossierPatientResponse;
 import com.cabinetmedical.backend.dto.FactureResponse;
@@ -42,6 +44,8 @@ public class DossierService {
     private final DispensationRepository dispensationRepository;
     private final FactureRepository factureRepository;
     private final FactureService factureService;
+    private final ActeProgrammeRepository acteProgrammeRepository;
+    private final ActeProgrammeService acteProgrammeService;
     private final MedecinRepository medecinRepository;
     private final UtilisateurRepository utilisateurRepository;
 
@@ -52,7 +56,7 @@ public class DossierService {
 
         List<RendezVous> rendezVousDuPatient = rendezVousRepository.findByPatientIdOrderByDateHeureDesc(patientId);
         verifierAcces(rendezVousDuPatient, utilisateurConnecte);
-        boolean masquerCompteRendu = aLeRole(utilisateurConnecte, "ROLE_ACCUEIL");
+        boolean masquerCompteRendu = aLeRole(utilisateurConnecte, "ROLE_ACCUEIL") || aLeRole(utilisateurConnecte, "ROLE_ADMIN");
 
         List<ConsultationDossierResponse> consultations = consultationRepository
                 .findByPatientIdOrderByDateHeureDesc(patientId).stream()
@@ -78,9 +82,12 @@ public class DossierService {
         List<FactureResponse> factures = factureRepository.findByPatientIdOrderByDateFactureDesc(patientId).stream()
                 .map(factureService::versResponse)
                 .toList();
+        List<ActeProgrammeResponse> actes = acteProgrammeRepository.findByPatientIdOrderByDateHeureDesc(patientId).stream()
+                .map(acte -> acteProgrammeService.versResponse(acte, utilisateurConnecte))
+                .toList();
 
         return new DossierPatientResponse(PatientResponse.from(patient), consultations, prochains, historique,
-                factures, masquerCompteRendu);
+                factures, actes, masquerCompteRendu);
     }
 
     /**

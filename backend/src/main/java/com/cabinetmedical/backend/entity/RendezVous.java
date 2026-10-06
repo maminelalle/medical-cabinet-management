@@ -22,6 +22,12 @@ public class RendezVous {
     private LocalDateTime dateHeure;
     @Column(length = 500)
     private String motif;
+    @Column(name = "duree_minutes", nullable = false)
+    private Integer dureeMinutes = 30;
+    @Column(name = "debut_consultation")
+    private Instant debutConsultation;
+    @Column(name = "fin_consultation")
+    private Instant finConsultation;
     @Column(name = "numero_file", nullable = false)
     private Integer numeroFile;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)

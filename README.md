@@ -107,7 +107,7 @@ Le fichier `frontend/src/environments/environment.ts` centralise :
 
 ### Collection Postman
 
-`postman/cabinet-medical.postman_collection.json` contient les 53 requêtes de l'API, rangées en 8 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
+`postman/cabinet-medical.postman_collection.json` contient les 80 requêtes de l'API, rangées en 10 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
 
 ## Comptes de démonstration
 
@@ -120,9 +120,47 @@ La migration de seed crée les comptes suivants. Le mot de passe est `password` 
 | Médecin (cardiologie) | `cardio@test.local` | Planning personnel, consultations, prescriptions, dossiers |
 | Médecin (chirurgie) | `chirurgie@test.local` | Planning personnel, consultations, prescriptions, dossiers |
 | Direction | `direction@test.local` | Dashboard, indicateurs, lecture factures et actes |
-| Pharmacien | `pharmacien@test.local` | Stock, prescriptions à délivrer et dispensations |
+| Pharmacien | `pharmacien@test.local` | Stock, fiches produits, vente des ordonnances, finances pharmacie |
+| Administrateur | `admin@test.local` | Comptes, rôles, sessions et appareils, journal d'activité, coordonnées du cabinet |
 
 Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamais de mot de passe en clair).
+
+## Parcours par interface
+
+### Accueil / Caisse
+
+- **Prise de rendez-vous** (`/rendez-vous/nouveau`) : recherche du patient (nom, prénom, téléphone) ou **création rapide du patient** dans le même formulaire ; grille des créneaux du médecin (libres, réservés, passés). Un créneau réservé ne peut pas être donné à un autre patient tant que le premier rendez-vous n'est pas annulé ou supprimé (chevauchement contrôlé avec la durée du rendez-vous et les actes programmés).
+- Après la prise de rendez-vous : **« Rédiger la facture maintenant »**, impression du ticket de passage ou nouveau rendez-vous. Le patient paie tout de suite ou après sa consultation.
+- **Facturation** (`/factures`) : onglets **À payer / Payées / Annulées** ; chaque facture indique son origine (rendez-vous, acte programmé, pharmacie). Paiement par espèces, Bankily, Masrvi, Sedad, carte, virement ou chèque, **référence de transaction obligatoire hors espèces**.
+- Planning : facture du rendez-vous (ou bouton « Facturer »), modification, suppression (libère le créneau).
+- **Médecins au cabinet** (tableau de bord) : connecté ou non, en consultation, disponible ou en retard.
+- **Actes programmés** (`/actes`) : chirurgies et traitements programmés par les médecins, génération de leur facture.
+
+### Médecin
+
+- Planning : **▶ Démarrer** la consultation à l'arrivée du patient, puis rédaction du compte-rendu et **■ Terminer**.
+- Une fois la consultation terminée : **ordonnance** avec recherche des médicaments par nom, dosage ou **famille** et disponibilité en stock (saisie libre possible hors stock), puis **programmation d'un acte** (chirurgie, traitement, examen, hospitalisation, soins) à une date et une heure, avec détails et lieu. L'accueil et la direction le voient ; il s'imprime.
+- Après l'acte : compte-rendu, **résultat (réussi, partiel, échec)** et date de réalisation ; l'accueil le facture.
+
+### Pharmacien
+
+- Stock avec recherche par nom ou famille, **import / export Excel**, **inventaire PDF** (JasperReports).
+- **Fiche produit** (`/pharmacie/medicaments/:id`) : ventes, achats, marge, valeur du stock et **historique des mouvements** ; approvisionnement fournisseur et correction d'inventaire tracés.
+- **Vente d'une ordonnance** : délivrance, facture et **paiement obligatoire** (moyen et référence) enregistrés ensemble.
+- Onglet **Finances** : ventes, achats, marge brute, encaissements par moyen de paiement, meilleures ventes, mouvements de la période.
+
+### Administrateur
+
+- Tableau de bord : comptes, **qui s'est connecté aujourd'hui et qui ne s'est pas connecté**, utilisateurs en ligne, présence des médecins, activité récente.
+- **Utilisateurs** : création (y compris médecins), modification, rôle, activation / désactivation (déconnexion immédiate), réinitialisation du mot de passe.
+- **Connexions et appareils** : sessions ouvertes, appareil, navigateur, système, adresse IP, dernière activité ; **révocation** d'une session.
+- **Journal d'activité** : toutes les actions (connexions et échecs, créations, paiements, annulations, exports PDF...), sans aucune donnée médicale.
+- **Rôles et permissions** et **coordonnées du cabinet** imprimées sur tous les documents.
+
+### Export et import des dossiers
+
+- **Export PDF** du dossier complet (identité, consultations et ordonnances, actes programmés, rendez-vous, factures) généré par **JasperReports** (`GET /api/patients/{id}/dossier.pdf`), et inventaire pharmacie en PDF.
+- Le fichier **JSON de transfert** reste le format réimportable dans l'application (`POST /api/patients/import`) : un PDF est un document de lecture, il ne peut pas être réimporté de façon fiable.
 
 ## Semaine 1 : fondations livrées
 
@@ -210,7 +248,7 @@ Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamai
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
-La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien et `V11` le motif, la date et l'auteur de l'annulation d'une facture. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
 
 ## Interface Angular livrée
 
@@ -240,7 +278,11 @@ La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur s
 | `/factures` | ACCUEIL, MEDECIN, PHARMACIEN, DIRECTION | Liste, recherche et détail ; depuis le détail : imprimer la facture, le reçu de paiement ou une ordonnance du patient ; encaissement accueil/pharmacie |
 | `/factures/nouveau` | ACCUEIL | Création d'une facture multi-actes |
 | `/direction/dashboard` | DIRECTION | Indicateurs réels, chiffre d'affaires par type d'acte, impayés, activité par médecin |
-| `/pharmacie` | PHARMACIEN, DIRECTION | Stock, alertes, prescriptions à délivrer et dispensation |
+| `/pharmacie` | PHARMACIEN, DIRECTION, ADMIN | Stock, import/export, vente des ordonnances avec paiement, finances |
+| `/pharmacie/medicaments/:id` | PHARMACIEN, DIRECTION, ADMIN | Fiche produit : ventes, achats, mouvements, approvisionnement |
+| `/actes` | ACCUEIL, MEDECIN, DIRECTION, ADMIN | Actes programmés : réalisation, facturation, annulation |
+| `/rendez-vous/:id/modifier` | ACCUEIL | Modification / reprogrammation |
+| `/admin`, `/admin/utilisateurs`, `/admin/sessions`, `/admin/journal`, `/admin/permissions`, `/admin/cabinet` | ADMIN | Administration |
 | `/parametres` | Tous les rôles | Profil connecté, rôle et accès applicatifs |
 | `/design-system` | Tous | Vitrine des composants de l'interface |
 
@@ -279,6 +321,17 @@ La redirection après connexion dépend du rôle : accueil vers `/accueil`, méd
 | Pharmacie | `POST /api/pharmacie/medicaments`, `PATCH /api/pharmacie/medicaments/{id}/stock` | PHARMACIEN, DIRECTION |
 | Pharmacie | `POST /api/pharmacie/dispensations` | PHARMACIEN |
 | Pharmacie | `POST /api/pharmacie/medicaments/import` | PHARMACIEN, DIRECTION |
+| Rendez-vous | `GET /api/rendezvous/creneaux?medecinId&date&dureeMinutes`, `DELETE /api/rendezvous/{id}` | ACCUEIL (créneaux : tous) |
+| Actes programmés | `GET /api/actes`, `GET /api/actes/{id}` | ACCUEIL, MEDECIN (les siens), DIRECTION, ADMIN |
+| Actes programmés | `POST /api/actes`, `PUT /api/actes/{id}`, `POST /api/actes/{id}/realisation` | MEDECIN |
+| Actes programmés | `POST /api/actes/{id}/annulation` | MEDECIN, ACCUEIL |
+| Dossier PDF | `GET /api/patients/{id}/dossier.pdf` | ACCUEIL, MEDECIN, DIRECTION, ADMIN |
+| Pharmacie | `GET /api/pharmacie/medicaments/{id}`, `PUT /api/pharmacie/medicaments/{id}`, `POST .../{id}/approvisionnements` | PHARMACIEN, DIRECTION (lecture : ADMIN) |
+| Pharmacie | `GET /api/pharmacie/finances`, `GET /api/pharmacie/medicaments/inventaire.pdf` | PHARMACIEN, DIRECTION, ADMIN |
+| Présence | `GET /api/medecins/presence` | ACCUEIL, DIRECTION, ADMIN |
+| Session | `POST /api/auth/logout`, `GET /api/auth/ping` | Utilisateur connecté |
+| Administration | `/api/admin/tableau-de-bord`, `/utilisateurs`, `/sessions`, `/journal`, `/permissions` | ADMIN |
+| Cabinet | `GET /api/parametres-cabinet` (tous), `PUT` (ADMIN) | Selon méthode |
 
 ### Format des erreurs
 
@@ -299,7 +352,7 @@ cd backend
 ./mvnw.cmd test
 ```
 
-Résultat : 10 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` vérifie à travers l'API réelle (JWT compris, base H2) :
+Résultat : 20 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `ParcoursCompletIntegrationTest` vérifient à travers l'API réelle (JWT compris, base H2) :
 
 - paiement partiel puis complet, recalcul du statut, refus d'un paiement supérieur au reste dû (`422`) ;
 - annulation de facture : motif obligatoire, refus si déjà annulée ou déjà encaissée ;
@@ -307,7 +360,12 @@ Résultat : 10 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` vérifie 
 - accès au dossier limité aux patients du médecin, compte-rendu masqué pour l'accueil ;
 - refus de supprimer un patient qui a un historique ;
 - modification de rendez-vous : créneau occupé et statut non modifiable refusés ;
-- import de dossier puis réimport sans doublon.
+- import de dossier puis réimport sans doublon, export PDF du dossier ;
+- créneau réservé refusé à un autre patient sauf annulation, création du patient avec le rendez-vous ;
+- facture unique par rendez-vous, référence obligatoire hors espèces ;
+- démarrer puis terminer une consultation, programmer / réaliser / facturer un acte ;
+- vente pharmacie : stock, paiement, mouvements et finances ;
+- administration : comptes, révocation de session, compte désactivé, journal, présence des médecins.
 
 Frontend :
 

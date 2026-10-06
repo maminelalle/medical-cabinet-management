@@ -1,1 +1,93 @@
-<section class="new-invoice-page"><header class="page-heading"><div><p class="breadcrumb">ACCUEIL / FACTURATION / NOUVELLE FACTURE</p><h1>Nouvelle facture</h1><p class="subtitle">Ajoutez les actes réalisés et vérifiez le total avant création.</p></div><a class="back-link" routerLink="/factures">← Retour aux factures</a></header>@if (loading) { <section class="card loading-state">Chargement du catalogue...</section> } @else { <form [formGroup]="form" (ngSubmit)="submit()"><section class="card form-card"><div class="section-heading"><div><h2>Patient et date</h2><p>Les informations administratives de la facture</p></div></div><div class="form-grid"><label>Patient *<select formControlName="patientId"><option value="">Sélectionner un patient</option>@for (patient of patients; track patient.id) { <option [value]="patient.id">{{ patient.prenom }} {{ patient.nom }}</option> }</select></label><label>Date de facture *<input type="date" formControlName="dateFacture"></label></div></section><section class="card form-card"><div class="section-heading"><div><h2>Actes facturés</h2><p>Une facture peut contenir plusieurs actes</p></div><button class="soft-button" type="button" (click)="addLine()">+ Ajouter un acte</button></div><div class="lines" formArrayName="lignes">@for (line of lines.controls; track line; let index = $index) { <div class="line" [formGroupName]="index"><label>Acte du catalogue<select formControlName="catalogueActeId" (change)="chooseAct(index)"><option value="">Acte personnalisé</option>@for (act of acts; track act.id) { <option [value]="act.id">{{ act.libelle }} · {{ act.montantDefaut }} MRU</option> }</select></label><label>Libellé *<input formControlName="libelle" placeholder="Consultation"></label><label>Type *<input formControlName="typeActe" placeholder="CONSULTATION"></label><label>Montant *<input type="number" min="0" formControlName="montant"></label><button class="remove-button" type="button" (click)="removeLine(index)" [disabled]="lines.length === 1" aria-label="Supprimer la ligne">×</button></div> }</div></section><section class="summary card"><div><span>Total de la facture</span><strong>{{ total | number:'1.0-2' }} MRU</strong></div><p>Le total est calculé automatiquement à partir des actes.</p></section>@if (error) { <p class="error">{{ error }}</p> }<div class="form-actions"><a class="cancel-button" routerLink="/factures">Annuler</a><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Création...' : 'Créer la facture' }} <span>→</span></button></div></form> }</section>
+<section class="new-invoice-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">ACCUEIL / FACTURATION / NOUVELLE FACTURE</p>
+      <h1>Nouvelle facture</h1>
+      <p class="subtitle">Ajoutez les actes, vérifiez le total, puis encaissez maintenant ou plus tard.</p>
+    </div>
+    <a class="back-link" routerLink="/factures">← Retour aux factures</a>
+  </header>
+
+  @if (loading) {
+    <section class="card loading-state">Chargement du catalogue...</section>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      @if (rendezVous || acte) {
+        <section class="card origin-card">
+          <span class="origin-icon">{{ rendezVous ? '◷' : '✚' }}</span>
+          <div>
+            <p class="breadcrumb">{{ rendezVous ? 'FACTURE DU RENDEZ-VOUS' : 'FACTURE DE L’ACTE PROGRAMMÉ' }}</p>
+            @if (rendezVous) {
+              <strong>{{ patientOrigine }} · {{ rendezVous.dateHeure | date:'EEEE d MMMM à HH:mm':'':'fr-FR' }}</strong>
+              <small>Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }} · {{ rendezVous.motif || 'Consultation' }}</small>
+            } @else if (acte) {
+              <strong>{{ patientOrigine }} · {{ acte.intitule }}</strong>
+              <small>Dr. {{ acte.medecinPrenom }} {{ acte.medecinNom }} · {{ acte.dateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</small>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="card form-card">
+        <div class="section-heading"><div><h2>Patient et date</h2><p>Les informations administratives de la facture</p></div></div>
+        <div class="form-grid">
+          <label>Patient *
+            <select formControlName="patientId">
+              <option value="">Sélectionner un patient</option>
+              @for (patient of patients; track patient.id) { <option [value]="patient.id">{{ patient.prenom }} {{ patient.nom }}</option> }
+            </select>
+          </label>
+          <label>Date de facture *<input type="date" formControlName="dateFacture"></label>
+        </div>
+      </section>
+
+      <section class="card form-card">
+        <div class="section-heading"><div><h2>Actes facturés</h2><p>Une facture peut contenir plusieurs actes</p></div><button class="soft-button" type="button" (click)="addLine()">+ Ajouter un acte</button></div>
+        <div class="lines" formArrayName="lignes">
+          @for (line of lines.controls; track line; let index = $index) {
+            <div class="line" [formGroupName]="index">
+              <label>Acte du catalogue<select formControlName="catalogueActeId" (change)="chooseAct(index)"><option value="">Acte personnalisé</option>@for (act of acts; track act.id) { <option [value]="act.id">{{ act.libelle }} · {{ act.montantDefaut }} MRU</option> }</select></label>
+              <label>Libellé *<input formControlName="libelle" placeholder="Consultation"></label>
+              <label>Type *<input formControlName="typeActe" placeholder="CONSULTATION"></label>
+              <label>Montant *<input type="number" min="0" formControlName="montant"></label>
+              <button class="remove-button" type="button" (click)="removeLine(index)" [disabled]="lines.length === 1" aria-label="Supprimer la ligne">×</button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="summary card"><div><span>Total de la facture</span><strong>{{ total | number:'1.0-2':'fr-FR' }} MRU</strong></div><p>Le total est calculé automatiquement à partir des actes.</p></section>
+
+      <section class="card form-card payment-card">
+        <div class="section-heading"><div><h2>Paiement</h2><p>Le patient paie maintenant, ou après son rendez-vous</p></div></div>
+        <div class="payment-choice">
+          <label class="choice"><input type="radio" name="moment" [value]="true" [(ngModel)]="encaisserMaintenant" [ngModelOptions]="{ standalone: true }"> Encaisser maintenant</label>
+          <label class="choice"><input type="radio" name="moment" [value]="false" [(ngModel)]="encaisserMaintenant" [ngModelOptions]="{ standalone: true }"> Le patient paiera plus tard</label>
+        </div>
+        @if (encaisserMaintenant) {
+          <div class="form-grid three">
+            <label>Moyen de paiement *
+              <select [(ngModel)]="moyenPaiement" [ngModelOptions]="{ standalone: true }">
+                @for (moyen of moyens; track moyen.code) { <option [value]="moyen.code">{{ moyen.libelle }}</option> }
+              </select>
+            </label>
+            <label>Référence {{ referenceObligatoire ? '*' : '(facultative)' }}
+              <input [(ngModel)]="referencePaiement" [ngModelOptions]="{ standalone: true }" [placeholder]="referenceObligatoire ? 'Code de la transaction' : 'N° de reçu (facultatif)'">
+            </label>
+            <label>Montant encaissé
+              <input type="number" min="1" [max]="total" [(ngModel)]="montantPaiement" [ngModelOptions]="{ standalone: true }" [placeholder]="(total | number:'1.0-0':'fr-FR') + ' (total)'">
+            </label>
+          </div>
+        } @else {
+          <p class="hint">La facture reste « en attente » et apparaît dans l’onglet « À payer » de la facturation.</p>
+        }
+      </section>
+
+      @if (error) { <div class="alert danger"><span>×</span><div><strong>Facture non créée</strong>{{ error }}</div></div> }
+      <div class="form-actions">
+        <a class="cancel-button" routerLink="/factures">Annuler</a>
+        <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Création...' : encaisserMaintenant ? 'Créer et encaisser' : 'Créer la facture' }} <span>→</span></button>
+      </div>
+    </form>
+  }
+</section>

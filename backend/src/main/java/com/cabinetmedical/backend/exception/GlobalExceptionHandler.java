@@ -48,7 +48,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErreurResponse> authentification(AuthenticationException exception, HttpServletRequest requete) {
-        return reponse(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect", requete, Map.of());
+        String message = exception instanceof org.springframework.security.authentication.DisabledException
+                ? "Ce compte est désactivé. Contactez l'administrateur." : "Email ou mot de passe incorrect";
+        return reponse(HttpStatus.UNAUTHORIZED, message, requete, Map.of());
     }
 
     @ExceptionHandler(AccessDeniedException.class)

@@ -10,8 +10,13 @@ import { RendezVousService } from '../../core/rendez-vous/rendez-vous.service';
 import { ConsultationService } from '../../core/consultations/consultation.service';
 import { OrdonnanceService } from '../../core/ordonnances/ordonnance.service';
 import { environment } from '../../environments/environment';
+import { AdminService } from '../../core/admin/admin.service';
+import { ActeService } from '../../core/actes/acte.service';
+import { ActeProgramme, libelleResultat, libelleStatutActe, libelleTypeActe } from '../../core/models/acte';
+import { ParametresCabinet } from '../../core/models/admin';
+import { libelleMoyen } from '../../core/models/facture';
 
-type TypeDocument = 'facture' | 'recu' | 'rendez-vous' | 'ordonnance' | 'dossier';
+type TypeDocument = 'facture' | 'recu' | 'rendez-vous' | 'ordonnance' | 'dossier' | 'acte';
 
 @Component({
   selector: 'app-impression',
@@ -31,7 +36,13 @@ export class ImpressionComponent {
   readonly type = this.route.snapshot.data['type'] as TypeDocument;
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
   readonly today = new Date();
-  readonly cabinet = environment.cabinet;
+  /** Coordonnees du cabinet : configurees par l'administrateur (repli : fichier environment). */
+  cabinet: ParametresCabinet = environment.cabinet;
+  acte: ActeProgramme | null = null;
+  readonly libelleTypeActe = libelleTypeActe;
+  readonly libelleStatutActe = libelleStatutActe;
+  readonly libelleResultat = libelleResultat;
+  private readonly acteService = inject(ActeService);
   facture: Facture | null = null;
   rendezVous: RendezVous | null = null;
   ordonnance: Ordonnance | null = null;
@@ -39,7 +50,10 @@ export class ImpressionComponent {
   loading = true;
   error = '';
 
-  constructor() { this.charger(); }
+  constructor() {
+    inject(AdminService).parametresCabinet().subscribe({ next: (parametres) => this.cabinet = parametres });
+    this.charger();
+  }
 
   private charger(): void {
     const fin = () => { this.loading = false; };
@@ -55,6 +69,9 @@ export class ImpressionComponent {
       case 'dossier':
         this.consultationService.dossier(this.id).subscribe({ next: (item) => { this.dossier = item; fin(); }, error: echec('Dossier patient introuvable ou non autorisé.') });
         break;
+      case 'acte':
+        this.acteService.get(this.id).subscribe({ next: (item) => { this.acte = item; fin(); }, error: echec('Acte programmé introuvable ou non autorisé.') });
+        break;
       default:
         this.rendezVousService.get(this.id).subscribe({ next: (item) => { this.rendezVous = item; fin(); }, error: echec('Rendez-vous introuvable.') });
     }
@@ -69,6 +86,7 @@ export class ImpressionComponent {
       case 'recu': return 'Reçu de paiement';
       case 'ordonnance': return 'Ordonnance médicale';
       case 'dossier': return 'Dossier patient';
+      case 'acte': return 'Acte programmé';
       default: return 'Reçu de rendez-vous';
     }
   }
@@ -84,7 +102,5 @@ export class ImpressionComponent {
     return statut === 'PAYEE' ? 'Payée' : statut === 'PARTIELLE' ? 'Partiellement payée' : statut === 'ANNULEE' ? 'Annulée' : 'En attente de paiement';
   }
   statutRendezVous(statut: string): string { return statut.replace('_', ' ').toLowerCase().replace(/^\w/, (lettre) => lettre.toUpperCase()); }
-  moyen(moyen?: string): string {
-    return moyen === 'ESPECES' ? 'Espèces' : moyen === 'CARTE' ? 'Carte bancaire' : moyen === 'VIREMENT' ? 'Virement' : moyen || 'Non précisé';
-  }
+  moyen(moyen?: string): string { return moyen ? libelleMoyen(moyen) : 'Non précisé'; }
 }

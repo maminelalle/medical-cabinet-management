@@ -2,10 +2,13 @@
   <header class="page-heading">
     <div>
       <p class="breadcrumb">MÉDECIN / CONSULTATION</p>
-      <h1>Compte-rendu de consultation</h1>
-      <p class="subtitle">Rédigez le compte-rendu puis, si nécessaire, l'ordonnance rattachée au rendez-vous.</p>
+      <h1>Consultation</h1>
+      <p class="subtitle">Démarrez la consultation à l’arrivée du patient, terminez-la avec le compte-rendu, puis prescrivez.</p>
     </div>
-    <a class="back-link" routerLink="/rendez-vous">← Retour au planning</a>
+    <div class="page-actions">
+      <a class="back-link" routerLink="/rendez-vous">← Mon planning</a>
+      @if (rendezVous) { <a class="soft-button" [routerLink]="['/dossier', rendezVous.patientId]">Dossier patient</a> }
+    </div>
   </header>
 
   @if (loading) {
@@ -15,126 +18,123 @@
       <span class="patient-avatar">{{ rendezVous.patientPrenom[0] }}{{ rendezVous.patientNom[0] }}</span>
       <div>
         <h2>{{ rendezVous.patientPrenom }} {{ rendezVous.patientNom }}</h2>
-        <p>{{ rendezVous.dateHeure | date:'EEEE d MMMM yyyy':'':'fr-FR' }} à {{ rendezVous.dateHeure | date:'HH:mm' }} · Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</p>
+        <p>{{ rendezVous.dateHeure | date:'EEEE d MMMM yyyy':'':'fr-FR' }} à {{ rendezVous.dateHeure | date:'HH:mm' }} · {{ rendezVous.dureeMinutes }} min · Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }}</p>
         <p>Motif : {{ rendezVous.motif || 'Consultation' }}</p>
       </div>
       <span class="badge" [class]="rendezVous.statut.toLowerCase()">{{ statutLabel(rendezVous.statut) }}</span>
     </article>
 
-    @if (message) {
-      <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong>Redirection vers le dossier du patient.</div></div>
-    }
-    @if (error) {
-      <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div>
-    }
+    <ol class="steps">
+      <li [class.done]="etape !== 'attente'" [class.current]="etape === 'attente'">1. Démarrer</li>
+      <li [class.done]="etape === 'terminee'" [class.current]="etape === 'en-cours'">2. Compte-rendu et fin</li>
+      <li [class.current]="etape === 'terminee'">3. Ordonnance et actes</li>
+    </ol>
 
-    @if (!consultation) {
-      <form class="card consultation-card" [formGroup]="form" (ngSubmit)="enregistrerConsultation()">
-        <div class="section-heading">
-          <div>
-            <h2>Compte-rendu médical</h2>
-            <p>Le compte-rendu clôture le rendez-vous et alimente le dossier du patient</p>
-          </div>
-        </div>
-        <label>
-          Compte-rendu *
-          <textarea rows="6" formControlName="compteRendu" placeholder="Observations, examen clinique, diagnostic, conduite à tenir..."></textarea>
-        </label>
+    @if (message) { <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong></div></div> }
+    @if (error) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ error }}</div></div> }
 
-        <div class="section-heading">
-          <div>
-            <h2>Ordonnance</h2>
-            <p>Optionnelle — laissez vide si aucun médicament n'est prescrit</p>
-          </div>
-          <button class="soft-button" type="button" (click)="ajouterLigne()">+ Ajouter un médicament</button>
-        </div>
+    @switch (etape) {
+      @case ('attente') {
+        <section class="card start-card">
+          <span class="start-icon">▶</span>
+          <div><h2>Le patient est arrivé ?</h2><p>Démarrez la consultation : l’accueil et la direction voient que vous êtes en consultation.</p></div>
+          <button class="primary-button" type="button" (click)="demarrer()" [disabled]="saving">▶ Démarrer la consultation</button>
+        </section>
+      }
 
-        <div class="prescription-lines" formArrayName="lignes">
-          @for (ligne of lignes.controls; track ligne; let index = $index) {
-            <div class="prescription-line" [formGroupName]="index">
-              <label>Médicament<select formControlName="medicamentId"><option [ngValue]="0">Sélectionner un médicament...</option>@for (medicament of medicaments; track medicament.id) { <option [ngValue]="medicament.id">{{ medicament.nom }} {{ medicament.dosage || '' }} · {{ medicament.stockActuel }} disponible(s)</option> }</select></label>
-              <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
-              <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
-              <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>
-            </div>
-          }
-        </div>
-
-        <label>
-          Instructions au patient
-          <textarea rows="3" formControlName="instructions" placeholder="Précautions, régime, date de contrôle..."></textarea>
-        </label>
-
-        <div class="form-actions">
-          <a class="cancel-button" routerLink="/rendez-vous">Annuler</a>
-          <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer la consultation' }} <span>→</span></button>
-        </div>
-      </form>
-    } @else {
-      <article class="card consultation-card">
-        <div class="section-heading">
-          <div>
-            <h2>Compte-rendu enregistré</h2>
-            <p>Consultation du {{ consultation.dateHeure | date:'dd/MM/yyyy':'':'fr-FR' }} · Dr. {{ consultation.medecinPrenom }} {{ consultation.medecinNom }}</p>
-          </div>
-          <span class="badge confirme">Consultation clôturée</span>
-        </div>
-        <p class="report-text">{{ consultation.compteRendu }}</p>
-
-        @if (consultation.prescription) {
+      @case ('en-cours') {
+        <section class="card consultation-card">
           <div class="section-heading">
-            <div>
-              <h2>Ordonnance du {{ consultation.prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</h2>
-              <p>{{ consultation.prescription.lignes.length }} médicament(s) prescrit(s)</p>
-            </div>
-            <a class="soft-button" [routerLink]="['/impression/ordonnance', consultation.prescription.id]">⎙ Imprimer l'ordonnance</a>
+            <div><h2>Consultation en cours</h2><p>Démarrée à {{ rendezVous.debutConsultation | date:'HH:mm' }} · depuis {{ dureeEnCours }}</p></div>
+            <span class="live">● En cours</span>
           </div>
-          <div class="ordonnance">
-            @for (item of consultation.prescription.lignes; track item.id) {
-              <div>
-                <span>
-                  <strong>{{ item.medicament }}</strong>
-                  <small>{{ item.posologie || 'Posologie non précisée' }}</small>
-                </span>
-                <span class="pill">{{ item.duree || 'Durée libre' }}</span>
-              </div>
-            }
+          <label>Compte-rendu *
+            <textarea rows="8" [(ngModel)]="compteRendu" placeholder="Observations, examen clinique, diagnostic, conduite à tenir..."></textarea>
+          </label>
+          <div class="form-actions">
+            <button class="primary-button" type="button" (click)="terminer()" [disabled]="saving">{{ saving ? 'Enregistrement...' : '■ Terminer la consultation' }}</button>
           </div>
-          @if (consultation.prescription.instructions) {
-            <p class="subtitle">Instructions : {{ consultation.prescription.instructions }}</p>
-          }
-        } @else {
-          <form class="consultation-card" [formGroup]="form" (ngSubmit)="enregistrerOrdonnanceSeule()">
+        </section>
+      }
+
+      @case ('terminee') {
+        <section class="card consultation-card">
+          <div class="section-heading">
+            <div><h2>Compte-rendu</h2><p>Consultation terminée{{ rendezVous.finConsultation ? ' à ' + (rendezVous.finConsultation | date:'HH:mm') : '' }}</p></div>
+            <span class="badge termine">Terminée</span>
+          </div>
+          <p class="report-text">{{ consultation!.compteRendu }}</p>
+        </section>
+
+        <section class="card consultation-card">
+          @if (consultation!.prescription; as prescription) {
             <div class="section-heading">
-              <div>
-                <h2>Ajouter une ordonnance</h2>
-                <p>Aucune prescription n'est rattachée à cette consultation</p>
-              </div>
+              <div><h2>Ordonnance du {{ prescription.datePrescription | date:'dd/MM/yyyy':'':'fr-FR' }}</h2><p>{{ prescription.lignes.length }} médicament(s) · {{ consultation!.ordonnanceDelivree ? 'délivrée par la pharmacie' : 'en attente à la pharmacie' }}</p></div>
+              <a class="primary-button" [routerLink]="['/impression/ordonnance', prescription.id]">⎙ Imprimer l'ordonnance</a>
+            </div>
+            <div class="ordonnance">
+              @for (item of prescription.lignes; track item.id) {
+                <div><span><strong>{{ item.medicament }}</strong><small>{{ item.posologie || 'Posologie non précisée' }}</small></span><span class="pill">{{ item.duree || 'Durée libre' }}</span></div>
+              }
+            </div>
+            @if (prescription.instructions) { <p class="subtitle">Instructions : {{ prescription.instructions }}</p> }
+          } @else {
+            <div class="section-heading">
+              <div><h2>Écrire l’ordonnance</h2><p>Recherchez dans le stock par nom ou par famille ; un produit hors stock peut être saisi librement</p></div>
               <button class="soft-button" type="button" (click)="ajouterLigne()">+ Ajouter un médicament</button>
             </div>
-            <div class="prescription-lines" formArrayName="lignes">
-              @for (ligne of lignes.controls; track ligne; let index = $index) {
-                <div class="prescription-line" [formGroupName]="index">
-                  <label>Médicament<select formControlName="medicamentId"><option [ngValue]="0">Sélectionner un médicament...</option>@for (medicament of medicaments; track medicament.id) { <option [ngValue]="medicament.id">{{ medicament.nom }} {{ medicament.dosage || '' }} · {{ medicament.stockActuel }} disponible(s)</option> }</select></label>
-                  <label>Posologie<input formControlName="posologie" placeholder="1 comprimé matin et soir"></label>
-                  <label>Durée<input formControlName="duree" placeholder="5 jours"></label>
+            <div class="prescription-lines">
+              @for (ligne of lignes; track $index; let index = $index) {
+                <div class="prescription-line">
+                  <label>Médicament<app-medicament-recherche [medicaments]="medicaments" [valeur]="ligne" (choix)="choisirMedicament(ligne, $event)" /></label>
+                  <label>Posologie<input [(ngModel)]="ligne.posologie" placeholder="1 comprimé matin et soir"></label>
+                  <label>Durée<input [(ngModel)]="ligne.duree" placeholder="5 jours"></label>
                   <button class="remove-button" type="button" (click)="supprimerLigne(index)" [disabled]="lignes.length === 1" aria-label="Supprimer la ligne">×</button>
                 </div>
               }
             </div>
-            <label>
-              Instructions au patient
-              <textarea rows="3" formControlName="instructions"></textarea>
-            </label>
+            <label>Instructions au patient<textarea rows="3" [(ngModel)]="instructions" placeholder="Précautions, régime, date de contrôle..."></textarea></label>
             <div class="form-actions">
-              <a class="cancel-button" routerLink="/rendez-vous">Fermer</a>
-              <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : "Enregistrer l'ordonnance" }}</button>
+              <button class="primary-button" type="button" (click)="enregistrerOrdonnance()" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer l’ordonnance' }}</button>
             </div>
-          </form>
-        }
-      </article>
+          }
+        </section>
+
+        <section class="card consultation-card">
+          <div class="section-heading">
+            <div><h2>Actes programmés</h2><p>Chirurgie, traitement, examen… à une date et une heure précises</p></div>
+            <button class="soft-button" type="button" (click)="ouvrirActe()">{{ acteOuvert ? 'Fermer' : '+ Programmer un acte' }}</button>
+          </div>
+          @if (acteOuvert) {
+            <div class="acte-form">
+              <label>Type *<select [(ngModel)]="acte.type">@for (type of typesActe; track type.code) { <option [value]="type.code">{{ type.libelle }}</option> }</select></label>
+              <label class="wide">Intitulé *<input [(ngModel)]="acte.intitule" placeholder="Cure de hernie inguinale, séance de kinésithérapie..."></label>
+              <label>Date *<input type="date" [(ngModel)]="acte.date"></label>
+              <label>Heure *<input type="time" [(ngModel)]="acte.heure"></label>
+              <label>Durée (min)<input type="number" min="5" step="5" [(ngModel)]="acte.dureeMinutes"></label>
+              <label>Lieu / salle<input [(ngModel)]="acte.lieu" placeholder="Bloc 1, salle de soins..."></label>
+              <label class="full">Détails et consignes<textarea rows="3" [(ngModel)]="acte.details" placeholder="Préparation, examens préalables, anesthésie, consignes au patient..."></textarea></label>
+              <div class="form-actions full"><button class="primary-button" type="button" (click)="programmerActe()" [disabled]="saving">Programmer</button></div>
+            </div>
+          }
+          @for (item of actes; track item.id) {
+            <div class="acte-row">
+              <span><strong>{{ libelleTypeActe(item.type) }} · {{ item.intitule }}</strong><small>{{ item.dateHeure | date:'EEEE d MMMM yyyy à HH:mm':'':'fr-FR' }} · {{ item.dureeMinutes }} min{{ item.lieu ? ' · ' + item.lieu : '' }}</small></span>
+              <span class="badge" [class]="item.statut.toLowerCase()">{{ libelleStatutActe(item.statut) }}</span>
+              <a class="row-action" [routerLink]="['/impression/acte', item.id]" aria-label="Imprimer">⎙</a>
+              <a class="row-action" routerLink="/actes" [queryParams]="{ id: item.id }" aria-label="Ouvrir">→</a>
+            </div>
+          } @empty {
+            @if (!acteOuvert) { <div class="empty-state">Aucun acte programmé pour ce patient.</div> }
+          }
+        </section>
+      }
+
+      @case ('close') {
+        <div class="empty-state">Ce rendez-vous est {{ statutLabel(rendezVous.statut).toLowerCase() }} : aucune consultation n’est possible.</div>
+      }
     }
   } @else {
-    <div class="empty-state">Rendez-vous indisponible.</div>
+    <div class="empty-state">{{ error || 'Rendez-vous indisponible.' }}</div>
   }
 </section>

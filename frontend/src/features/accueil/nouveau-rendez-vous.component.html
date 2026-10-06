@@ -1,1 +1,123 @@
-<section class="new-appointment-page"><header class="page-heading"><div><p class="breadcrumb">ACCUEIL / RENDEZ-VOUS / {{ modeModification ? 'MODIFIER' : 'NOUVEAU' }}</p><h1>{{ modeModification ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous' }}</h1><p class="subtitle">{{ modeModification ? 'Changez le médecin, la date, l’heure ou le motif ; le créneau est revérifié.' : 'Planifiez une consultation dans un créneau disponible.' }}</p></div><a class="back-link" routerLink="/rendez-vous">← Retour au planning</a></header>@if (loading) { <section class="card loading-state">Chargement du formulaire...</section> } @else { <form class="card form-card" [formGroup]="form" (ngSubmit)="submit()"><div class="form-grid"><label>Patient *<select formControlName="patientId"><option value="">Sélectionner un patient</option>@for (patient of patients; track patient.id) { <option [value]="patient.id">{{ patient.prenom }} {{ patient.nom }}</option> }</select></label><label>Médecin *<select formControlName="medecinId"><option value="">Sélectionner un médecin</option>@for (doctor of doctors; track doctor.id) { <option [value]="doctor.id">Dr. {{ doctor.prenom }} {{ doctor.nom }}{{ doctor.specialite ? ' · ' + doctor.specialite : '' }}</option> }</select></label><label>Date *<input type="date" formControlName="date"></label><label>Heure *<input type="time" formControlName="heure"></label><label class="full">Motif *<textarea rows="4" formControlName="motif" placeholder="Consultation, contrôle, suivi..."></textarea></label></div>@if (error) { <p class="error">{{ error }}</p> }<div class="form-actions"><a class="cancel-button" routerLink="/rendez-vous">Annuler</a><button class="primary-button" type="submit" [disabled]="saving || form.disabled">{{ saving ? 'Enregistrement...' : modeModification ? 'Enregistrer les modifications' : 'Prendre rendez-vous' }} <span>→</span></button></div></form> }</section>
+<section class="new-appointment-page">
+  <header class="page-heading">
+    <div>
+      <p class="breadcrumb">ACCUEIL / RENDEZ-VOUS / {{ modeModification ? 'MODIFIER' : 'NOUVEAU' }}</p>
+      <h1>{{ modeModification ? 'Modifier le rendez-vous' : 'Prendre un rendez-vous' }}</h1>
+      <p class="subtitle">{{ modeModification ? 'Changez le médecin, la date, l’heure ou le motif ; le créneau est revérifié.' : 'Patient existant ou nouveau patient, puis un créneau libre du médecin.' }}</p>
+    </div>
+    <a class="back-link" routerLink="/rendez-vous">← Retour au planning</a>
+  </header>
+
+  @if (loading) {
+    <section class="card loading-state">Chargement du formulaire...</section>
+  } @else if (cree) {
+    <section class="card success-card">
+      <span class="success-icon">✓</span>
+      <div class="success-text">
+        <p class="breadcrumb">RENDEZ-VOUS ENREGISTRÉ</p>
+        <h2>{{ cree.patientPrenom }} {{ cree.patientNom }} · {{ cree.dateHeure | date:'EEEE d MMMM à HH:mm':'':'fr-FR' }}</h2>
+        <p>Dr. {{ cree.medecinPrenom }} {{ cree.medecinNom }} · {{ cree.dureeMinutes }} min · numéro de file <strong>{{ cree.numeroFile }}</strong></p>
+        <p class="hint">Le patient peut payer maintenant ou après sa consultation.</p>
+      </div>
+      <div class="success-actions">
+        <a class="primary-button" routerLink="/factures/nouveau" [queryParams]="{ rendezVousId: cree.id }">▤ Rédiger la facture maintenant</a>
+        <a class="soft-button" [routerLink]="['/impression/rendez-vous', cree.id]">⎙ Imprimer le ticket</a>
+        <button class="soft-button" type="button" (click)="recommencer()">+ Nouveau rendez-vous</button>
+        <a class="soft-button" routerLink="/rendez-vous" [queryParams]="{ date: cree.dateHeure.slice(0, 10) }">Voir le planning</a>
+      </div>
+    </section>
+  } @else {
+    <form class="booking-grid" [formGroup]="form" (ngSubmit)="submit()">
+      <article class="card step-card">
+        <div class="step-heading"><span class="step-number">1</span><div><h2>Patient</h2><p>Retrouvez le patient ou créez sa fiche en même temps</p></div></div>
+
+        @if (patientChoisi) {
+          <div class="patient-chip">
+            <span class="patient-avatar">{{ patientChoisi.prenom[0] }}{{ patientChoisi.nom[0] }}</span>
+            <span><strong>{{ patientChoisi.prenom }} {{ patientChoisi.nom }}</strong><small>Né(e) le {{ patientChoisi.dateNaissance | date:'dd/MM/yyyy' }} · {{ patientChoisi.telephone || 'pas de téléphone' }}</small></span>
+            @if (!modeModification) { <button class="soft-button" type="button" (click)="changerPatient()">Changer</button> }
+          </div>
+        } @else {
+          <div class="segmented" role="tablist">
+            <button type="button" [class.active]="modePatient === 'existant'" (click)="basculer('existant')">Patient existant</button>
+            <button type="button" [class.active]="modePatient === 'nouveau'" (click)="basculer('nouveau')">+ Nouveau patient</button>
+          </div>
+
+          @if (modePatient === 'existant') {
+            <label>Rechercher (nom, prénom ou téléphone)
+              <input [(ngModel)]="recherche" [ngModelOptions]="{ standalone: true }" placeholder="Ex. Diallo, Aminata, 46 12..." autocomplete="off">
+            </label>
+            @if (recherche.trim().length >= 2) {
+              <div class="search-results">
+                @for (patient of resultats; track patient.id) {
+                  <button type="button" (click)="choisirPatient(patient)">
+                    <strong>{{ patient.prenom }} {{ patient.nom }}</strong>
+                    <small>{{ patient.dateNaissance | date:'dd/MM/yyyy' }} · {{ patient.telephone || '—' }}</small>
+                  </button>
+                } @empty {
+                  <div class="no-result">Aucun patient trouvé. <button class="link-button" type="button" (click)="basculer('nouveau')">Créer ce patient</button></div>
+                }
+              </div>
+            }
+          } @else {
+            <div class="form-grid" [formGroup]="nouveauPatient">
+              <label>Nom *<input formControlName="nom"></label>
+              <label>Prénom *<input formControlName="prenom"></label>
+              <label>Date de naissance *<input type="date" formControlName="dateNaissance"></label>
+              <label>Téléphone *<input formControlName="telephone" placeholder="+222 ..."></label>
+              <label>Email<input type="email" formControlName="email"></label>
+              <label>Adresse<input formControlName="adresse"></label>
+            </div>
+            <p class="hint">La fiche patient est créée en même temps que le rendez-vous.</p>
+          }
+        }
+      </article>
+
+      <article class="card step-card">
+        <div class="step-heading"><span class="step-number">2</span><div><h2>Médecin et créneau</h2><p>Un créneau réservé n’est plus proposé tant qu’il n’est pas annulé</p></div></div>
+        <div class="form-grid">
+          <label class="full">Médecin *
+            <select formControlName="medecinId" (change)="form.patchValue({ heure: '' }); chargerCreneaux()">
+              <option value="">Sélectionner un médecin</option>
+              @for (doctor of doctors; track doctor.id) { <option [value]="doctor.id">Dr. {{ doctor.prenom }} {{ doctor.nom }}{{ doctor.specialite ? ' · ' + doctor.specialite : '' }}</option> }
+            </select>
+          </label>
+          <label>Date *<input type="date" formControlName="date" (change)="form.patchValue({ heure: '' }); chargerCreneaux()"></label>
+          <label>Durée
+            <select formControlName="dureeMinutes" (change)="form.patchValue({ heure: '' }); chargerCreneaux()">
+              @for (duree of durees; track duree) { <option [ngValue]="duree">{{ duree }} minutes</option> }
+            </select>
+          </label>
+        </div>
+
+        @if (!form.controls.medecinId.value) {
+          <div class="empty-state">Choisissez un médecin pour voir ses créneaux.</div>
+        } @else if (chargementCreneaux) {
+          <div class="empty-state">Chargement des créneaux...</div>
+        } @else {
+          <p class="slots-summary">{{ creneauxLibres }} créneau(x) libre(s) · <span class="legend libre"></span> libre <span class="legend pris"></span> réservé <span class="legend passe"></span> passé</p>
+          <div class="slots">
+            @for (creneau of creneaux; track creneau.debut) {
+              <button type="button" class="slot" [class.pris]="!creneau.libre && !creneau.passe" [class.passe]="creneau.passe"
+                      [class.choisi]="form.controls.heure.value === creneau.debut" [disabled]="!creneau.libre"
+                      [title]="creneau.occupePar || (creneau.passe ? 'Créneau passé' : 'Libre')" (click)="choisirCreneau(creneau)">
+                {{ creneau.debut }}
+              </button>
+            }
+          </div>
+          <label class="manual-time">Heure choisie *<input type="time" formControlName="heure"></label>
+        }
+      </article>
+
+      <article class="card step-card full-step">
+        <div class="step-heading"><span class="step-number">3</span><div><h2>Motif</h2><p>Visible par le médecin dans son planning</p></div></div>
+        <label>Motif de la consultation *<textarea rows="3" formControlName="motif" placeholder="Consultation, contrôle, suivi, douleur..."></textarea></label>
+        @if (error) { <div class="alert danger"><span>×</span><div><strong>Rendez-vous non enregistré</strong>{{ error }}</div></div> }
+        <div class="form-actions">
+          <a class="cancel-button" routerLink="/rendez-vous">Annuler</a>
+          <button class="primary-button" type="submit" [disabled]="saving || form.disabled">{{ saving ? 'Enregistrement...' : modeModification ? 'Enregistrer les modifications' : 'Confirmer le rendez-vous' }} <span>→</span></button>
+        </div>
+      </article>
+    </form>
+  }
+</section>

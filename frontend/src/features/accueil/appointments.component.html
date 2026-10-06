@@ -38,6 +38,7 @@
     </label>
   </section>
 
+  @if (erreurAction) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ erreurAction }}</div></div> }
   @if (message) {
     <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong></div></div>
   }
@@ -74,13 +75,14 @@
               <th>Médecin</th>
               <th>Motif</th>
               <th>Statut</th>
+              @if (!isDoctor) { <th>Facture</th> }
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             @for (appointment of appointments; track appointment.id) {
               <tr>
-                <td class="time">{{ time(appointment.dateHeure) }}</td>
+                <td class="time">{{ time(appointment.dateHeure) }}<small>{{ appointment.dureeMinutes }} min · n° {{ appointment.numeroFile }}</small></td>
                 <td>
                   <strong>{{ appointment.patientPrenom }} {{ appointment.patientNom }}</strong>
                   <small>Patient #{{ appointment.patientId }}</small>
@@ -88,34 +90,55 @@
                 <td>Dr. {{ appointment.medecinPrenom }} {{ appointment.medecinNom }}</td>
                 <td>{{ appointment.motif || 'Consultation' }}</td>
                 <td><span class="badge" [class]="appointment.statut.toLowerCase()">{{ statusLabel(appointment.statut) }}</span></td>
+                @if (!isDoctor) {
+                  <td>
+                    @if (appointment.factureId) {
+                      <a class="facture-lien" [class.payee]="appointment.factureStatut === 'PAYEE'" routerLink="/factures" [queryParams]="{ id: appointment.factureId }">
+                        FAC-{{ appointment.factureId.toString().padStart(3, '0') }} · {{ appointment.factureStatut === 'PAYEE' ? 'payée' : 'à payer' }}
+                      </a>
+                    } @else if (isAccueil && appointment.statut !== 'ANNULE') {
+                      <a class="soft-button petit" routerLink="/factures/nouveau" [queryParams]="{ rendezVousId: appointment.id }">▤ Facturer</a>
+                    } @else { <span class="subtitle">—</span> }
+                  </td>
+                }
                 <td>
                   <div class="actions">
-                    @if (!isDirection) { <select
-                      class="statut-select"
-                      [ngModel]="appointment.statut"
-                      (ngModelChange)="changerStatut(appointment, $event)"
-                      [disabled]="savingId === appointment.id"
-                      [attr.aria-label]="'Changer le statut du rendez-vous de ' + appointment.patientPrenom"
-                    >
-                      @for (item of statuses; track item) { <option [value]="item">{{ statusLabel(item) }}</option> }
-                    </select> } @else { <span class="subtitle">Lecture seule</span> }
+                    @if (isAccueil && estModifiable(appointment)) {
+                      <select class="statut-select" [ngModel]="appointment.statut" (ngModelChange)="changerStatut(appointment, $event)"
+                              [disabled]="savingId === appointment.id" [attr.aria-label]="'Changer le statut du rendez-vous de ' + appointment.patientPrenom">
+                        @for (item of statutsAccueil; track item) { <option [value]="item">{{ statusLabel(item) }}</option> }
+                      </select>
+                    }
+                    @if (isDoctor) {
+                      @if (appointment.statut === 'PLANIFIE' || appointment.statut === 'CONFIRME') {
+                        <button class="primary-button petit" type="button" (click)="demarrer(appointment)" [disabled]="savingId === appointment.id">▶ Démarrer</button>
+                        <button class="soft-button petit" type="button" (click)="changerStatut(appointment, 'ABSENT')" [disabled]="savingId === appointment.id">Absent</button>
+                      } @else if (appointment.statut === 'EN_COURS') {
+                        <a class="primary-button petit" [routerLink]="['/rendez-vous', appointment.id, 'consultation']">● En cours · ouvrir</a>
+                      } @else if (appointment.statut === 'TERMINE') {
+                        <a class="soft-button petit" [routerLink]="['/rendez-vous', appointment.id, 'consultation']">Ordonnance / actes</a>
+                      }
+                    }
                     <a class="row-action" [routerLink]="['/dossier', appointment.patientId]" aria-label="Dossier du patient" title="Dossier du patient">☰</a>
-                    @if (isAccueil && (appointment.statut === 'PLANIFIE' || appointment.statut === 'CONFIRME')) {
+                    @if (isAccueil && estModifiable(appointment)) {
                       <a class="row-action" [routerLink]="['/rendez-vous', appointment.id, 'modifier']" aria-label="Modifier ou reprogrammer" title="Modifier ou reprogrammer">✎</a>
                     }
                     @if (!isDoctor) {
-                      <a class="row-action" [routerLink]="['/impression/rendez-vous', appointment.id]" aria-label="Imprimer le reçu de rendez-vous" title="Imprimer le ticket de passage">⎙</a>
+                      <a class="row-action" [routerLink]="['/impression/rendez-vous', appointment.id]" aria-label="Imprimer le ticket" title="Imprimer le ticket de passage">⎙</a>
                     }
-                    @if (isDoctor) {
-                      @if (estOuvert(appointment)) {
-                        <a class="row-action" [routerLink]="['/rendez-vous', appointment.id, 'consultation']" aria-label="Ouvrir la consultation">✎</a>
+                    @if (isAccueil && !appointment.factureId && appointment.statut !== 'EN_COURS' && appointment.statut !== 'TERMINE') {
+                      @if (aSupprimer === appointment.id) {
+                        <button class="soft-button danger petit" type="button" (click)="supprimer(appointment)">Confirmer</button>
+                        <button class="soft-button petit" type="button" (click)="aSupprimer = null">Non</button>
+                      } @else {
+                        <button class="row-action danger" type="button" (click)="aSupprimer = appointment.id" aria-label="Supprimer le rendez-vous" title="Supprimer (libère le créneau)">⌫</button>
                       }
                     }
                   </div>
                 </td>
               </tr>
             } @empty {
-              <tr><td class="empty-cell" colspan="6">Aucun rendez-vous ne correspond à vos filtres.</td></tr>
+              <tr><td class="empty-cell" [attr.colspan]="isDoctor ? 6 : 7">Aucun rendez-vous ne correspond à vos filtres.</td></tr>
             }
           </tbody>
         </table>
