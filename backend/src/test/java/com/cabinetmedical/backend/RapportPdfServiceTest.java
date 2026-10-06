@@ -15,7 +15,7 @@ class RapportPdfServiceTest {
     @Test
     void genereUnPdfAvecAccentsEtSections() {
         byte[] pdf = new RapportPdfService().generer(
-                new EnTeteRapport("Cabinet Médical", "Nouakchott · Tél. 22 00 00 00", "Dossier patient", "Aminata Diallo", "Document confidentiel"),
+                new EnTeteRapport("Cabinet Médical", "Nouakchott · Tél. 22 00 00 00", "Dossier patient", "Lalle Ould Mohamed", "Document confidentiel"),
                 List.of(new LigneRapport("Identité", "Né(e) le", "12/04/1987", ""),
                         new LigneRapport("Factures", "FAC-001", "Consultation générale", "1 500 MRU")));
 

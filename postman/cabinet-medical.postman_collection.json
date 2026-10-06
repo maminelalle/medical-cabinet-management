@@ -501,7 +501,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nom\": \"Postman\",\n  \"prenom\": \"Test\",\n  \"dateNaissance\": \"1990-01-15\",\n  \"telephone\": \"22 00 00 00\",\n  \"email\": \"postman@test.local\",\n  \"adresse\": \"Nouakchott\"\n}",
+              "raw": "{\n  \"nom\": \"Ould Salem\",\n  \"prenom\": \"Mohamed\",\n  \"dateNaissance\": \"1990-01-15\",\n  \"telephone\": \"22 00 00 00\",\n  \"email\": \"mohamed.ouldsalem@example.com\",\n  \"adresse\": \"Nouakchott\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -588,7 +588,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nom\": \"Postman\",\n  \"prenom\": \"Test modifié\",\n  \"dateNaissance\": \"1990-01-15\",\n  \"telephone\": \"22 11 11 11\",\n  \"email\": \"postman@test.local\",\n  \"adresse\": \"Nouakchott\"\n}",
+              "raw": "{\n  \"nom\": \"Ould Salem\",\n  \"prenom\": \"Mohamed Lemine\",\n  \"dateNaissance\": \"1990-01-15\",\n  \"telephone\": \"22 11 11 11\",\n  \"email\": \"mohamed.ouldsalem@example.com\",\n  \"adresse\": \"Nouakchott\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -777,7 +777,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"format\": \"cabinet-medical.dossier-patient\",\n  \"version\": 1,\n  \"patient\": {\n    \"nom\": \"Import\",\n    \"prenom\": \"Postman\",\n    \"dateNaissance\": \"1985-03-20\"\n  },\n  \"consultations\": [\n    {\n      \"dateHeure\": \"2026-01-10T10:00:00\",\n      \"motif\": \"Fièvre\",\n      \"medecinNom\": \"Dupont\",\n      \"medecinPrenom\": \"Marie\",\n      \"compteRendu\": \"Angine\",\n      \"prescription\": {\n        \"datePrescription\": \"2026-01-10\",\n        \"lignes\": [\n          {\n            \"medicament\": \"Paracétamol 1 g\",\n            \"posologie\": \"3 fois par jour\",\n            \"duree\": \"5 jours\"\n          }\n        ]\n      }\n    }\n  ],\n  \"rendezVous\": [],\n  \"factures\": [\n    {\n      \"dateFacture\": \"2026-01-10\",\n      \"lignes\": [\n        {\n          \"libelle\": \"Consultation\",\n          \"typeActe\": \"CONSULTATION\",\n          \"montant\": 1500\n        }\n      ],\n      \"paiements\": []\n    }\n  ]\n}",
+              "raw": "{\n  \"format\": \"cabinet-medical.dossier-patient\",\n  \"version\": 1,\n  \"patient\": {\n    \"nom\": \"Mint Mahmoud\",\n    \"prenom\": \"Vatimetou\",\n    \"dateNaissance\": \"1985-03-20\"\n  },\n  \"consultations\": [\n    {\n      \"dateHeure\": \"2026-01-10T10:00:00\",\n      \"motif\": \"Fièvre\",\n      \"medecinNom\": \"Ould Cheikh\",\n      \"medecinPrenom\": \"Mohamed\",\n      \"compteRendu\": \"Angine\",\n      \"prescription\": {\n        \"datePrescription\": \"2026-01-10\",\n        \"lignes\": [\n          {\n            \"medicament\": \"Paracétamol 1 g\",\n            \"posologie\": \"3 fois par jour\",\n            \"duree\": \"5 jours\"\n          }\n        ]\n      }\n    }\n  ],\n  \"rendezVous\": [],\n  \"factures\": [\n    {\n      \"dateFacture\": \"2026-01-10\",\n      \"lignes\": [\n        {\n          \"libelle\": \"Consultation\",\n          \"typeActe\": \"CONSULTATION\",\n          \"montant\": 1500\n        }\n      ],\n      \"paiements\": []\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -978,7 +978,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nouveauPatient\": {\n    \"nom\": \"Rapide\",\n    \"prenom\": \"Patient\",\n    \"dateNaissance\": \"1992-06-01\",\n    \"telephone\": \"36 11 22 33\"\n  },\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:00:00\",\n  \"dureeMinutes\": 15,\n  \"motif\": \"Première visite\"\n}",
+              "raw": "{\n  \"nouveauPatient\": {\n    \"nom\": \"Ould Ahmed\",\n    \"prenom\": \"Sidi\",\n    \"dateNaissance\": \"1992-06-01\",\n    \"telephone\": \"36 11 22 33\"\n  },\n  \"medecinId\": {{medecinId}},\n  \"dateHeure\": \"{{dateDuJour}}T17:00:00\",\n  \"dureeMinutes\": 15,\n  \"motif\": \"Première visite\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2933,7 +2933,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"caisse.postman@test.local\",\n  \"nom\": \"Postman\",\n  \"prenom\": \"Caisse\",\n  \"role\": \"ACCUEIL\",\n  \"motDePasse\": \"motdepasse1\"\n}",
+              "raw": "{\n  \"email\": \"caisse.postman@test.local\",\n  \"nom\": \"Mint Sidi\",\n  \"prenom\": \"Aicha\",\n  \"role\": \"ACCUEIL\",\n  \"motDePasse\": \"motdepasse1\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

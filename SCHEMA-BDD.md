@@ -4,7 +4,7 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 
 | Migration | Contenu |
 |---|---|
-| `V1__init.sql` | Schéma du cœur métier : 11 tables, contraintes `CHECK` sur les statuts, index `idx_patients_nom_prenom` et `idx_rendez_vous_medecin_date` |
+| `V1__init.sql` | Schéma du cœur métier : 11 tables (21 tables après V12), contraintes `CHECK` sur les statuts, index `idx_patients_nom_prenom` et `idx_rendez_vous_medecin_date` |
 | `V2__seed_data.sql` | Comptes de démonstration (3 rôles) + 1 médecin |
 | `V3__fix_test_account_passwords.sql` | Correction du mot de passe de démonstration (sans réécrire V2) |
 | `V4__demo_data.sql` | Jeu de données de démonstration complet : catalogue d'actes, 3 médecins, 8 patients, 14 rendez-vous, 5 consultations, 4 prescriptions, 9 factures, paiements et statuts cohérents |
@@ -14,6 +14,9 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V8__fix_pharmacien_demo_password.sql` | Correction du mot de passe de démonstration du pharmacien |
 | `V9__pharmacy_commercial_fields.sql` | Prix achat/vente, fournisseur et date d'expiration des médicaments |
 | `V10__appointment_queue_number.sql` | Numéro de file quotidien pour les reçus de rendez-vous |
+| `V11__facture_annulation.sql` | Motif, date et auteur de l'annulation d'une facture |
+| `V12__parcours_actes_pharmacie_administration.sql` | Rôle ADMIN et identité des comptes ; durée et horodatage réel des rendez-vous ; table `actes_programmes` ; liens facture → rendez-vous / acte et dispensation → facture ; référence de paiement ; famille des médicaments et table `mouvements_stock` (historique reconstitué) ; tables `sessions_utilisateur`, `journal_activite` et `parametres_cabinet` |
+| `V13__noms_mauritaniens.sql` | Noms mauritaniens pour les médecins, le personnel et les patients de démonstration (V2 et V4 restent inchangées pour préserver les empreintes Flyway) |
 
 ## Diagramme entité-association
 

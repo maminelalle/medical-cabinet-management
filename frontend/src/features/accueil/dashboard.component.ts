@@ -59,7 +59,7 @@ export class DashboardComponent {
     });
   }
 
-  get prenomAffiche(): string { return this.auth.prenom() || 'à vous'; }
+  get prenomAffiche(): string { return this.auth.prenom() || ''; }
 
   get dateDuJour(): string {
     const libelle = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });

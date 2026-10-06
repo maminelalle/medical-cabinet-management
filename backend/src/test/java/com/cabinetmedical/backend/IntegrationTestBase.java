@@ -78,9 +78,9 @@ abstract class IntegrationTestBase {
         utilisateur("direction@test.local", Role.DIRECTION);
         utilisateur("pharmacien@test.local", Role.PHARMACIEN);
         utilisateur("admin@test.local", Role.ADMIN);
-        medecin = medecin("medecin@test.local", "Dupont", "Marie");
-        autreMedecin = medecin("cardio@test.local", "Martin", "Paul");
-        patient = nouveauPatient("Diallo", "Aminata");
+        medecin = medecin("medecin@test.local", "Ould Cheikh", "Mohamed");
+        autreMedecin = medecin("cardio@test.local", "Mint Ahmed", "Zeinabou");
+        patient = nouveauPatient("Ould Mohamed", "Lalle");
     }
 
     protected Patient nouveauPatient(String nom, String prenom) {

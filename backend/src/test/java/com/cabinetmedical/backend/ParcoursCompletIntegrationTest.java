@@ -21,7 +21,7 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
     @Test
     void unCreneauReserveNePeutPasEtreDonneAUnAutrePatientSaufAnnulation() throws Exception {
         String accueil = connexion("accueil@test.local");
-        long autrePatient = nouveauPatient("Sow", "Moussa").getId();
+        long autrePatient = nouveauPatient("Ould Sidi", "Mohamed").getId();
         LocalDateTime neufHeures = creneau(2, 9, 0);
         long premier = creerRendezVous(accueil, medecin.getId(), neufHeures);
 
@@ -44,16 +44,16 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
     void lAccueilCreeLePatientEnPrenantLeRendezVous() throws Exception {
         String accueil = connexion("accueil@test.local");
         long patientsAvant = patientRepository.count();
-        String demande = "{\"nouveauPatient\":{\"nom\":\"Ba\",\"prenom\":\"Fatou\",\"dateNaissance\":\"1995-02-03\",\"telephone\":\"36 00 00 00\"},"
+        String demande = "{\"nouveauPatient\":{\"nom\":\"Mint Ahmedou\",\"prenom\":\"Fatimetou\",\"dateNaissance\":\"1995-02-03\",\"telephone\":\"36 00 00 00\"},"
                 + "\"medecinId\":" + medecin.getId() + ",\"dateHeure\":\"" + creneau(1, 10, 0) + "\",\"motif\":\"Première visite\"}";
 
         envoyer("POST", "/api/rendezvous", accueil, demande).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.patientNom").value("Ba"))
+                .andExpect(jsonPath("$.patientNom").value("Mint Ahmedou"))
                 .andExpect(jsonPath("$.patientTelephone").value("36 00 00 00"));
         assertThat(patientRepository.count()).isEqualTo(patientsAvant + 1);
 
         // Creneau deja pris : ni rendez-vous ni fiche patient creee.
-        envoyer("POST", "/api/rendezvous", accueil, demande.replace("Ba", "Kane")).andExpect(status().isConflict());
+        envoyer("POST", "/api/rendezvous", accueil, demande.replace("Mint Ahmedou", "Ould Ely")).andExpect(status().isConflict());
         assertThat(patientRepository.count()).isEqualTo(patientsAvant + 1);
     }
 
@@ -190,7 +190,7 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
         envoyer("GET", "/api/admin/utilisateurs", connexion("direction@test.local"), null).andExpect(status().isForbidden());
 
         long id = id(envoyer("POST", "/api/admin/utilisateurs", admin,
-                "{\"email\":\"caisse2@test.local\",\"nom\":\"Diop\",\"prenom\":\"Awa\",\"role\":\"ACCUEIL\",\"motDePasse\":\"motdepasse1\"}")
+                "{\"email\":\"caisse2@test.local\",\"nom\":\"Mint Sidi\",\"prenom\":\"Aicha\",\"role\":\"ACCUEIL\",\"motDePasse\":\"motdepasse1\"}")
                 .andExpect(status().isCreated()));
         String jetonCaisse = "Bearer " + com.jayway.jsonpath.JsonPath.read(mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON).header("User-Agent", "Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
@@ -227,17 +227,17 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
         String chemin = "/api/medecins/presence";
 
         envoyer("GET", chemin, accueil, null).andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.nom == 'Dupont')].statut").value("ABSENT"));
+                .andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].statut").value("ABSENT"));
         String medecinJeton = connexion("medecin@test.local");
         envoyer("GET", "/api/auth/ping", medecinJeton, null).andExpect(status().isNoContent());
-        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Dupont')].statut").value("DISPONIBLE"));
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].statut").value("DISPONIBLE"));
         if (!memeJour) return; // Autour de minuit, le planning "du jour" ne permet pas ce scenario.
 
         long retard = creerRendezVous(accueil, medecin.getId(), ilYaUneHeure);
-        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Dupont')].statut").value("EN_RETARD"));
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].statut").value("EN_RETARD"));
         envoyer("PATCH", "/api/rendezvous/" + retard + "/statut", medecinJeton, "{\"statut\":\"EN_COURS\"}").andExpect(status().isOk());
-        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Dupont')].statut").value("EN_CONSULTATION"))
-                .andExpect(jsonPath("$[?(@.nom == 'Dupont')].patientEnCours").value("Aminata Diallo"));
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].statut").value("EN_CONSULTATION"))
+                .andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].patientEnCours").value("Lalle Ould Mohamed"));
         envoyer("GET", chemin, connexion("medecin@test.local"), null).andExpect(status().isForbidden());
     }
 

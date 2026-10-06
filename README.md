@@ -11,7 +11,9 @@ Application interne de gestion d'un cabinet médical. Le projet centralise les p
 - Migrations : Flyway
 - Authentification : JWT
 - Sécurité : Spring Security avec rôles et `@PreAuthorize`
-- Tests backend : JUnit / Spring Boot Test avec H2
+- Rapports PDF : JasperReports 7 (dossier patient, inventaire pharmacie)
+- Export Excel côté navigateur : SheetJS (xlsx)
+- Tests backend : JUnit / Spring Boot Test avec H2 (20 tests d'intégration)
 
 ## Architecture
 
@@ -113,17 +115,19 @@ Le fichier `frontend/src/environments/environment.ts` centralise :
 
 La migration de seed crée les comptes suivants. Le mot de passe est `password` pour chacun.
 
-| Rôle | Email | Accès principal |
-|---|---|---|
-| Accueil / Caisse | `accueil@test.local` | Patients, rendez-vous, factures, paiements |
-| Médecin (médecine générale) | `medecin@test.local` | Planning personnel, consultations, prescriptions, dossiers |
-| Médecin (cardiologie) | `cardio@test.local` | Planning personnel, consultations, prescriptions, dossiers |
-| Médecin (chirurgie) | `chirurgie@test.local` | Planning personnel, consultations, prescriptions, dossiers |
-| Direction | `direction@test.local` | Dashboard, indicateurs, lecture factures et actes |
-| Pharmacien | `pharmacien@test.local` | Stock, fiches produits, vente des ordonnances, finances pharmacie |
-| Administrateur | `admin@test.local` | Comptes, rôles, sessions et appareils, journal d'activité, coordonnées du cabinet |
+| Rôle | Email | Nom | Accès principal |
+|---|---|---|---|
+| Accueil / Caisse | `accueil@test.local` | Khadijetou Mint Salem | Patients, rendez-vous, factures, paiements |
+| Médecin (médecine générale) | `medecin@test.local` | Dr. Mohamed Ould Cheikh | Planning personnel, consultations, prescriptions, dossiers |
+| Médecin (cardiologie) | `cardio@test.local` | Dr. Zeinabou Mint Ahmed | Planning personnel, consultations, prescriptions, dossiers |
+| Médecin (chirurgie) | `chirurgie@test.local` | Dr. Sidi Ould Brahim | Planning personnel, consultations, prescriptions, dossiers |
+| Direction | `direction@test.local` | Ahmed Ould Abdallahi | Dashboard, indicateurs, lecture factures et actes |
+| Pharmacien | `pharmacien@test.local` | Moulaye Ould Sidaty | Stock, fiches produits, vente des ordonnances, finances pharmacie |
+| Administrateur | `admin@test.local` | El Hacen Ould Mohamed Lemine | Comptes, rôles, sessions et appareils, journal d'activité, coordonnées du cabinet |
 
 Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamais de mot de passe en clair).
+
+Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi, Fatimetou Mint Ahmedou, Brahim Ould Ely, Aichetou Mint Cheikh, Ahmedou Ould Bakar, Mariem Mint Moctar et Cheikh Ould Sidi Mohamed.
 
 ## Parcours par interface
 
@@ -248,7 +252,7 @@ Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamai
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
-La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, et `V13` remplace les noms de démonstration par des noms mauritaniens. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
 
 ## Interface Angular livrée
 
@@ -286,7 +290,7 @@ La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur s
 | `/parametres` | Tous les rôles | Profil connecté, rôle et accès applicatifs |
 | `/design-system` | Tous | Vitrine des composants de l'interface |
 
-La redirection après connexion dépend du rôle : accueil vers `/accueil`, médecin vers `/medecin/dashboard`, direction vers `/direction/dashboard`.
+La redirection après connexion dépend du rôle : accueil vers `/accueil`, médecin vers `/medecin/dashboard`, pharmacien vers `/pharmacie`, direction vers `/direction/dashboard`, administrateur vers `/admin`.
 
 ## Endpoints REST
 
@@ -378,10 +382,12 @@ Résultat : compilation Angular réussie avec les routes lazy-loaded (planning, 
 
 ## Scénario de démonstration final
 
-1. Se connecter avec `accueil@test.local` / `password`, rechercher un patient, ouvrir ou créer un rendez-vous, puis créer une facture multi-actes et enregistrer un paiement partiel.
-2. Se connecter avec `medecin@test.local` / `password`, ouvrir son planning, rédiger un compte-rendu avec plusieurs lignes de prescription, puis consulter le dossier médical et son historique.
-3. Se connecter avec `pharmacien@test.local` / `password`, ouvrir `/pharmacie`, préparer l'ordonnance du patient et confirmer la dispensation ; le stock diminue et la prescription disparaît de la liste à délivrer.
-4. Se connecter avec `direction@test.local` / `password`, consulter `/direction/dashboard` sur le mois ou l'année, vérifier les consultations par médecin, le chiffre d'affaires par type d'acte et les impayés, puis ouvrir le stock pharmacie en lecture.
+1. **Accueil** (`accueil@test.local`, Khadijetou Mint Salem) : « Prendre un rendez-vous », créer le patient *Sidi Ould Ahmed* directement dans le formulaire, choisir un créneau libre du Dr. Mohamed Ould Cheikh, puis « Rédiger la facture maintenant » et encaisser par Bankily avec sa référence.
+2. **Médecin** (`medecin@test.local`, Dr. Mohamed Ould Cheikh) : dans « Mon planning », **▶ Démarrer** la consultation, rédiger le compte-rendu, **■ Terminer**, écrire l'ordonnance en cherchant « antalgiques » dans le stock, puis programmer une chirurgie avec date, heure et lieu.
+3. **Pharmacien** (`pharmacien@test.local`, Moulaye Ould Sidaty) : onglet « Ordonnances à délivrer », vendre l'ordonnance avec un paiement Masrvi et sa référence ; vérifier la fiche produit (stock et mouvements) et l'onglet Finances.
+4. **Accueil** : dans « Actes programmés », générer la facture de la chirurgie après sa réalisation ; dans « Facturation », vérifier les onglets À payer / Payées.
+5. **Direction** (`direction@test.local`, Ahmed Ould Abdallahi) : indicateurs du mois et présence des médecins.
+6. **Administrateur** (`admin@test.local`, El Hacen Ould Mohamed Lemine) : connexions du jour, appareils connectés, journal d'activité de tout le scénario.
 
 Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 
@@ -400,18 +406,20 @@ Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 | Dossier patient côté médecin (compte-rendu, prescription) | Terminé (API + écrans `/rendez-vous/:id/consultation` et `/dossier/:patientId`) |
 | Facturation multi-actes et paiements | Terminé (statut recalculé côté serveur) |
 | Tableau de bord direction | Terminé (4 endpoints agrégés sur données réelles) |
-| Jeu de données de démonstration | Terminé (`V4__demo_data.sql` + pharmacie `V5` à `V10`) |
+| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`) |
+| Pharmacie interne | Terminé (stock, mouvements, vente avec paiement, finances) |
+| Actes programmés (chirurgie, traitement...) | Terminé (programmation, réalisation, facturation) |
+| Administration | Terminé (comptes, sessions, journal, permissions) |
 
 ## Extensions bonus
 
-La pharmacie interne est livrée après stabilisation du cœur :
+Livrées après stabilisation du cœur :
 
-- pharmacie interne (catalogue de médicaments, stock, dispensation liée à une prescription) ;
-- laboratoire (demande d'examen, résultat rattaché au dossier) ;
-- bloc opératoire (planning des interventions avec créneau et salle) ;
-- espace patient.
+- pharmacie interne : familles, stock et mouvements, fiche produit, vente des ordonnances avec paiement, finances ;
+- actes programmés : chirurgie, traitement, examen, hospitalisation et soins planifiés à un créneau du médecin, avec compte-rendu, résultat et facture ;
+- administration : comptes, sessions, journal d'activité, permissions.
 
-L'hospitalisation et l'acte chirurgical sont couverts comme **types d'actes facturables** (`HOSPITALISATION`, `CHIRURGIE`), sans module de planning de bloc ou de lits.
+Restent possibles : laboratoire (demande d'examen, résultat rattaché au dossier), gestion des salles et des lits, espace patient.
 
 Le cœur suit le parcours :
 

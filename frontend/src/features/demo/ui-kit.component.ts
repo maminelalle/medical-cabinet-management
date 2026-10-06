@@ -48,10 +48,10 @@ export class UiKitComponent {
   ];
 
   readonly invoices: InvoiceRow[] = [
-    { id: 'FAC-142', patient: 'Aminata Diallo', initials: 'AD', date: '15/09/2026', amount: '12 500 MRU', status: 'Payée', badge: 'payee' },
-    { id: 'FAC-141', patient: 'Moussa Sow', initials: 'MS', date: '15/09/2026', amount: '8 000 MRU', status: 'Partielle', badge: 'partielle' },
-    { id: 'FAC-140', patient: 'Fatima Ba', initials: 'FB', date: '14/09/2026', amount: '25 000 MRU', status: 'En attente', badge: 'en_attente' },
-    { id: 'FAC-139', patient: 'Ibrahima Kane', initials: 'IK', date: '13/09/2026', amount: '6 500 MRU', status: 'Annulée', badge: 'annulee' }
+    { id: 'FAC-142', patient: 'Lalle Ould Mohamed', initials: 'LO', date: '15/09/2026', amount: '12 500 MRU', status: 'Payée', badge: 'payee' },
+    { id: 'FAC-141', patient: 'Mohamed Ould Sidi', initials: 'MO', date: '15/09/2026', amount: '8 000 MRU', status: 'Partielle', badge: 'partielle' },
+    { id: 'FAC-140', patient: 'Fatimetou Mint Ahmedou', initials: 'FM', date: '14/09/2026', amount: '25 000 MRU', status: 'En attente', badge: 'en_attente' },
+    { id: 'FAC-139', patient: 'Brahim Ould Ely', initials: 'BO', date: '13/09/2026', amount: '6 500 MRU', status: 'Annulée', badge: 'annulee' }
   ];
 
   readonly navPreview: string[][] = [
