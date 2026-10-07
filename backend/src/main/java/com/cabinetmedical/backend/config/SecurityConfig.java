@@ -1,5 +1,6 @@
 package com.cabinetmedical.backend.config;
 
+import org.springframework.http.HttpMethod;
 import com.cabinetmedical.backend.security.JwtAuthenticationFilter;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,8 @@ public class SecurityConfig {
                         // Fin des flux temps reel (dispatch asynchrone) : deja authentifies a l'ouverture.
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                        // Apparence (nom, logo, couleurs) : necessaire a la page de connexion.
+                        .requestMatchers(HttpMethod.GET, "/api/parametres-cabinet/apparence").permitAll()
                         .requestMatchers("/actuator/health", "/error").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())

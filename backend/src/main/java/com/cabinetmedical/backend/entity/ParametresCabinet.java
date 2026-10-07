@@ -33,6 +33,17 @@ public class ParametresCabinet {
     private Integer controleGratuitJours = 30;
     @Column(name = "controle_gratuit_nombre", nullable = false)
     private Integer controleGratuitNombre = 1;
+    /** Apparence de l'interface (barre laterale, connexion, onglet du navigateur), reglee par l'administrateur. */
+    @Column(name = "nom_interface", nullable = false, length = 80)
+    private String nomInterface = "Cabinets Médicaux";
+    @Column(name = "couleur_principale", nullable = false, length = 7)
+    private String couleurPrincipale = "#2563eb";
+    @Column(name = "couleur_accent", nullable = false, length = 7)
+    private String couleurAccent = "#10b981";
+    @Column(name = "couleur_bouton", nullable = false, length = 7)
+    private String couleurBouton = "#111a2e";
+    @Column(columnDefinition = "TEXT")
+    private String logo;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 }

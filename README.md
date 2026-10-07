@@ -109,7 +109,7 @@ Le fichier `frontend/src/environments/environment.ts` centralise :
 
 ### Collection Postman
 
-`postman/cabinet-medical.postman_collection.json` contient les 96 requêtes de l'API, rangées en 11 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
+`postman/cabinet-medical.postman_collection.json` contient les 98 requêtes de l'API, rangées en 11 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
 
 ## Comptes de démonstration
 
@@ -171,6 +171,7 @@ Patients de démonstration (Nouakchott) : Lalle Mohamed, Mohamed Sidi, Fatimetou
 - **Connexions et appareils** : sessions ouvertes, appareil, navigateur, système, adresse IP, dernière activité ; **révocation** d'une session.
 - **Journal d'activité** : toutes les actions (connexions et échecs, créations, paiements, annulations, exports PDF...), sans aucune donnée médicale.
 - **Rôles et permissions** et **coordonnées du cabinet** imprimées sur tous les documents.
+- **Personnalisation de l'interface** (page **Design system**) : nom de l'interface, sous-titre, **logo** (PNG, JPEG, WEBP ou SVG, 300 Ko au plus) et **couleurs** (principale, accent, boutons). Aperçu en direct, puis application à tous les écrans, à la page de connexion et à l'onglet du navigateur pour tous les utilisateurs.
 
 ### Langue arabe
 
@@ -269,7 +270,7 @@ Patients de démonstration (Nouakchott) : Lalle Mohamed, Mohamed Sidi, Fatimetou
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
-La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, `V13` remplace les noms de démonstration par des noms mauritaniens, et `V14` ajoute la grille tarifaire par spécialité et les tarifs de soins, la règle du contrôle gratuit, le lien rendez-vous de contrôle → consultation d'origine et la table `soins`, et `V15` simplifie les noms de démonstration (sans « Ould » ni « Mint » : Lalle Mohamed, Ahmed Sidi...). Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, `V13` remplace les noms de démonstration par des noms mauritaniens, et `V14` ajoute la grille tarifaire par spécialité et les tarifs de soins, la règle du contrôle gratuit, le lien rendez-vous de contrôle → consultation d'origine et la table `soins`, et `V15` simplifie les noms de démonstration (sans « Ould » ni « Mint » : Lalle Mohamed, Ahmed Sidi...), et `V16` ajoute l'apparence de l'interface (nom, logo, couleurs). Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
 
 ## Interface Angular livrée
 
@@ -360,6 +361,7 @@ La redirection après connexion dépend du rôle : accueil vers `/accueil`, méd
 | Session | `POST /api/auth/logout`, `GET /api/auth/ping` | Utilisateur connecté |
 | Administration | `/api/admin/tableau-de-bord`, `/utilisateurs`, `/sessions`, `/journal`, `/permissions` | ADMIN |
 | Cabinet | `GET /api/parametres-cabinet` (tous), `PUT` (ADMIN) | Selon méthode |
+| Apparence | `GET /api/parametres-cabinet/apparence` (public : page de connexion), `PUT` | ADMIN |
 
 ### Format des erreurs
 
@@ -380,7 +382,7 @@ cd backend
 ./mvnw.cmd test
 ```
 
-Résultat : 26 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `ParcoursCompletIntegrationTest` vérifient à travers l'API réelle (JWT compris, base H2) :
+Résultat : 27 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `ParcoursCompletIntegrationTest` vérifient à travers l'API réelle (JWT compris, base H2) :
 
 - paiement partiel puis complet, recalcul du statut, refus d'un paiement supérieur au reste dû (`422`) ;
 - annulation de facture : motif obligatoire, refus si déjà annulée ou déjà encaissée ;

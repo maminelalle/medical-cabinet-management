@@ -406,3 +406,4 @@ Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier
 | 7 octobre 2026 | Grille tarifaire de la direction (tarif de consultation par spécialité, soins), consultation de contrôle gratuite réglable, soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) | V14 |
 | 7 octobre 2026 | Interface bilingue français / arabe avec lecture de droite à gauche | — |
 | 7 octobre 2026 | Noms de démonstration simplifiés (sans « Ould » ni « Mint ») | V15 |
+| 7 octobre 2026 | Personnalisation de l'interface par l'administrateur : nom, sous-titre, logo et couleurs appliqués à toute l'application ; impression limitée au document | V16 |

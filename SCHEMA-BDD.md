@@ -19,6 +19,7 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V13__noms_mauritaniens.sql` | Noms mauritaniens pour les médecins, le personnel et les patients de démonstration (V2 et V4 restent inchangées pour préserver les empreintes Flyway) |
 | `V14__tarifs_controle_gratuit_soins.sql` | Catalogue : `specialite` (tarif de consultation par spécialité) et `description`, tarifs de soins (injection, perfusion, nébulisation, constantes) ; règle du contrôle gratuit dans `parametres_cabinet` (`controle_gratuit_actif`, `_jours`, `_nombre`) ; `rendez_vous.rendez_vous_origine_id` (contrôle → consultation payée) ; table `soins` et `factures.soin_id` |
 | `V15__noms_sans_ould_mint.sql` | Noms de démonstration simplifiés : « Ould » et « Mint » retirés (patients, médecins, comptes) |
+| `V16__apparence_interface.sql` | Apparence de l'interface dans `parametres_cabinet` : `nom_interface`, `couleur_principale`, `couleur_accent`, `couleur_bouton` (#RRGGBB contrôlé), `logo` (data URL) |
 
 ## Diagramme entité-association
 
@@ -240,6 +241,11 @@ erDiagram
         boolean controle_gratuit_actif
         integer controle_gratuit_jours "1 a 365, defaut 30"
         integer controle_gratuit_nombre "1 a 10, defaut 1"
+        varchar nom_interface
+        varchar couleur_principale "#RRGGBB"
+        varchar couleur_accent "#RRGGBB"
+        varchar couleur_bouton "#RRGGBB"
+        text logo "data URL image"
     }
 ```
 

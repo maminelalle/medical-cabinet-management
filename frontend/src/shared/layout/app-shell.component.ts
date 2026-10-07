@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { FactureService } from '../../core/factures/facture.service';
 import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 import { ChoixLangueComponent } from '../langue/choix-langue.component';
+import { ApparenceService } from '../../core/apparence/apparence.service';
 
 @Component({
   selector: 'app-shell',
@@ -16,12 +17,16 @@ import { ChoixLangueComponent } from '../langue/choix-langue.component';
     <div class="app-shell" [class.is-collapsed]="collapsed()">
       <aside class="sidebar">
         <a class="brand" [routerLink]="homeLink">
-          <span class="brand-mark">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5v11M6.5 12h11" /></svg>
+          <span class="brand-mark" [class.avec-logo]="apparence().logo">
+            @if (apparence().logo) {
+              <img [src]="apparence().logo" alt="">
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5v11M6.5 12h11" /></svg>
+            }
           </span>
           <span class="brand-copy">
-            <small>Cabinet de groupe</small>
-            <strong>Cabinets Médicaux</strong>
+            @if (apparence().sousTitre) { <small>{{ apparence().sousTitre }}</small> }
+            <strong>{{ apparence().nomInterface }}</strong>
           </span>
         </a>
 
@@ -212,6 +217,7 @@ import { ChoixLangueComponent } from '../langue/choix-langue.component';
 })
 export class AppShellComponent {
   readonly auth = inject(AuthService);
+  readonly apparence = inject(ApparenceService).apparence;
   private readonly router = inject(Router);
   private readonly factureService = inject(FactureService);
 

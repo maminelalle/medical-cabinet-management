@@ -1,5 +1,6 @@
 package com.cabinetmedical.backend.controller;
 
+import com.cabinetmedical.backend.dto.ApparenceDto;
 import com.cabinetmedical.backend.dto.ParametresCabinetDto;
 import com.cabinetmedical.backend.dto.RegleControleGratuitDto;
 import com.cabinetmedical.backend.service.ControleGratuitService;
@@ -23,6 +24,14 @@ public class ParametresCabinetController {
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ParametresCabinetDto modifier(@Valid @RequestBody ParametresCabinetDto request) { return service.modifier(request); }
+
+    /** Apparence de l'interface : lisible sans connexion (page de connexion). */
+    @GetMapping("/apparence")
+    public ApparenceDto apparence() { return service.lireApparence(); }
+
+    @PutMapping("/apparence")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApparenceDto modifierApparence(@Valid @RequestBody ApparenceDto request) { return service.modifierApparence(request); }
 
     /** Regle du controle gratuit (delai et nombre), affichee a l'accueil et reglee par la direction. */
     @GetMapping("/controle-gratuit")

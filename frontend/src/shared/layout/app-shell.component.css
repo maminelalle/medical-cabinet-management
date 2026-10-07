@@ -181,3 +181,7 @@ nav em { padding: 2px 7px; border-radius: var(--radius-pill); background: var(--
 /* Lecture de droite a gauche : la fleche de repli suit le sens de la barre laterale. */
 [dir='rtl'] .collapse-toggle svg { transform: scaleX(-1); }
 [dir='rtl'] .app-shell.is-collapsed .collapse-toggle svg { transform: none; }
+
+/* Logo choisi par l administrateur a la place de la croix */
+.brand-mark.avec-logo { background: var(--bg-surface); border: 1px solid var(--border); box-shadow: none; overflow: hidden; padding: 4px; }
+.brand-mark.avec-logo img { width: 100%; height: 100%; object-fit: contain; }

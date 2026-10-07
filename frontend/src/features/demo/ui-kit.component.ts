@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { PersonnalisationComponent } from './personnalisation.component';
 
 interface Swatch { label: string; token: string; }
 interface Kpi { label: string; value: string; caption: string; icon: string; tone: string; accent: string; }
@@ -6,6 +7,7 @@ interface InvoiceRow { id: string; patient: string; initials: string; date: stri
 
 @Component({
   selector: 'app-ui-kit',
+  imports: [PersonnalisationComponent],
   standalone: true,
   templateUrl: './ui-kit.component.html',
   styleUrl: './ui-kit.component.css'

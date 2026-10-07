@@ -3828,6 +3828,71 @@
           }
         },
         {
+          "name": "Apparence de l’interface (sans connexion)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parametres-cabinet/apparence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parametres-cabinet",
+                "apparence"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Personnaliser l’interface (nom, couleurs)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parametres-cabinet/apparence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parametres-cabinet",
+                "apparence"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_ADMIN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomInterface\": \"Cabinets Médicaux\",\n  \"sousTitre\": \"Cabinet de groupe\",\n  \"couleurPrincipale\": \"#2563eb\",\n  \"couleurAccent\": \"#10b981\",\n  \"couleurBouton\": \"#111a2e\",\n  \"logo\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Présence des médecins",
           "request": {
             "method": "GET",

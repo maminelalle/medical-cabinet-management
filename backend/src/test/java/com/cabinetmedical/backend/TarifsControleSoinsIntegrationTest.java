@@ -153,6 +153,27 @@ class TarifsControleSoinsIntegrationTest extends IntegrationTestBase {
         envoyer("POST", "/api/soins/" + soin + "/annulation", accueil, "{\"motif\":\"Erreur\"}").andExpect(status().isConflict());
     }
 
+    @Test
+    void lAdministrateurPersonnaliseLApparenceDeLInterface() throws Exception {
+        // Lisible sans connexion : la page de connexion affiche le nom et le logo du cabinet.
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/parametres-cabinet/apparence"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nomInterface").value("Cabinets Médicaux"))
+                .andExpect(jsonPath("$.couleurPrincipale").value("#2563eb"));
+
+        String apparence = "{\"nomInterface\":\"Clinique Nour\",\"sousTitre\":\"Nouakchott\",\"couleurPrincipale\":\"#0F766E\","
+                + "\"couleurAccent\":\"#16a34a\",\"couleurBouton\":\"#1f2937\",\"logo\":\"data:image/png;base64,iVBORw0KGgo=\"}";
+        envoyer("PUT", "/api/parametres-cabinet/apparence", connexion("direction@test.local"), apparence).andExpect(status().isForbidden());
+        String admin = connexion("admin@test.local");
+        envoyer("PUT", "/api/parametres-cabinet/apparence", admin, apparence)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nomInterface").value("Clinique Nour"))
+                .andExpect(jsonPath("$.couleurPrincipale").value("#0f766e"));
+        envoyer("PUT", "/api/parametres-cabinet/apparence", admin, apparence.replace("#0F766E", "rouge")).andExpect(status().isBadRequest());
+        envoyer("PUT", "/api/parametres-cabinet/apparence", admin, apparence.replace("data:image/png", "data:text/html"))
+                .andExpect(status().isBadRequest());
+    }
+
     private org.springframework.test.web.servlet.ResultActions eligibilite(String jeton, long medecinId, LocalDateTime date)
             throws Exception {
         return envoyer("GET", "/api/rendezvous/controle-gratuit?patientId=" + patient.getId() + "&medecinId=" + medecinId
