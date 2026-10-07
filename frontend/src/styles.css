@@ -411,3 +411,13 @@ html[lang='ar'] { --font-sans: 'Cairo', 'Manrope', system-ui, sans-serif; }
 html[lang='ar'] body * { letter-spacing: 0 !important; }
 html[dir='rtl'] input[type='date'], html[dir='rtl'] input[type='time'], html[dir='rtl'] input[type='number'],
 html[dir='rtl'] input[type='email'], html[dir='rtl'] input[type='tel'] { direction: ltr; text-align: end; }
+
+/* Impression : seul le document s'imprime. Ces regles sont globales car les styles des composants
+   (encapsules par Angular) ne peuvent pas masquer la barre laterale ni la barre du haut. */
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; }
+  .sidebar, .topbar, .notifications, .collapse-toggle, .print-actions, app-choix-langue { display: none !important; }
+  .app-shell, .main-area { display: block !important; min-height: 0 !important; background: #fff !important; }
+  .page-content { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+}

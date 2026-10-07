@@ -42,8 +42,7 @@
 .print-actions { display: flex; justify-content: space-between; gap: 12px; }
 @media (max-width: 640px) { .print-document { padding: 22px; } }
 @media print {
-  body * { visibility: hidden !important; }
-  .print-document, .print-document * { visibility: visible !important; }
-  .print-document { position: absolute; inset: 0; width: auto; border: 0; box-shadow: none; border-radius: 0; padding: 0; }
+  .print-page { display: block; max-width: none; margin: 0; }
+  .print-document { width: auto; border: 0; box-shadow: none; border-radius: 0; padding: 0; }
   .print-actions { display: none !important; }
 }
