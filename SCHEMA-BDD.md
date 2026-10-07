@@ -18,6 +18,7 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V12__parcours_actes_pharmacie_administration.sql` | Rôle ADMIN et identité des comptes ; durée et horodatage réel des rendez-vous ; table `actes_programmes` ; liens facture → rendez-vous / acte et dispensation → facture ; référence de paiement ; famille des médicaments et table `mouvements_stock` (historique reconstitué) ; tables `sessions_utilisateur`, `journal_activite` et `parametres_cabinet` |
 | `V13__noms_mauritaniens.sql` | Noms mauritaniens pour les médecins, le personnel et les patients de démonstration (V2 et V4 restent inchangées pour préserver les empreintes Flyway) |
 | `V14__tarifs_controle_gratuit_soins.sql` | Catalogue : `specialite` (tarif de consultation par spécialité) et `description`, tarifs de soins (injection, perfusion, nébulisation, constantes) ; règle du contrôle gratuit dans `parametres_cabinet` (`controle_gratuit_actif`, `_jours`, `_nombre`) ; `rendez_vous.rendez_vous_origine_id` (contrôle → consultation payée) ; table `soins` et `factures.soin_id` |
+| `V15__noms_sans_ould_mint.sql` | Noms de démonstration simplifiés : « Ould » et « Mint » retirés (patients, médecins, comptes) |
 
 ## Diagramme entité-association
 

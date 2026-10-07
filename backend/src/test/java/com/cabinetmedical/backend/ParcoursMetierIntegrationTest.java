@@ -128,10 +128,10 @@ class ParcoursMetierIntegrationTest extends IntegrationTestBase {
         String accueil = connexion("accueil@test.local");
         String dossier = """
                 {"format":"cabinet-medical.dossier-patient","version":1,
-                 "patient":{"id":99,"nom":"Ould Sidi","prenom":"Mohamed","dateNaissance":"1990-05-02","telephone":"22 00 00 00"},
-                 "consultations":[{"dateHeure":"2026-01-10T10:00:00","motif":"Fièvre","medecinNom":"Ould Cheikh","medecinPrenom":"Mohamed",
+                 "patient":{"id":99,"nom":"Sidi","prenom":"Mohamed","dateNaissance":"1990-05-02","telephone":"22 00 00 00"},
+                 "consultations":[{"dateHeure":"2026-01-10T10:00:00","motif":"Fièvre","medecinNom":"Cheikh","medecinPrenom":"Mohamed",
                    "compteRendu":"Angine","prescription":{"datePrescription":"2026-01-10","lignes":[{"medicament":"Amoxicilline 500 mg","posologie":"3/j","duree":"7 jours"}]}}],
-                 "rendezVous":[{"dateHeure":"2026-01-10T10:00:00","medecinNom":"Ould Cheikh","medecinPrenom":"Mohamed","statut":"TERMINE"}],
+                 "rendezVous":[{"dateHeure":"2026-01-10T10:00:00","medecinNom":"Cheikh","medecinPrenom":"Mohamed","statut":"TERMINE"}],
                  "factures":[{"dateFacture":"2026-01-10","statut":"PAYEE","lignes":[{"libelle":"Consultation","typeActe":"CONSULTATION","montant":1500}],
                    "paiements":[{"montant":1500,"datePaiement":"2026-01-10T10:30:00Z","moyenPaiement":"ESPECES"}]}]}
                 """;

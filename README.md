@@ -117,17 +117,17 @@ La migration de seed crée les comptes suivants. Le mot de passe est `password` 
 
 | Rôle | Email | Nom | Accès principal |
 |---|---|---|---|
-| Accueil / Caisse | `accueil@test.local` | Khadijetou Mint Salem | Patients, rendez-vous, factures, paiements |
-| Médecin (médecine générale) | `medecin@test.local` | Dr. Mohamed Ould Cheikh | Planning personnel, consultations, prescriptions, dossiers |
-| Médecin (cardiologie) | `cardio@test.local` | Dr. Zeinabou Mint Ahmed | Planning personnel, consultations, prescriptions, dossiers |
-| Médecin (chirurgie) | `chirurgie@test.local` | Dr. Sidi Ould Brahim | Planning personnel, consultations, prescriptions, dossiers |
-| Direction | `direction@test.local` | Ahmed Ould Abdallahi | Dashboard, indicateurs, lecture factures et actes |
-| Pharmacien | `pharmacien@test.local` | Moulaye Ould Sidaty | Stock, fiches produits, vente des ordonnances, finances pharmacie |
-| Administrateur | `admin@test.local` | El Hacen Ould Mohamed Lemine | Comptes, rôles, sessions et appareils, journal d'activité, coordonnées du cabinet |
+| Accueil / Caisse | `accueil@test.local` | Khadijetou Salem | Patients, rendez-vous, factures, paiements |
+| Médecin (médecine générale) | `medecin@test.local` | Dr. Mohamed Cheikh | Planning personnel, consultations, prescriptions, dossiers |
+| Médecin (cardiologie) | `cardio@test.local` | Dr. Zeinabou Ahmed | Planning personnel, consultations, prescriptions, dossiers |
+| Médecin (chirurgie) | `chirurgie@test.local` | Dr. Sidi Brahim | Planning personnel, consultations, prescriptions, dossiers |
+| Direction | `direction@test.local` | Ahmed Abdallahi | Dashboard, indicateurs, lecture factures et actes |
+| Pharmacien | `pharmacien@test.local` | Moulaye Sidaty | Stock, fiches produits, vente des ordonnances, finances pharmacie |
+| Administrateur | `admin@test.local` | El Hacen Mohamed Lemine | Comptes, rôles, sessions et appareils, journal d'activité, coordonnées du cabinet |
 
 Le mot de passe est `password` pour tous les comptes (hash BCrypt en base, jamais de mot de passe en clair).
 
-Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi, Fatimetou Mint Ahmedou, Brahim Ould Ely, Aichetou Mint Cheikh, Ahmedou Ould Bakar, Mariem Mint Moctar et Cheikh Ould Sidi Mohamed.
+Patients de démonstration (Nouakchott) : Lalle Mohamed, Mohamed Sidi, Fatimetou Ahmedou, Brahim Ely, Aichetou Cheikh, Ahmedou Bakar, Mariem Moctar et Cheikh Sidi Mohamed.
 
 ## Parcours par interface
 
@@ -269,7 +269,7 @@ Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi,
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
-La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, `V13` remplace les noms de démonstration par des noms mauritaniens, et `V14` ajoute la grille tarifaire par spécialité et les tarifs de soins, la règle du contrôle gratuit, le lien rendez-vous de contrôle → consultation d'origine et la table `soins`. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, `V13` remplace les noms de démonstration par des noms mauritaniens, et `V14` ajoute la grille tarifaire par spécialité et les tarifs de soins, la règle du contrôle gratuit, le lien rendez-vous de contrôle → consultation d'origine et la table `soins`, et `V15` simplifie les noms de démonstration (sans « Ould » ni « Mint » : Lalle Mohamed, Ahmed Sidi...). Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
 
 ## Interface Angular livrée
 
@@ -410,12 +410,12 @@ Résultat : compilation Angular réussie avec les routes lazy-loaded (planning, 
 
 ## Scénario de démonstration final
 
-1. **Accueil** (`accueil@test.local`, Khadijetou Mint Salem) : « Prendre un rendez-vous », créer le patient *Sidi Ould Ahmed* directement dans le formulaire, choisir un créneau libre du Dr. Mohamed Ould Cheikh, puis « Rédiger la facture maintenant » et encaisser par Bankily avec sa référence.
-2. **Médecin** (`medecin@test.local`, Dr. Mohamed Ould Cheikh) : dans « Mon planning », **▶ Démarrer** la consultation, rédiger le compte-rendu, **■ Terminer**, écrire l'ordonnance en cherchant « antalgiques » dans le stock, puis programmer une chirurgie avec date, heure et lieu.
-3. **Pharmacien** (`pharmacien@test.local`, Moulaye Ould Sidaty) : onglet « Ordonnances à délivrer », vendre l'ordonnance avec un paiement Masrvi et sa référence ; vérifier la fiche produit (stock et mouvements) et l'onglet Finances.
+1. **Accueil** (`accueil@test.local`, Khadijetou Salem) : « Prendre un rendez-vous », créer le patient *Sidi Ahmed* directement dans le formulaire, choisir un créneau libre du Dr. Mohamed Cheikh, puis « Rédiger la facture maintenant » et encaisser par Bankily avec sa référence.
+2. **Médecin** (`medecin@test.local`, Dr. Mohamed Cheikh) : dans « Mon planning », **▶ Démarrer** la consultation, rédiger le compte-rendu, **■ Terminer**, écrire l'ordonnance en cherchant « antalgiques » dans le stock, puis programmer une chirurgie avec date, heure et lieu.
+3. **Pharmacien** (`pharmacien@test.local`, Moulaye Sidaty) : onglet « Ordonnances à délivrer », vendre l'ordonnance avec un paiement Masrvi et sa référence ; vérifier la fiche produit (stock et mouvements) et l'onglet Finances.
 4. **Accueil** : dans « Actes programmés », générer la facture de la chirurgie après sa réalisation ; dans « Facturation », vérifier les onglets À payer / Payées.
-5. **Direction** (`direction@test.local`, Ahmed Ould Abdallahi) : indicateurs du mois et présence des médecins.
-6. **Administrateur** (`admin@test.local`, El Hacen Ould Mohamed Lemine) : connexions du jour, appareils connectés, journal d'activité de tout le scénario.
+5. **Direction** (`direction@test.local`, Ahmed Abdallahi) : indicateurs du mois et présence des médecins.
+6. **Administrateur** (`admin@test.local`, El Hacen Mohamed Lemine) : connexions du jour, appareils connectés, journal d'activité de tout le scénario.
 
 Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 
@@ -434,7 +434,7 @@ Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 | Dossier patient côté médecin (compte-rendu, prescription) | Terminé (API + écrans `/rendez-vous/:id/consultation` et `/dossier/:patientId`) |
 | Facturation multi-actes et paiements | Terminé (statut recalculé côté serveur) |
 | Tableau de bord direction | Terminé (4 endpoints agrégés sur données réelles) |
-| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`, tarifs et soins `V14`) |
+| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`, tarifs et soins `V14`, noms simplifiés `V15`) |
 | Pharmacie interne | Terminé (stock, mouvements, vente avec paiement, finances) |
 | Actes programmés (chirurgie, traitement...) | Terminé (programmation, réalisation, facturation) |
 | Administration | Terminé (comptes, sessions, journal, permissions) |

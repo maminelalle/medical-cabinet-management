@@ -130,7 +130,7 @@ import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
             </label>
             <label>Intitulé *<input formControlName="intitule" placeholder="Injection intramusculaire"></label>
             <label>Produit administré<input formControlName="produit" placeholder="Ceftriaxone 1 g (apporté par le patient)"></label>
-            <label>Prescripteur<input formControlName="prescripteurExterne" placeholder="Dr. Ould Ely, clinique externe"></label>
+            <label>Prescripteur<input formControlName="prescripteurExterne" placeholder="Dr. Ely, clinique externe"></label>
             <label>Observations<textarea rows="2" formControlName="observations"></textarea></label>
             @if (tarif) { <p class="tarif">Tarif de la direction : <strong>{{ tarif.libelle }} · {{ format(tarif.montantDefaut) }}</strong></p> }
             <div class="form-actions">

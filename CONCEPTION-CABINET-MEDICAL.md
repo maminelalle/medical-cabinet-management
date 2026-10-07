@@ -405,3 +405,4 @@ Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier
 | 7 octobre 2026 | Direction : paramètres des employés (ajout, modification, suppression, sessions) ; présence en temps réel par flux SSE | — |
 | 7 octobre 2026 | Grille tarifaire de la direction (tarif de consultation par spécialité, soins), consultation de contrôle gratuite réglable, soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) | V14 |
 | 7 octobre 2026 | Interface bilingue français / arabe avec lecture de droite à gauche | — |
+| 7 octobre 2026 | Noms de démonstration simplifiés (sans « Ould » ni « Mint ») | V15 |

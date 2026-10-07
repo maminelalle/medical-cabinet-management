@@ -129,7 +129,7 @@ class TarifsControleSoinsIntegrationTest extends IntegrationTestBase {
         long soin = id(envoyer("POST", "/api/soins", accueil, soinJson())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.statut").value("EN_ATTENTE"))
-                .andExpect(jsonPath("$.prescripteur").value("Dr. Ould Ely (clinique externe)")));
+                .andExpect(jsonPath("$.prescripteur").value("Dr. Ely (clinique externe)")));
         envoyer("POST", "/api/soins/" + soin + "/terminer", accueil, "{}").andExpect(status().isConflict());
         envoyer("POST", "/api/soins/" + soin + "/demarrer", accueil, null)
                 .andExpect(status().isOk()).andExpect(jsonPath("$.statut").value("EN_COURS"));
@@ -171,6 +171,6 @@ class TarifsControleSoinsIntegrationTest extends IntegrationTestBase {
 
     private String soinJson() {
         return "{\"patientId\":" + patient.getId() + ",\"type\":\"INJECTION\",\"intitule\":\"Injection intramusculaire\","
-                + "\"produit\":\"Ceftriaxone 1 g (apporté par le patient)\",\"prescripteurExterne\":\"Dr. Ould Ely (clinique externe)\"}";
+                + "\"produit\":\"Ceftriaxone 1 g (apporté par le patient)\",\"prescripteurExterne\":\"Dr. Ely (clinique externe)\"}";
     }
 }

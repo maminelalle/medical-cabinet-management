@@ -49,7 +49,7 @@
 
           @if (modePatient === 'existant') {
             <label>Rechercher (nom, prénom ou téléphone)
-              <input [(ngModel)]="recherche" [ngModelOptions]="{ standalone: true }" placeholder="Ex. Ould Mohamed, Lalle, 46 12..." autocomplete="off">
+              <input [(ngModel)]="recherche" [ngModelOptions]="{ standalone: true }" placeholder="Ex. Lalle Mohamed, Ahmed Sidi, 46 12..." autocomplete="off">
             </label>
             @if (recherche.trim().length >= 2) {
               <div class="search-results">
