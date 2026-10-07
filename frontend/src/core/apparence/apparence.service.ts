@@ -34,7 +34,10 @@ const CLE_CACHE = 'cabinet.apparence';
 export class ApparenceService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/parametres-cabinet/apparence`;
+  /** Apparence enregistree. */
   readonly apparence = signal<Apparence>(ApparenceService.lireCache());
+  /** Apparence affichee : l'enregistree, ou l'apercu en cours de l'administrateur. */
+  readonly affichee = signal<Apparence>(this.apparence());
 
   /** Appele au demarrage : applique le cache tout de suite, puis la version du serveur. */
   async initialiser(): Promise<void> {
@@ -50,6 +53,7 @@ export class ApparenceService {
 
   /** Apercu immediat (avant enregistrement) ; {@code definir} le rend definitif. */
   appliquer(apparence: Apparence): void {
+    this.affichee.set({ ...apparence });
     const style = document.documentElement.style;
     const principale = ApparenceService.valide(apparence.couleurPrincipale, APPARENCE_PAR_DEFAUT.couleurPrincipale);
     const accent = ApparenceService.valide(apparence.couleurAccent, APPARENCE_PAR_DEFAUT.couleurAccent);

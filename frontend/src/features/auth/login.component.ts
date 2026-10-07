@@ -9,7 +9,7 @@ const CLE_EMAIL_MEMORISE = 'cabinet.emailMemoire';
 
 @Component({ selector: 'app-login', standalone: true, imports: [ChoixLangueComponent, ReactiveFormsModule], templateUrl: './login.component.html', styleUrl: './login.component.css' })
 export class LoginComponent {
-  readonly apparence = inject(ApparenceService).apparence;
+  readonly apparence = inject(ApparenceService).affichee;
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);

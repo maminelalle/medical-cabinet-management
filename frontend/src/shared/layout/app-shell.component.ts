@@ -217,7 +217,7 @@ import { ApparenceService } from '../../core/apparence/apparence.service';
 })
 export class AppShellComponent {
   readonly auth = inject(AuthService);
-  readonly apparence = inject(ApparenceService).apparence;
+  readonly apparence = inject(ApparenceService).affichee;
   private readonly router = inject(Router);
   private readonly factureService = inject(FactureService);
 

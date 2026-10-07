@@ -6,8 +6,8 @@
       <p class="subtitle">Tous les composants d'interface de l'application, alignés sur la maquette d'administration.</p>
     </div>
     <div class="page-actions">
-      <button class="soft-button" type="button">Exporter les jetons</button>
-      <button class="primary-button" type="button"><span>+</span> Nouveau composant</button>
+      <button class="soft-button" type="button" (click)="copierCss()">Copier en CSS</button>
+      <button class="primary-button" type="button" (click)="exporterJetons()">⇩ Exporter les jetons</button>
     </div>
   </header>
 
@@ -18,17 +18,18 @@
       <div class="card-heading">
         <div>
           <h2>Jetons de couleur</h2>
-          <p>Variables CSS déclarées dans <strong>src/styles.css</strong> et réutilisées par tous les écrans.</p>
+          <p>Valeurs réelles en cours d'utilisation ; cliquez sur un jeton pour copier sa variable CSS.</p>
         </div>
         <span class="pill soft">{{ swatches.length }} jetons</span>
       </div>
       <div class="swatch-grid">
         @for (color of swatches; track color.token) {
-          <div class="swatch">
+          <button type="button" class="swatch" (click)="copierJeton(color)" [title]="'Copier ' + color.token">
             <span [style.background]="'var(' + color.token + ')'"></span>
             <strong>{{ color.label }}</strong>
             <small>{{ color.token }}</small>
-          </div>
+            <code>{{ valeurs()[color.token] }}</code>
+          </button>
         }
       </div>
     </article>
@@ -57,17 +58,19 @@
         <div class="card-heading">
           <div>
             <h2>Navigation</h2>
-            <p>Groupes de menu, élément actif et entrées désactivées.</p>
+            <p>Groupes de menu, élément actif et entrées désactivées : cliquez pour changer l'élément actif.</p>
           </div>
         </div>
         <div class="nav-preview">
           <p class="nav-label">Pilotage</p>
-          @for (item of navPreview; track item[0]) {
-            <span class="nav-item" [class.active]="item[1] === 'active'">
-              {{ item[0] }}
-              @if (item[2]) { <em>{{ item[2] }}</em> }
-            </span>
+          @for (item of navPreview; track item.libelle) {
+            <button type="button" class="nav-item" [class.active]="navActif() === item.libelle" [class.disabled]="item.desactive"
+                    [attr.aria-disabled]="item.desactive ? true : null" (click)="choisirNav(item)">
+              {{ item.libelle }}
+              @if (item.badge) { <em>{{ item.badge }}</em> }
+            </button>
           }
+          <p class="nav-courant">Élément actif : <strong>{{ navActif() }}</strong></p>
         </div>
       </article>
     </div>
@@ -78,24 +81,24 @@
       <div class="card-heading">
         <div>
           <h2>Boutons</h2>
-          <p>Actions principales, secondaires, contextuelles et iconographiques.</p>
+          <p>Actions principales, secondaires, contextuelles et iconographiques : chaque bouton réagit au clic.</p>
         </div>
       </div>
       <div class="button-row">
-        <button class="primary-button" type="button"><span>+</span> Action principale</button>
-        <button class="soft-button" type="button">Action secondaire</button>
-        <button class="soft-button success" type="button">Valider un paiement</button>
-        <button class="soft-button danger" type="button">Annuler la facture</button>
-        <button class="ghost-button" type="button">Action discrète</button>
+        <button class="primary-button" type="button" (click)="action('Action principale')"><span>+</span> Action principale</button>
+        <button class="soft-button" type="button" (click)="action('Action secondaire')">Action secondaire</button>
+        <button class="soft-button success" type="button" (click)="action('Valider un paiement', 'success')">Valider un paiement</button>
+        <button class="soft-button danger" type="button" (click)="actionDangereuse('Annuler la facture')">Annuler la facture</button>
+        <button class="ghost-button" type="button" (click)="action('Action discrète')">Action discrète</button>
         <button class="primary-button" type="button" disabled>Désactivé</button>
-        <button class="icon-button" type="button" aria-label="Rechercher">⌕</button>
-        <button class="row-action" type="button" aria-label="Voir">→</button>
-        <button class="row-action danger" type="button" aria-label="Supprimer"></button>
+        <button class="icon-button" type="button" aria-label="Rechercher" (click)="action('Rechercher')">⌕</button>
+        <button class="row-action" type="button" aria-label="Voir" (click)="action('Voir')">→</button>
+        <button class="row-action danger" type="button" aria-label="Supprimer" (click)="actionDangereuse('Supprimer')">⌫</button>
       </div>
       <div class="divider"></div>
       <div class="badge-row">
         @for (badge of badges; track badge[0]) {
-          <span class="badge" [class]="badge[0]">{{ badge[1] }}</span>
+          <button type="button" class="badge" [class]="'badge ' + badge[0]" [class.badge-choisi]="badgeChoisi() === badge[0]" (click)="choisirBadge(badge)">{{ badge[1] }}</button>
         }
         <span class="pill soft">Pilule douce</span>
         <span class="pill">Pilule neutre</span>
@@ -123,11 +126,13 @@
       <div class="card-heading">
         <div>
           <h2>Tableau de données</h2>
-          <p>En-têtes en majuscules, lignes aérées et actions alignées à droite.</p>
+          <p>En-têtes en majuscules, lignes aérées et actions alignées à droite : ouvrez ou retirez une ligne.</p>
         </div>
-        <button class="soft-button" type="button">↻ Actualiser</button>
+        <button class="soft-button" type="button" (click)="actualiser()" [disabled]="actualisation()">
+          {{ actualisation() ? 'Actualisation...' : '↻ Actualiser' }}
+        </button>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" [class.en-chargement]="actualisation()">
         <table>
           <thead>
             <tr>
@@ -140,8 +145,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (invoice of invoices; track invoice.id) {
-              <tr>
+            @for (invoice of factures(); track invoice.id) {
+              <tr [class.ligne-ouverte]="factureOuverte()?.id === invoice.id">
                 <td><strong>{{ invoice.id }}</strong></td>
                 <td>
                   <div class="patient-cell">
@@ -151,18 +156,27 @@
                 </td>
                 <td>{{ invoice.date }}</td>
                 <td>{{ invoice.amount }}</td>
-                <td><span class="badge" [class]="invoice.badge">{{ invoice.status }}</span></td>
+                <td><span class="badge" [class]="'badge ' + invoice.badge">{{ invoice.status }}</span></td>
                 <td>
                   <div class="actions">
-                    <button class="row-action" type="button" aria-label="Voir la facture">→</button>
-                    <button class="row-action danger" type="button" aria-label="Supprimer la facture">⌫</button>
+                    <button class="row-action" type="button" aria-label="Voir la facture" (click)="voir(invoice)">{{ factureOuverte()?.id === invoice.id ? '↑' : '→' }}</button>
+                    <button class="row-action danger" type="button" aria-label="Supprimer la facture" (click)="supprimer(invoice)">⌫</button>
                   </div>
                 </td>
               </tr>
+              @if (factureOuverte()?.id === invoice.id) {
+                <tr class="detail-ligne">
+                  <td colspan="6">
+                    Facture <strong>{{ invoice.id }}</strong> de <strong>{{ invoice.patient }}</strong>, émise le {{ invoice.date }} :
+                    {{ invoice.amount }}, statut « {{ invoice.status }} ».
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td class="empty-cell" colspan="6">Cellule vide — état « aucun résultat ». <button class="lien-action" type="button" (click)="actualiser()">Recharger l'exemple</button></td>
+              </tr>
             }
-            <tr>
-              <td class="empty-cell" colspan="6">Cellule vide — état « aucun résultat ».</td>
-            </tr>
           </tbody>
         </table>
       </div>
@@ -179,20 +193,21 @@
           </div>
         </div>
         <div class="form-grid">
-          <label>Patient<input value="Lalle Mohamed"></label>
-          <label>Médecin<input value="Dr. Mohamed Cheikh"></label>
-          <label>Date<input type="date" value="2026-09-15"></label>
+          <label>Patient *<input [(ngModel)]="formulaire.patient" name="patient"></label>
+          <label>Médecin<input [(ngModel)]="formulaire.medecin" name="medecin"></label>
+          <label>Date *<input type="date" [(ngModel)]="formulaire.date" name="date"></label>
           <label>Statut
-            <select>
+            <select [(ngModel)]="formulaire.statut" name="statut">
               <option>Confirmé</option>
               <option>En attente</option>
             </select>
           </label>
-          <label class="full">Motif<textarea rows="3">Consultation de contrôle</textarea></label>
+          <label class="full">Motif *<textarea rows="3" [(ngModel)]="formulaire.motif" name="motif"></textarea></label>
         </div>
+        @if (formulaireErreur) { <p class="erreur-formulaire">{{ formulaireErreur }}</p> }
         <div class="form-actions">
-          <button class="cancel-button" type="button">Annuler</button>
-          <button class="primary-button" type="button">Enregistrer</button>
+          <button class="cancel-button" type="button" (click)="annulerFormulaire()">Annuler</button>
+          <button class="primary-button" type="button" (click)="enregistrerFormulaire()">Enregistrer</button>
         </div>
       </article>
 
@@ -202,40 +217,43 @@
             <h2>Retours et états</h2>
             <p>Messages contextuels, progression et listes vides.</p>
           </div>
+          @if (alertes().length < 4) { <button class="soft-button" type="button" (click)="restaurerAlertes()">Réafficher les messages</button> }
         </div>
-        <div class="alert success">
-          <span>✓</span>
-          <div><strong>Paiement enregistré</strong>La facture FAC-142 est désormais soldée.</div>
-        </div>
-        <div class="alert info">
-          <span>i</span>
-          <div><strong>Information</strong>Le planning du 18 septembre est encore vide.</div>
-        </div>
-        <div class="alert warning">
-          <span>!</span>
-          <div><strong>Attention</strong>Trois factures dépassent trente jours d'ancienneté.</div>
-        </div>
-        <div class="alert danger">
-          <span>×</span>
-          <div><strong>Erreur</strong>Le service de facturation est momentanément indisponible.</div>
-        </div>
+        @for (alerte of alertes(); track alerte.titre) {
+          <div class="alert" [class]="'alert ' + alerte.type">
+            <span>{{ alerte.icone }}</span>
+            <div><strong>{{ alerte.titre }}</strong>{{ alerte.texte }}</div>
+            <button class="fermer-alerte" type="button" aria-label="Fermer" (click)="fermerAlerte(alerte)">×</button>
+          </div>
+        }
         <div class="progress-row">
-          <div>
-            <small>Factures payées · 72%</small>
-            <div class="progress"><span style="width: 72%"></span></div>
-          </div>
-          <div>
-            <small>Occupation du planning · 48%</small>
-            <div class="progress"><span style="width: 48%"></span></div>
-          </div>
+          <label>
+            <small>Factures payées · {{ progressionPayees }}%</small>
+            <div class="progress"><span [style.width.%]="progressionPayees"></span></div>
+            <input type="range" min="0" max="100" [(ngModel)]="progressionPayees" name="payees" aria-label="Factures payées">
+          </label>
+          <label>
+            <small>Occupation du planning · {{ progressionPlanning }}%</small>
+            <div class="progress"><span [style.width.%]="progressionPlanning"></span></div>
+            <input type="range" min="0" max="100" [(ngModel)]="progressionPlanning" name="planning" aria-label="Occupation du planning">
+          </label>
         </div>
         <div class="empty-state">Aucune donnée à afficher pour cette période.</div>
         <div class="empty-state">
-          <span class="loading-dot"></span>
-          <strong>Chargement des données</strong>
-          <small>Connexion au service en cours...</small>
+          @if (chargement()) {
+            <span class="loading-dot"></span>
+            <strong>Chargement des données</strong>
+            <small>Connexion au service en cours...</small>
+          } @else {
+            <strong>Données chargées</strong>
+          }
+          <button class="lien-action" type="button" (click)="chargement.set(!chargement())">{{ chargement() ? 'Terminer le chargement' : 'Relancer le chargement' }}</button>
         </div>
       </article>
     </div>
   </section>
+
+  @if (toast(); as message) {
+    <div class="toast" [class]="'toast ' + message.type" role="status" aria-live="polite">{{ message.texte }}</div>
+  }
 </section>
