@@ -2,16 +2,16 @@
 .catalogue-page { display: grid; gap: 20px; }
 .catalogue-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
 .catalogue-page form.card { display: grid; gap: 16px; }
-.catalogue-page table td.amount { color: var(--text-strong); font-weight: 800; text-align: right; white-space: nowrap; }
+.catalogue-page table td.amount { color: var(--text-strong); font-weight: 800; text-align: end; white-space: nowrap; }
 .catalogue-page .table-card { padding: 0; overflow: hidden; }
 .catalogue-page .table-card .table-heading { padding: 22px 22px 0; }
 .catalogue-page .table-card .message { padding: 0 22px; }
 .catalogue-page .table-card .empty-state { margin: 22px; }
 .catalogue-page .table-card .table-wrap { margin-top: 18px; }
-.catalogue-page .table-card thead th:first-child { padding-left: 22px; border-radius: 0; }
-.catalogue-page .table-card thead th:last-child { padding-right: 22px; border-radius: 0; }
-.catalogue-page .table-card tbody td:first-child { padding-left: 22px; }
-.catalogue-page .table-card tbody td:last-child { padding-right: 22px; }
+.catalogue-page .table-card thead th:first-child { padding-inline-start: 22px; border-radius: 0; }
+.catalogue-page .table-card thead th:last-child { padding-inline-end: 22px; border-radius: 0; }
+.catalogue-page .table-card tbody td:first-child { padding-inline-start: 22px; }
+.catalogue-page .table-card tbody td:last-child { padding-inline-end: 22px; }
 
 @media (max-width: 1180px) {
   .catalogue-layout { grid-template-columns: minmax(0, 1fr); }

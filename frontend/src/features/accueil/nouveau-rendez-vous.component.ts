@@ -2,10 +2,10 @@ import { Component, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { debounceTime, forkJoin } from 'rxjs';
 import { messageErreur } from '../../core/http/erreur-api';
 import { Patient } from '../../core/models/patient';
-import { Creneau, RendezVous, RendezVousRequest } from '../../core/models/rendez-vous';
+import { ControleGratuit, Creneau, RendezVous, RendezVousRequest } from '../../core/models/rendez-vous';
 import { PatientService } from '../../core/patients/patient.service';
 import { Medecin, RendezVousService } from '../../core/rendez-vous/rendez-vous.service';
 
@@ -32,6 +32,11 @@ export class NouveauRendezVousComponent {
   recherche = '';
   patientChoisi: Patient | null = null;
   cree: RendezVous | null = null;
+  /** Droit du patient a un controle gratuit avec ce medecin a cette date (regle de la direction). */
+  controle: ControleGratuit | null = null;
+  appliquerControle = true;
+  /** Controle deja rattache a sa consultation (programme par le medecin) : l'origine est conservee. */
+  origineExistante: number | null = null;
   loading = true;
   chargementCreneaux = false;
   saving = false;
@@ -60,10 +65,30 @@ export class NouveauRendezVousComponent {
         this.doctors = data.doctors;
         const preselection = Number(this.route.snapshot.queryParamMap.get('patientId'));
         if (preselection) this.patientChoisi = this.patients.find((patient) => patient.id === preselection) ?? null;
-        if (this.rendezVousId) this.chargerRendezVous(this.rendezVousId); else this.loading = false;
+        if (this.rendezVousId) this.chargerRendezVous(this.rendezVousId); else { this.loading = false; this.verifierControle(); }
       },
       error: () => { this.error = 'Impossible de charger les patients et les médecins.'; this.loading = false; }
     });
+  }
+
+  /** Controle gratuit : reverifie a chaque changement de patient, de medecin, de jour ou d'heure. */
+  private readonly suiviControle = this.form.valueChanges.pipe(debounceTime(250)).subscribe(() => this.verifierControle());
+
+  verifierControle(): void {
+    const { medecinId, date, heure } = this.form.getRawValue();
+    const patientId = this.modePatient === 'existant' ? this.patientChoisi?.id : undefined;
+    if (!patientId || !medecinId || !date) { this.controle = null; return; }
+    this.service.controleGratuit(patientId, Number(medecinId), `${date}T${heure || '08:00'}`, this.rendezVousId ?? undefined).subscribe({
+      next: (controle) => { this.controle = controle; },
+      error: () => { this.controle = null; }
+    });
+  }
+
+  /** Origine envoyee : celle du controle deja programme, sinon la consultation payee proposee (si cochee). */
+  private origineControle(): number | null {
+    if (!this.appliquerControle) return null;
+    if (this.origineExistante) return this.origineExistante;
+    return this.controle?.eligible ? this.controle.rendezVousOrigineId ?? null : null;
   }
 
   /** Recherche par nom, prenom ou telephone (10 resultats au plus). */
@@ -74,10 +99,11 @@ export class NouveauRendezVousComponent {
       `${patient.prenom} ${patient.nom} ${patient.nom} ${patient.prenom} ${patient.telephone ?? ''}`.toLowerCase().includes(terme)).slice(0, 10);
   }
 
-  choisirPatient(patient: Patient): void { this.patientChoisi = patient; this.recherche = ''; }
-  changerPatient(): void { this.patientChoisi = null; }
+  choisirPatient(patient: Patient): void { this.patientChoisi = patient; this.recherche = ''; this.verifierControle(); }
+  changerPatient(): void { this.patientChoisi = null; this.controle = null; }
   basculer(mode: 'existant' | 'nouveau'): void {
     this.modePatient = mode;
+    this.verifierControle();
     if (mode === 'nouveau' && this.recherche.trim()) {
       // Reprend le texte recherche comme nom du nouveau patient.
       const [premier, ...reste] = this.recherche.trim().split(/\s+/);
@@ -111,6 +137,8 @@ export class NouveauRendezVousComponent {
           this.form.disable();
         }
         this.patientChoisi = this.patients.find((patient) => patient.id === rendezVous.patientId) ?? null;
+        this.origineExistante = rendezVous.rendezVousOrigineId ?? null;
+        this.appliquerControle = this.origineExistante !== null;
         this.form.patchValue({
           medecinId: String(rendezVous.medecinId),
           date: rendezVous.dateHeure.slice(0, 10),
@@ -137,6 +165,7 @@ export class NouveauRendezVousComponent {
       dateHeure: `${valeur.date}T${valeur.heure}`,
       dureeMinutes: Number(valeur.dureeMinutes),
       motif: valeur.motif,
+      rendezVousOrigineId: this.origineControle(),
       ...(this.modePatient === 'nouveau' && !this.modeModification
         ? { nouveauPatient: this.nouveauPatient.getRawValue() }
         : { patientId: this.patientChoisi!.id })
@@ -164,6 +193,8 @@ export class NouveauRendezVousComponent {
     this.cree = null;
     this.patientChoisi = null;
     this.modePatient = 'existant';
+    this.controle = null;
+    this.appliquerControle = true;
     this.nouveauPatient.reset();
     this.form.patchValue({ heure: '', motif: '' });
     this.patientService.list().subscribe({ next: (items) => this.patients = items });

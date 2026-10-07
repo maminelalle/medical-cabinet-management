@@ -40,16 +40,16 @@ export interface ChoixMedicament { medicamentId: number | null; medicament: stri
   `,
   styles: [`
     .recherche { position: relative; }
-    .recherche input { padding-right: 96px; }
-    .recherche > .etat { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); }
+    .recherche input { padding-inline-end: 96px; }
+    .recherche > .etat { position: absolute; top: 50%; inset-inline-end: 8px; transform: translateY(-50%); }
     .etat { padding: 3px 8px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 800; white-space: nowrap; }
     .etat.ok { background: var(--accent-soft); color: var(--accent-text); }
     .etat.bas { background: var(--warn-soft); color: var(--warn-text); }
     .etat.rupture { background: var(--danger-soft); color: var(--danger-text); }
     .etat.libre { background: var(--bg-hover); color: var(--text-muted); }
-    .resultats { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; max-height: 300px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); box-shadow: var(--shadow-pop); }
+    .resultats { position: absolute; z-index: 30; top: calc(100% + 4px); inset-inline-start: 0; inset-inline-end: 0; max-height: 300px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); box-shadow: var(--shadow-pop); }
     .famille { margin: 6px 8px 4px; color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .resultats button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; text-align: left; cursor: pointer; }
+    .resultats button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; text-align: start; cursor: pointer; }
     .resultats button:hover { background: var(--brand-soft); }
     .resultats strong { display: block; color: var(--text-strong); font-size: var(--fs-sm); }
     .resultats small { color: var(--text-soft); font-size: var(--fs-label); }

@@ -17,6 +17,7 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V11__facture_annulation.sql` | Motif, date et auteur de l'annulation d'une facture |
 | `V12__parcours_actes_pharmacie_administration.sql` | Rôle ADMIN et identité des comptes ; durée et horodatage réel des rendez-vous ; table `actes_programmes` ; liens facture → rendez-vous / acte et dispensation → facture ; référence de paiement ; famille des médicaments et table `mouvements_stock` (historique reconstitué) ; tables `sessions_utilisateur`, `journal_activite` et `parametres_cabinet` |
 | `V13__noms_mauritaniens.sql` | Noms mauritaniens pour les médecins, le personnel et les patients de démonstration (V2 et V4 restent inchangées pour préserver les empreintes Flyway) |
+| `V14__tarifs_controle_gratuit_soins.sql` | Catalogue : `specialite` (tarif de consultation par spécialité) et `description`, tarifs de soins (injection, perfusion, nébulisation, constantes) ; règle du contrôle gratuit dans `parametres_cabinet` (`controle_gratuit_actif`, `_jours`, `_nombre`) ; `rendez_vous.rendez_vous_origine_id` (contrôle → consultation payée) ; table `soins` et `factures.soin_id` |
 
 ## Diagramme entité-association
 
@@ -43,6 +44,11 @@ erDiagram
     MEDECINS ||--o{ ACTES_PROGRAMMES : "programme"
     CONSULTATIONS ||--o{ ACTES_PROGRAMMES : "decide"
     ACTES_PROGRAMMES ||--o{ FACTURES : "est facture par"
+    RENDEZ_VOUS |o--o{ RENDEZ_VOUS : "controle gratuit de"
+    PATIENTS ||--o{ SOINS : "recoit"
+    PRESCRIPTIONS |o--o{ SOINS : "prescrit"
+    UTILISATEURS |o--o{ SOINS : "realise"
+    SOINS ||--o{ FACTURES : "est facture par"
     DISPENSATIONS ||--o| FACTURES : "genere"
     MEDICAMENTS ||--o{ MOUVEMENTS_STOCK : "historique"
     DISPENSATIONS ||--o{ MOUVEMENTS_STOCK : "sorties de vente"
@@ -83,6 +89,7 @@ erDiagram
         timestamp date_heure "creneau unique par medecin"
         varchar motif
         integer numero_file
+        bigint rendez_vous_origine_id FK "controle : consultation payee d origine"
         varchar statut "PLANIFIE | CONFIRME | EN_COURS | TERMINE | ANNULE | ABSENT"
         bigint created_by FK
         timestamptz created_at
@@ -138,8 +145,21 @@ erDiagram
         bigint id PK
         varchar libelle
         varchar type "CONSULTATION | HOSPITALISATION | CHIRURGIE | LABORATOIRE | IMAGERIE | PHARMACIE | SOINS"
+        varchar specialite "tarif de consultation de la specialite"
+        varchar description
         numeric montant_defaut
         boolean actif
+    }
+    SOINS {
+        bigint id PK
+        bigint patient_id FK
+        varchar type "INJECTION | PERFUSION | PANSEMENT | NEBULISATION | CONSTANTES | AUTRE"
+        varchar intitule
+        varchar produit
+        bigint prescription_id FK "ou prescripteur_externe"
+        timestamp date_heure
+        varchar statut "EN_ATTENTE | EN_COURS | TERMINE | ANNULE"
+        bigint realise_par FK
     }
     FACTURES {
         bigint id PK
@@ -147,6 +167,7 @@ erDiagram
         date date_facture
         numeric montant_total
         varchar statut "EN_ATTENTE | PARTIELLE | PAYEE | ANNULEE"
+        bigint soin_id FK "origine : soin"
         bigint created_by FK
         timestamptz created_at
     }
@@ -215,6 +236,9 @@ erDiagram
         varchar nom
         varchar adresse
         varchar telephone
+        boolean controle_gratuit_actif
+        integer controle_gratuit_jours "1 a 365, defaut 30"
+        integer controle_gratuit_nombre "1 a 10, defaut 1"
     }
 ```
 
@@ -222,6 +246,9 @@ erDiagram
 
 - **Un rendez-vous = un créneau médecin** : chaque rendez-vous et chaque acte programmé occupe `[date_heure, date_heure + duree_minutes[` ; `DisponibiliteService` refuse (409) tout chevauchement avec un rendez-vous non annulé / non absent ou un acte planifié du même médecin.
 - **Facture reliée à son origine** : `factures.rendez_vous_id`, `factures.acte_programme_id` ou `dispensations.facture_id` ; une seule facture non annulée par rendez-vous ou par acte. Un rendez-vous ou un acte facturé ne peut être annulé qu'après annulation de sa facture.
+- **Contrôle gratuit** : `rendez_vous.rendez_vous_origine_id` relie un contrôle à la consultation payée (même patient, même médecin). Il est gratuit si la règle de `parametres_cabinet` est active, la facture d'origine `PAYEE` et le contrôle dans le délai ; le nombre de contrôles par consultation est limité (contrôles annulés ou absents non comptés). Une facture de 0 MRU est soldée à sa création.
+- **Soins** : un soin (`soins`) a au plus une facture active (`factures.soin_id`) ; il ne s'annule qu'avant d'être terminé et sans facture active.
+- **Tarifs** : un tarif présent sur une ligne de facture ne se supprime pas, il se désactive (historique conservé).
 - **Stock tracé** : tout changement de `medicaments.stock_actuel` (stock initial, achat, vente, correction d'inventaire) crée une ligne `mouvements_stock` avec le stock résultant et la valeur.
 - **Sessions** : le JWT porte l'identifiant de session (`jti`) ; une session fermée (déconnexion, révocation par l'administrateur, compte désactivé) invalide son jeton.
 - **Un rendez-vous honoré donne au plus une consultation** : `consultations.rendez_vous_id` est `UNIQUE` ; la création clôture le rendez-vous (`TERMINE`).

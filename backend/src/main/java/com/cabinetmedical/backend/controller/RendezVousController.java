@@ -1,5 +1,7 @@
 package com.cabinetmedical.backend.controller;
 
+import com.cabinetmedical.backend.dto.ControleGratuitResponse;
+import com.cabinetmedical.backend.dto.ControleRequest;
 import com.cabinetmedical.backend.dto.CreneauResponse;
 import com.cabinetmedical.backend.dto.RendezVousRequest;
 import com.cabinetmedical.backend.dto.RendezVousResponse;
@@ -15,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -41,6 +44,24 @@ public class RendezVousController {
     public List<CreneauResponse> creneaux(@RequestParam Long medecinId, @RequestParam LocalDate date,
                                           @RequestParam(required = false) Integer dureeMinutes) {
         return rendezVousService.creneaux(medecinId, date, dureeMinutes);
+    }
+
+    /** Le patient a-t-il droit a un controle gratuit avec ce medecin a cette date ? */
+    @GetMapping("/controle-gratuit")
+    @PreAuthorize("hasAnyRole('ACCUEIL', 'MEDECIN', 'DIRECTION', 'ADMIN')")
+    public ControleGratuitResponse controleGratuit(@RequestParam Long patientId, @RequestParam Long medecinId,
+                                                   @RequestParam LocalDateTime date,
+                                                   @RequestParam(required = false) Long exclure) {
+        return rendezVousService.controleGratuit(patientId, medecinId, date, exclure);
+    }
+
+    /** Le medecin programme le rendez-vous de controle du patient a la fin de la consultation. */
+    @PostMapping("/{id}/controle")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('MEDECIN')")
+    public RendezVousResponse programmerControle(@PathVariable Long id, @Valid @RequestBody ControleRequest request,
+                                                 @AuthenticationPrincipal UserDetails utilisateurConnecte) {
+        return rendezVousService.programmerControle(id, request, utilisateurConnecte);
     }
 
     @DeleteMapping("/{id}")

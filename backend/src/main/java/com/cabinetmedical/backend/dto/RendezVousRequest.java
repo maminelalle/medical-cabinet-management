@@ -18,7 +18,9 @@ public record RendezVousRequest(
         @NotNull Long medecinId,
         @NotNull LocalDateTime dateHeure,
         @Min(5) @Max(480) Integer dureeMinutes,
-        @Size(max = 500) String motif
+        @Size(max = 500) String motif,
+        /** Consultation payee dont ce rendez-vous est le controle gratuit (proposee par /controle-gratuit). */
+        Long rendezVousOrigineId
 ) {
     public int dureeOuDefaut() { return dureeMinutes == null ? 30 : dureeMinutes; }
 }

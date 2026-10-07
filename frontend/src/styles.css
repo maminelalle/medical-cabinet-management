@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap');
 
 /* ==========================================================================
    Cabinet Medical - Design system (aligne sur la maquette administration)
@@ -327,7 +327,7 @@ input[type="date"], input[type="time"] { cursor: pointer; }
 .stat-card small { display: block; color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
 .stat-card small.up, .positive { color: var(--accent-text); }
 .stat-card small.down, .warning { color: var(--warn-text); }
-.stat-card small em { margin-left: 4px; color: var(--text-soft); font-style: normal; font-weight: 500; }
+.stat-card small em { margin-inline-start: 4px; color: var(--text-soft); font-style: normal; font-weight: 500; }
 .stat-icon { display: grid; place-items: center; order: 2; flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--bg-hover); color: var(--text-muted); font-size: 20px; }
 .stat-icon.teal, .stat-icon.green { background: var(--accent-soft); color: var(--accent-text); }
 .stat-icon.blue { background: var(--brand-soft); color: var(--brand-dark); }
@@ -337,7 +337,7 @@ input[type="date"], input[type="time"] { cursor: pointer; }
 /* --- 6. Tableaux ------------------------------------------------------- */
 .table-wrap { margin-top: 20px; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
-thead th { padding: 12px 14px; background: var(--bg-subtle); color: var(--text-soft); font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--tracking-label); text-transform: uppercase; text-align: left; white-space: nowrap; }
+thead th { padding: 12px 14px; background: var(--bg-subtle); color: var(--text-soft); font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--tracking-label); text-transform: uppercase; text-align: start; white-space: nowrap; }
 thead th:first-child { border-radius: var(--radius-xs) 0 0 var(--radius-xs); }
 thead th:last-child { border-radius: 0 var(--radius-xs) var(--radius-xs) 0; }
 tbody td { padding: 15px 14px; border-bottom: 1px solid var(--border-soft); color: var(--text-muted); font-size: var(--fs-sm); vertical-align: middle; }
@@ -363,12 +363,12 @@ tbody td small { display: block; margin-top: 3px; color: var(--text-soft); font-
 /* --- 7. Retours utilisateur -------------------------------------------- */
 .message { display: flex; align-items: center; gap: 8px; margin-top: 16px; color: var(--accent-text); font-size: var(--fs-sm); font-weight: 700; }
 .error { margin-top: 16px; color: var(--danger-text); font-size: var(--fs-sm); font-weight: 700; }
-.alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-left: 3px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text); font-size: var(--fs-sm); }
+.alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-inline-start: 3px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text); font-size: var(--fs-sm); }
 .alert strong { display: block; margin-bottom: 3px; color: var(--text-strong); font-weight: 800; }
-.alert.info { border-left-color: var(--info); background: var(--info-soft); }
-.alert.success { border-left-color: var(--accent); background: var(--accent-soft); }
-.alert.warning { border-left-color: var(--warn); background: var(--warn-soft); }
-.alert.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+.alert.info { border-inline-start-color: var(--info); background: var(--info-soft); }
+.alert.success { border-inline-start-color: var(--accent); background: var(--accent-soft); }
+.alert.warning { border-inline-start-color: var(--warn); background: var(--warn-soft); }
+.alert.danger { border-inline-start-color: var(--danger); background: var(--danger-soft); }
 .empty-state { padding: 44px 18px; border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
 .empty-state strong, .loading-state strong, .error-state strong { display: block; margin-top: 10px; color: var(--text-strong); font-size: var(--fs-sm); font-weight: 800; }
 .empty-state small, .loading-state small, .error-state p { display: block; margin-top: 5px; color: var(--text-soft); font-size: var(--fs-xs); }
@@ -404,3 +404,10 @@ tbody td small { display: block; margin-top: 3px; color: var(--text-soft); font-
 .file-button { position: relative; overflow: hidden; cursor: pointer; }
 .file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .file-button.disabled { opacity: .6; pointer-events: none; }
+
+/* Interface en arabe : police adaptee, lecture de droite a gauche, pas d'espacement entre lettres
+   (il casserait la liaison des lettres arabes). */
+html[lang='ar'] { --font-sans: 'Cairo', 'Manrope', system-ui, sans-serif; }
+html[lang='ar'] body * { letter-spacing: 0 !important; }
+html[dir='rtl'] input[type='date'], html[dir='rtl'] input[type='time'], html[dir='rtl'] input[type='number'],
+html[dir='rtl'] input[type='email'], html[dir='rtl'] input[type='tel'] { direction: ltr; text-align: end; }

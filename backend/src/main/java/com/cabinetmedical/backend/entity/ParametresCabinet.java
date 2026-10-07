@@ -26,6 +26,13 @@ public class ParametresCabinet {
     private String telephone;
     @Column(length = 255)
     private String email;
+    /** Regle du cabinet : une consultation payee donne droit a un controle gratuit avec le meme medecin. */
+    @Column(name = "controle_gratuit_actif", nullable = false)
+    private boolean controleGratuitActif = true;
+    @Column(name = "controle_gratuit_jours", nullable = false)
+    private Integer controleGratuitJours = 30;
+    @Column(name = "controle_gratuit_nombre", nullable = false)
+    private Integer controleGratuitNombre = 1;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 }

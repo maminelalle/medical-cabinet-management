@@ -14,7 +14,7 @@
 .segmented button.active { background: var(--bg-surface); color: var(--brand-dark); box-shadow: var(--shadow-xs); }
 
 .search-results { display: grid; gap: 6px; max-height: 280px; overflow-y: auto; }
-.search-results > button { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); font: inherit; text-align: left; cursor: pointer; }
+.search-results > button { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); font: inherit; text-align: start; cursor: pointer; }
 .search-results > button:hover { border-color: var(--brand); background: var(--brand-soft); }
 .search-results strong { color: var(--text-strong); font-size: var(--fs-sm); }
 .search-results small { color: var(--text-soft); font-size: var(--fs-label); }
@@ -26,7 +26,7 @@
 .patient-chip small { color: var(--text-muted); font-size: var(--fs-label); }
 
 .slots-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--fs-xs); }
-.legend { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border-radius: 3px; }
+.legend { display: inline-block; width: 10px; height: 10px; margin-inline-start: 6px; border-radius: 3px; }
 .legend.libre { border: 1px solid var(--accent); background: var(--accent-soft); }
 .legend.pris { background: var(--danger-soft); border: 1px solid #fecaca; }
 .legend.passe { background: var(--bg-hover); }
@@ -47,3 +47,11 @@
 @media (max-width: 1000px) {
   .booking-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Controle gratuit (regle de la direction) */
+.controle-gratuit { display: grid; gap: 4px; margin-top: 14px; padding: 12px 14px; border: 1px solid #b7e4c7; border-radius: var(--radius-md); background: #ecfdf3; }
+.controle-gratuit.attention { border-color: #fde68a; background: #fffbeb; }
+.controle-gratuit .interrupteur { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
+.controle-gratuit input { width: 18px; height: 18px; margin-top: 2px; }
+.controle-gratuit small { color: var(--text-muted); }
+.hint.gratuit { color: #15803d; font-weight: 700; }

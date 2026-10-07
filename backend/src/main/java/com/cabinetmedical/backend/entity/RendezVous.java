@@ -28,6 +28,9 @@ public class RendezVous {
     private Instant debutConsultation;
     @Column(name = "fin_consultation")
     private Instant finConsultation;
+    /** Consultation payee dont ce rendez-vous est le controle (gratuit selon la regle du cabinet). */
+    @ManyToOne @JoinColumn(name = "rendez_vous_origine_id")
+    private RendezVous rendezVousOrigine;
     @Column(name = "numero_file", nullable = false)
     private Integer numeroFile;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)

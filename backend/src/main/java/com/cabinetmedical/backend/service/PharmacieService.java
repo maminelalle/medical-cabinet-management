@@ -173,7 +173,7 @@ public class PharmacieService {
         }
         PaiementRequest paiement = total.signum() > 0 ? new PaiementRequest(total, moyenEtReference[0], moyenEtReference[1]) : null;
         FactureResponse facture = factureService.creer(new FactureRequest(enregistree.getPatient().getId(), LocalDate.now(),
-                lignesFacture, null, null, paiement), connecte);
+                lignesFacture, null, null, null, paiement), connecte);
         enregistree.setFacture(factureRepository.findById(facture.id()).orElseThrow());
         return new DispensationResponse(enregistree.getId(), prescription.getId(), enregistree.getPatient().getId(),
                 facture.id(), enregistree.getDateDispensation(),

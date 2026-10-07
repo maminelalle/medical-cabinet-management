@@ -35,10 +35,10 @@ Le patient n'est pas un utilisateur du système : il n'apparaît que comme donn�
 
 | Acteur | Rôle applicatif | Cas d'utilisation principaux |
 |---|---|---|
-| Accueil / Caisse | ACCUEIL | Gestion des fiches patients ; prise de rendez-vous avec création rapide du patient et choix d'un créneau libre du médecin ; modification, annulation et suppression de rendez-vous ; factures liées au rendez-vous ou à l'acte programmé ; encaissement avec référence de paiement ; suivi des factures à payer et payées ; présence des médecins ; export / import des dossiers. |
-| Médecin | MEDECIN | Son planning ; démarrer puis terminer une consultation ; compte-rendu ; ordonnance à partir du stock (recherche par nom ou famille) ; programmation d'actes (chirurgie, traitement, examen...) et compte-rendu de leur réalisation ; dossiers de ses patients. |
+| Accueil / Caisse | ACCUEIL | Gestion des fiches patients ; prise de rendez-vous avec création rapide du patient et choix d'un créneau libre du médecin ; modification, annulation et suppression de rendez-vous ; factures liées au rendez-vous ou à l'acte programmé ; encaissement avec référence de paiement ; suivi des factures à payer et payées ; présence des médecins ; export / import des dossiers ; soins (injection, perfusion, pansement...) et leur facture ; contrôle gratuit proposé automatiquement. |
+| Médecin | MEDECIN | Son planning ; démarrer puis terminer une consultation ; compte-rendu ; ordonnance à partir du stock (recherche par nom ou famille) ; programmation d'actes (chirurgie, traitement, examen...) et compte-rendu de leur réalisation ; programmation du rendez-vous de contrôle ; réalisation des soins ; dossiers de ses patients. |
 | Pharmacien | PHARMACIEN | Stock (import / export, fiche produit, approvisionnement, inventaire) ; vente des ordonnances avec paiement obligatoire ; finances de la pharmacie. |
-| Direction (DG) | DIRECTION | Tableaux de bord (consultations, chiffre d'affaires par type d'acte, impayés, activité par médecin) ; présence des médecins ; lecture des dossiers, actes, factures et de la pharmacie ; catalogue des actes. |
+| Direction (DG) | DIRECTION | Tableaux de bord (consultations, chiffre d'affaires par type d'acte, impayés, activité par médecin) ; présence des médecins ; lecture des dossiers, actes, factures et de la pharmacie ; grille tarifaire (tarifs par spécialité, soins, actes) et règle du contrôle gratuit ; employés et sessions. |
 | Administrateur | ADMIN | Comptes et rôles ; sessions et appareils connectés (révocation) ; journal d'activité ; qui s'est connecté ou non ; coordonnées du cabinet ; lecture de toutes les données sans les comptes-rendus médicaux. |
 
 
@@ -96,6 +96,14 @@ Le champ statut de Facture prend les valeurs EN_ATTENTE, PARTIELLE, PAYEE ou ANN
 ### 4.3 bis États d'un acte programmé
 
 PLANIFIE → REALISE (le médecin saisit le résultat et le compte-rendu) ou ANNULE (médecin ou accueil, avec motif, refusé si l'acte est déjà facturé).
+
+### 4.3 ter États d'un soin
+
+EN_ATTENTE (enregistré par l'accueil) → EN_COURS (démarré par l'accueil ou un médecin) → TERMINE (observations). ANNULE possible tant que le soin n'est ni terminé ni facturé. Une seule facture active par soin.
+
+### 4.3 quater Consultation de contrôle gratuite
+
+Un rendez-vous de contrôle référence la consultation payée qui l'ouvre (`rendez_vous_origine_id`). Il est gratuit si : la règle de la direction est active, c'est le même patient et le même médecin, la consultation d'origine a eu lieu et sa facture est payée, le contrôle tombe dans le délai (30 jours par défaut) et le nombre de contrôles autorisés (1 par défaut) n'est pas atteint. L'accueil voit le droit au moment de la prise de rendez-vous et peut y renoncer ; le médecin peut programmer le contrôle en fin de consultation. La facture du contrôle vaut 0 MRU et est soldée à sa création.
 
 
 ### 4.4 Pourquoi ce découpage plutôt qu'un modèle plus simple
@@ -232,7 +240,20 @@ Points de conception importants :
 | Méthode | Endpoint | Rôles | Description |
 |---|---|---|---|
 | GET | /api/actes-catalogue | ACCUEIL, MEDECIN, DIRECTION, ADMIN | Liste du référentiel des actes. |
-| POST | /api/actes-catalogue | DIRECTION | Ajouter un type d'acte. |
+| POST | /api/actes-catalogue | DIRECTION | Ajouter un tarif (avec spécialité pour une consultation). |
+| PUT | /api/actes-catalogue/{id} | DIRECTION | Modifier, activer ou désactiver un tarif. |
+| DELETE | /api/actes-catalogue/{id} | DIRECTION | Supprimer un tarif jamais facturé (sinon 409 : le désactiver). |
+| GET / PUT | /api/parametres-cabinet/controle-gratuit | Lecture : tous ; modification : DIRECTION, ADMIN | Règle du contrôle gratuit (actif, délai, nombre). |
+| GET | /api/rendezvous/controle-gratuit | ACCUEIL, MEDECIN, DIRECTION, ADMIN | Droit du patient à un contrôle gratuit avec ce médecin à cette date. |
+| POST | /api/rendezvous/{id}/controle | MEDECIN propriétaire | Programmer le rendez-vous de contrôle en fin de consultation. |
+
+### 6.5 bis Soins
+
+| Méthode | Endpoint | Rôles | Description |
+|---|---|---|---|
+| GET | /api/soins?date&patientId&statut | ACCUEIL, MEDECIN, DIRECTION, ADMIN | Soins du jour ou d'un patient. |
+| POST / PUT | /api/soins, /api/soins/{id} | ACCUEIL, MEDECIN | Enregistrer (patient existant ou créé sur place) ou modifier un soin en attente. |
+| POST | /api/soins/{id}/demarrer, /terminer, /annulation | ACCUEIL, MEDECIN | Cycle de vie du soin. |
 
 
 ### 6.6 Facturation et paiements
@@ -293,7 +314,10 @@ Points de conception importants :
 | Pharmacie — stock et vente | Non | Lecture du stock | Oui | Lecture et gestion du stock | Lecture |
 | Tableau de bord direction | Non | Non | Non | Oui | Oui |
 | Présence des médecins | Oui | Non | Non | Oui | Oui |
-| Comptes, sessions, journal, permissions | Non | Non | Non | Non | Oui |
+| Comptes, sessions, journal, permissions | Non | Non | Non | Employés et sessions (hors comptes ADMIN) | Oui |
+| Soins — enregistrer / réaliser | Oui (et facturer) | Oui | Non | Lecture | Lecture |
+| Grille tarifaire et règle du contrôle gratuit | Lecture | Lecture | Non | Oui | Règle uniquement |
+| Rendez-vous de contrôle | Proposé à la prise de RDV | Programmation en fin de consultation | Non | Lecture | Lecture |
 
 Cette matrice se traduit directement en annotations @PreAuthorize côté back-end et en gardes de route (RoleGuard) côté front-end : les deux doivent rester synchronisés, le front-end masque l'interface mais le back-end reste la seule source de vérité pour la sécurité réelle.
 
@@ -378,3 +402,6 @@ Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier
 | 6 octobre 2026 | Pharmacie : familles, mouvements de stock, fiche produit, approvisionnement, inventaire, vente avec paiement obligatoire, finances, export Excel et PDF | V12 |
 | 6 octobre 2026 | Administration : rôle ADMIN, comptes, sessions et appareils, journal d'activité, permissions, coordonnées du cabinet ; exports PDF avec JasperReports | V12 |
 | 6 octobre 2026 | Données de démonstration avec des noms mauritaniens | V13 |
+| 7 octobre 2026 | Direction : paramètres des employés (ajout, modification, suppression, sessions) ; présence en temps réel par flux SSE | — |
+| 7 octobre 2026 | Grille tarifaire de la direction (tarif de consultation par spécialité, soins), consultation de contrôle gratuite réglable, soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) | V14 |
+| 7 octobre 2026 | Interface bilingue français / arabe avec lecture de droite à gauche | — |

@@ -12,17 +12,23 @@
     <section class="card loading-state">Chargement du catalogue...</section>
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()">
-      @if (rendezVous || acte) {
+      @if (rendezVous || acte || soin) {
         <section class="card origin-card">
-          <span class="origin-icon">{{ rendezVous ? '◷' : '✚' }}</span>
+          <span class="origin-icon">{{ rendezVous ? '◷' : soin ? '✎' : '✚' }}</span>
           <div>
-            <p class="breadcrumb">{{ rendezVous ? 'FACTURE DU RENDEZ-VOUS' : 'FACTURE DE L’ACTE PROGRAMMÉ' }}</p>
+            <p class="breadcrumb">{{ rendezVous ? (rendezVous.controleGratuit ? 'CONTRÔLE GRATUIT' : 'FACTURE DU RENDEZ-VOUS') : soin ? 'FACTURE DU SOIN' : 'FACTURE DE L’ACTE PROGRAMMÉ' }}</p>
             @if (rendezVous) {
               <strong>{{ patientOrigine }} · {{ rendezVous.dateHeure | date:'EEEE d MMMM à HH:mm':'':'fr-FR' }}</strong>
               <small>Dr. {{ rendezVous.medecinPrenom }} {{ rendezVous.medecinNom }} · {{ rendezVous.motif || 'Consultation' }}</small>
             } @else if (acte) {
               <strong>{{ patientOrigine }} · {{ acte.intitule }}</strong>
               <small>Dr. {{ acte.medecinPrenom }} {{ acte.medecinNom }} · {{ acte.dateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</small>
+            } @else if (soin) {
+              <strong>{{ patientOrigine }} · {{ soin.intitule }}</strong>
+              <small>{{ soin.produit || 'Produit non précisé' }} · {{ soin.dateHeure | date:'dd/MM/yyyy HH:mm':'':'fr-FR' }}</small>
+            }
+            @if (rendezVous?.controleGratuit) {
+              <small class="gratuit">La consultation précédente avec ce médecin est payée : ce contrôle est gratuit (0 MRU).</small>
             }
           </div>
         </section>

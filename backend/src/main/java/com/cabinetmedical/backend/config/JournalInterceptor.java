@@ -33,6 +33,12 @@ public class JournalInterceptor implements HandlerInterceptor {
             new Regle("PATCH", "/api/rendezvous/(\\d+)/statut", "Changement de statut d'un rendez-vous"),
             new Regle("DELETE", "/api/rendezvous/(\\d+)", "Suppression d'un rendez-vous"),
             new Regle("POST", "/api/rendezvous/(\\d+)/consultation", "Compte-rendu de consultation"),
+            new Regle("POST", "/api/rendezvous/(\\d+)/controle", "Programmation d'un contrôle par le médecin"),
+            new Regle("POST", "/api/soins", "Enregistrement d'un soin"),
+            new Regle("PUT", "/api/soins/(\\d+)", "Modification d'un soin"),
+            new Regle("POST", "/api/soins/(\\d+)/demarrer", "Début d'un soin"),
+            new Regle("POST", "/api/soins/(\\d+)/terminer", "Fin d'un soin"),
+            new Regle("POST", "/api/soins/(\\d+)/annulation", "Annulation d'un soin"),
             new Regle("POST", "/api/consultations/(\\d+)/prescriptions", "Rédaction d'une ordonnance"),
             new Regle("POST", "/api/actes", "Programmation d'un acte"),
             new Regle("PUT", "/api/actes/(\\d+)", "Modification d'un acte programmé"),
@@ -41,7 +47,9 @@ public class JournalInterceptor implements HandlerInterceptor {
             new Regle("POST", "/api/factures", "Création d'une facture"),
             new Regle("POST", "/api/factures/(\\d+)/paiements", "Encaissement d'un paiement"),
             new Regle("POST", "/api/factures/(\\d+)/annulation", "Annulation d'une facture"),
-            new Regle("POST", "/api/actes-catalogue", "Ajout d'un acte au catalogue"),
+            new Regle("POST", "/api/actes-catalogue", "Ajout d'un tarif"),
+            new Regle("PUT", "/api/actes-catalogue/(\\d+)", "Modification d'un tarif"),
+            new Regle("DELETE", "/api/actes-catalogue/(\\d+)", "Suppression d'un tarif"),
             new Regle("POST", "/api/pharmacie/medicaments", "Ajout d'un médicament"),
             new Regle("PUT", "/api/pharmacie/medicaments/(\\d+)", "Modification d'un médicament"),
             new Regle("POST", "/api/pharmacie/medicaments/import", "Import de médicaments"),
@@ -55,6 +63,7 @@ public class JournalInterceptor implements HandlerInterceptor {
             new Regle("POST", "/api/admin/utilisateurs/(\\d+)/mot-de-passe", "Réinitialisation d'un mot de passe"),
             new Regle("DELETE", "/api/admin/utilisateurs/(\\d+)", "Suppression d'un utilisateur"),
             new Regle("DELETE", "/api/admin/sessions/(\\d+)", "Révocation d'une session"),
+            new Regle("PUT", "/api/parametres-cabinet/controle-gratuit", "Modification de la règle du contrôle gratuit"),
             new Regle("PUT", "/api/parametres-cabinet", "Modification des coordonnées du cabinet"));
 
     private final JournalService journalService;

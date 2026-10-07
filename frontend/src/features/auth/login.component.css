@@ -43,7 +43,7 @@
 
 .login-form-side form { display: grid; gap: 16px; }
 .password-field { position: relative; display: flex; align-items: center; }
-.password-field span { position: absolute; right: 12px; color: var(--text-soft); font-size: 15px; pointer-events: none; }
+.password-field span { position: absolute; inset-inline-end: 12px; color: var(--text-soft); font-size: 15px; pointer-events: none; }
 .form-options { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .check { display: flex; align-items: center; gap: 9px; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
 .form-options a { font-size: var(--fs-xs); font-weight: 700; }
@@ -98,3 +98,4 @@
   .login-page { padding: 18px; }
   .login-form-side { padding: 26px 20px; }
 }
+.langue-connexion { display: flex; justify-content: flex-end; margin-block-end: 8px; }

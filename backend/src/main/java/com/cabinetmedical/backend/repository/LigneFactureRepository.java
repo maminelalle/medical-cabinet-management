@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface LigneFactureRepository extends JpaRepository<LigneFacture, Long> {
 	List<LigneFacture> findByFactureId(Long factureId);
+
+	boolean existsByCatalogueActeId(Long catalogueActeId);
 }

@@ -3,13 +3,13 @@
 .dossier-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
 .dossier-side { display: grid; gap: 18px; }
 
-.identity-card { display: grid; gap: 6px; justify-items: start; text-align: left; }
+.identity-card { display: grid; gap: 6px; justify-items: start; text-align: start; }
 .identity-card .patient-avatar { width: 56px; height: 56px; font-size: 16px; background: var(--ink); color: #fff; }
 .identity-card h2 { font-size: 19px; }
 .identity-list, .stats-list { display: grid; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; width: 100%; }
 .identity-list li, .stats-list li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-top: 1px solid var(--border-soft); font-size: var(--fs-xs); }
 .identity-list li span, .stats-list li span { color: var(--text-muted); font-weight: 600; }
-.identity-list li strong, .stats-list li strong { color: var(--text-strong); font-weight: 700; text-align: right; }
+.identity-list li strong, .stats-list li strong { color: var(--text-strong); font-weight: 700; text-align: end; }
 .stats-list li strong { font-size: var(--fs-h2); }
 
 .next-list { display: grid; gap: 10px; margin-top: 16px; }
@@ -18,7 +18,7 @@
 .next-list small { display: block; margin-top: 3px; color: var(--text-soft); font-size: var(--fs-label); }
 
 .timeline { display: grid; gap: 14px; }
-.timeline-item { display: grid; gap: 12px; padding: 20px; border-left: 3px solid var(--brand); }
+.timeline-item { display: grid; gap: 12px; padding: 20px; border-inline-start: 3px solid var(--brand); }
 .timeline-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .timeline-head h3 { font-size: var(--fs-h3); font-weight: 800; }
 .timeline-head p { margin-top: 5px; color: var(--text-muted); font-size: var(--fs-xs); }

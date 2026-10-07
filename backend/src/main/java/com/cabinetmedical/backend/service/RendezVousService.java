@@ -1,5 +1,7 @@
 package com.cabinetmedical.backend.service;
 
+import com.cabinetmedical.backend.dto.ControleGratuitResponse;
+import com.cabinetmedical.backend.dto.ControleRequest;
 import com.cabinetmedical.backend.dto.CreneauResponse;
 import com.cabinetmedical.backend.dto.RendezVousRequest;
 import com.cabinetmedical.backend.dto.RendezVousResponse;
@@ -43,6 +45,7 @@ public class RendezVousService {
     private final DisponibiliteService disponibiliteService;
     private final UtilisateurConnecte utilisateurConnecte;
     private final TempsReelService tempsReelService;
+    private final ControleGratuitService controleGratuitService;
 
     @Transactional(readOnly = true)
     public List<RendezVousResponse> rechercher(Long medecinId, LocalDate date, LocalDate dateDebut, LocalDate dateFin,
@@ -86,6 +89,7 @@ public class RendezVousService {
         rendezVous.setDureeMinutes(request.dureeOuDefaut());
         rendezVous.setMotif(request.motif());
         rendezVous.setNumeroFile(numeroFile(request.dateHeure().toLocalDate()));
+        rendezVous.setRendezVousOrigine(origineControle(request, patient.getId(), medecin.getId(), null));
         rendezVous.setCreatedBy(utilisateurConnecte.utilisateur(connecte));
         return versResponse(rendezVousRepository.save(rendezVous));
     }
@@ -106,6 +110,7 @@ public class RendezVousService {
             // Changement de jour : nouveau numero de file dans la journee cible.
             rendezVous.setNumeroFile(numeroFile(nouveauJour));
         }
+        rendezVous.setRendezVousOrigine(origineControle(request, request.patientId(), medecin.getId(), id));
         rendezVous.setPatient(trouverPatient(request.patientId()));
         rendezVous.setMedecin(medecin);
         rendezVous.setDateHeure(request.dateHeure());
@@ -183,8 +188,45 @@ public class RendezVousService {
         rendezVousRepository.delete(rendezVous);
     }
 
+    /** Droit a un controle gratuit pour ce patient, ce medecin et cette date (utilise par la prise de rendez-vous). */
+    @Transactional(readOnly = true)
+    public ControleGratuitResponse controleGratuit(Long patientId, Long medecinId, LocalDateTime date, Long rendezVousExclu) {
+        return controleGratuitService.eligibilite(patientId, medecinId, date, rendezVousExclu);
+    }
+
+    /**
+     * Le medecin programme le controle a la fin de la consultation. Il est rattache a la consultation (gratuit
+     * si elle est payee et si le delai est respecte) ; hors delai ou au-dela du nombre autorise, c'est un
+     * rendez-vous de suivi ordinaire.
+     */
+    @Transactional
+    public RendezVousResponse programmerControle(Long id, ControleRequest request, UserDetails connecte) {
+        RendezVous consultation = trouver(id);
+        Medecin medecin = utilisateurConnecte.medecin(connecte);
+        if (!consultation.getMedecin().getId().equals(medecin.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ce rendez-vous ne concerne pas ce médecin");
+        }
+        if (consultation.getStatut() != StatutRendezVous.EN_COURS && consultation.getStatut() != StatutRendezVous.TERMINE) {
+            refuser("Le contrôle se programme pendant ou après la consultation");
+        }
+        int duree = request.dureeMinutes() == null ? 30 : request.dureeMinutes();
+        disponibiliteService.verifierDisponible(medecin.getId(), request.dateHeure(), duree, null, null);
+        RendezVous origine = controleGratuitService.racine(consultation);
+
+        RendezVous controle = new RendezVous();
+        controle.setPatient(consultation.getPatient());
+        controle.setMedecin(medecin);
+        controle.setDateHeure(request.dateHeure());
+        controle.setDureeMinutes(duree);
+        controle.setMotif(request.motif() == null || request.motif().isBlank() ? "Consultation de contrôle" : request.motif().trim());
+        controle.setNumeroFile(numeroFile(request.dateHeure().toLocalDate()));
+        if (controleGratuitService.refus(origine, request.dateHeure(), null, false) == null) controle.setRendezVousOrigine(origine);
+        controle.setCreatedBy(utilisateurConnecte.utilisateur(connecte));
+        return versResponse(rendezVousRepository.save(controle));
+    }
+
     public RendezVousResponse versResponse(RendezVous rendezVous) {
-        return RendezVousResponse.from(rendezVous, factureActive(rendezVous.getId()));
+        return RendezVousResponse.from(rendezVous, factureActive(rendezVous.getId()), controleGratuitService.estGratuit(rendezVous));
     }
 
     private Facture factureActive(Long rendezVousId) {
@@ -204,6 +246,20 @@ public class RendezVousService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sélectionnez un patient ou saisissez un nouveau patient");
         }
         return trouverPatient(request.patientId());
+    }
+
+    /**
+     * Consultation d'origine demandee pour un controle gratuit. Le paiement est exige, sauf pour un controle
+     * deja programme par le medecin que l'accueil deplace (son origine ne change pas).
+     */
+    private RendezVous origineControle(RendezVousRequest request, Long patientId, Long medecinId, Long rendezVousId) {
+        if (request.rendezVousOrigineId() == null) return null;
+        RendezVous origine = trouver(request.rendezVousOrigineId());
+        RendezVous existant = rendezVousId == null ? null : trouver(rendezVousId);
+        boolean origineInchangee = existant != null && existant.getRendezVousOrigine() != null
+                && existant.getRendezVousOrigine().getId().equals(origine.getId());
+        controleGratuitService.verifier(origine, patientId, medecinId, request.dateHeure(), rendezVousId, !origineInchangee);
+        return origine;
     }
 
     private int numeroFile(LocalDate jour) {

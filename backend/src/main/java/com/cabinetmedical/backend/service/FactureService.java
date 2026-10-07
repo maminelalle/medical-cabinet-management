@@ -26,6 +26,7 @@ public class FactureService {
     private final RendezVousRepository rendezVousRepository;
     private final ActeProgrammeRepository acteProgrammeRepository;
     private final DispensationRepository dispensationRepository;
+    private final SoinRepository soinRepository;
     private final UtilisateurConnecte utilisateurConnecte;
 
     @Transactional(readOnly = true)
@@ -67,7 +68,10 @@ public class FactureService {
             total = total.add(requestLigne.montant());
         }
         facture.setMontantTotal(total);
+        // Controle gratuit ou acte offert : rien a encaisser, la facture est soldee des sa creation.
+        if (total.signum() == 0) facture.setStatut(StatutFacture.PAYEE);
         Facture enregistree = factureRepository.save(facture);
+        if (total.signum() == 0) return versResponse(enregistree);
         if (request.paiement() != null) {
             return ajouterPaiement(enregistree.getId(), request.paiement(), connecte);
         }
@@ -119,8 +123,20 @@ public class FactureService {
     }
 
     private void rattacherOrigine(Facture facture, FactureRequest request) {
-        if (request.rendezVousId() != null && request.acteProgrammeId() != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une facture concerne un rendez-vous ou un acte, pas les deux");
+        long origines = java.util.stream.Stream.of(request.rendezVousId(), request.acteProgrammeId(), request.soinId())
+                .filter(java.util.Objects::nonNull).count();
+        if (origines > 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une facture concerne un seul rendez-vous, acte ou soin");
+        }
+        if (request.soinId() != null) {
+            Soin soin = soinRepository.findById(request.soinId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Soin introuvable"));
+            verifierMemePatient(soin.getPatient(), facture.getPatient());
+            if (soin.getStatut() == StatutSoin.ANNULE) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce soin est annulé : il ne peut pas être facturé");
+            }
+            verifierAucuneFactureActive(factureRepository.findBySoinId(soin.getId()), "ce soin");
+            facture.setSoin(soin);
         }
         if (request.rendezVousId() != null) {
             RendezVous rendezVous = rendezVousRepository.findById(request.rendezVousId())

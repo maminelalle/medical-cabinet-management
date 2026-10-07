@@ -4,8 +4,8 @@
 .table-card { padding: 0; overflow: hidden; }
 .table-card .table-heading { padding: 22px 22px 0; }
 .table-card .table-wrap { margin-top: 16px; }
-.table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 22px; }
-.table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 22px; }
+.table-card thead th:first-child, .table-card tbody td:first-child { padding-inline-start: 22px; }
+.table-card thead th:last-child, .table-card tbody td:last-child { padding-inline-end: 22px; }
 td small, .muted { display: block; margin-top: 2px; color: var(--text-soft); font-size: var(--fs-label); }
 .table-heading .filters { gap: 10px; }
 .table-heading .filters select, .table-heading .filters input { width: auto; min-width: 170px; }

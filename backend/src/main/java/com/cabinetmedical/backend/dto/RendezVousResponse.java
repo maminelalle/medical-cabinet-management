@@ -24,16 +24,18 @@ public record RendezVousResponse(
         StatutRendezVous statut,
         Instant debutConsultation,
         Instant finConsultation,
+        Long rendezVousOrigineId,
+        boolean controleGratuit,
         Long factureId,
         StatutFacture factureStatut,
         Instant createdAt
 ) {
     public static RendezVousResponse from(RendezVous rendezVous) {
-        return from(rendezVous, null);
+        return from(rendezVous, null, rendezVous.getRendezVousOrigine() != null);
     }
 
-    /** {@code facture} = la facture active (non annulee) du rendez-vous, s'il en existe une. */
-    public static RendezVousResponse from(RendezVous rendezVous, Facture facture) {
+    /** {@code facture} = la facture active (non annulee) ; {@code controleGratuit} = controle couvert par la consultation payee. */
+    public static RendezVousResponse from(RendezVous rendezVous, Facture facture, boolean controleGratuit) {
         return new RendezVousResponse(
                 rendezVous.getId(),
                 rendezVous.getPatient().getId(),
@@ -50,6 +52,8 @@ public record RendezVousResponse(
                 rendezVous.getStatut(),
                 rendezVous.getDebutConsultation(),
                 rendezVous.getFinConsultation(),
+                rendezVous.getRendezVousOrigine() == null ? null : rendezVous.getRendezVousOrigine().getId(),
+                controleGratuit,
                 facture == null ? null : facture.getId(),
                 facture == null ? null : facture.getStatut(),
                 rendezVous.getCreatedAt()

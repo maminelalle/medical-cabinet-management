@@ -49,6 +49,9 @@ abstract class IntegrationTestBase {
     @Autowired protected MedicamentRepository medicamentRepository;
     @Autowired protected SessionUtilisateurRepository sessionRepository;
     @Autowired protected JournalActiviteRepository journalRepository;
+    @Autowired protected SoinRepository soinRepository;
+    @Autowired protected CatalogueActeRepository catalogueRepository;
+    @Autowired protected ParametresCabinetRepository parametresRepository;
 
     protected MockMvc mvc;
     protected Medecin medecin;
@@ -66,8 +69,13 @@ abstract class IntegrationTestBase {
         ligneFactureRepository.deleteAll();
         factureRepository.deleteAll();
         acteProgrammeRepository.deleteAll();
+        soinRepository.deleteAll();
+        catalogueRepository.deleteAll();
+        parametresRepository.deleteAll();
         prescriptionRepository.deleteAll();
         consultationRepository.deleteAll();
+        // Les controles referencent leur consultation d origine : ils partent en premier.
+        rendezVousRepository.deleteAll(rendezVousRepository.findAll().stream().filter(r -> r.getRendezVousOrigine() != null).toList());
         rendezVousRepository.deleteAll();
         patientRepository.deleteAll();
         medecinRepository.deleteAll();

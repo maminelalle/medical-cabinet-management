@@ -109,7 +109,7 @@ Le fichier `frontend/src/environments/environment.ts` centralise :
 
 ### Collection Postman
 
-`postman/cabinet-medical.postman_collection.json` contient les 80 requêtes de l'API, rangées en 10 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
+`postman/cabinet-medical.postman_collection.json` contient les 96 requêtes de l'API, rangées en 11 dossiers. Importer la collection dans Postman, exécuter d'abord « 0. Authentification » (un jeton est enregistré par rôle), puis les dossiers dans l'ordre : les identifiants créés sont réutilisés automatiquement. La variable `baseUrl` vaut `http://localhost:8080`.
 
 ## Comptes de démonstration
 
@@ -139,12 +139,23 @@ Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi,
 - Planning : facture du rendez-vous (ou bouton « Facturer »), modification, suppression (libère le créneau).
 - **Médecins au cabinet** (tableau de bord) : connecté ou non, en consultation, disponible ou en retard.
 - **Actes programmés** (`/actes`) : chirurgies et traitements programmés par les médecins, génération de leur facture.
+- **Soins et injections** (`/soins`) : le patient vient pour une injection, une perfusion, un pansement, une nébulisation ou une prise de constantes, souvent avec l'ordonnance d'un autre médecin et son propre produit. L'accueil enregistre le soin (patient existant ou créé sur place), l'équipe le **démarre** puis le **termine** avec ses observations, l'accueil le **facture** au tarif fixé par la direction. Mise à jour en temps réel sur tous les postes.
+- **Contrôle gratuit** : lors de la prise de rendez-vous, si le patient a payé une consultation chez **le même médecin** dans le délai fixé par la direction (30 jours par défaut, 1 contrôle), un bandeau le signale et le rendez-vous est rattaché à cette consultation ; la facture est pré-remplie à **0 MRU** et soldée aussitôt. L'accueil peut décocher pour facturer une nouvelle consultation. Dans le planning, un badge « Contrôle gratuit » repère ces rendez-vous.
+- **Tarif de consultation par spécialité** : la facture d'un rendez-vous reprend automatiquement le tarif de la spécialité du médecin (cardiologie, chirurgie...) ou, à défaut, le tarif général.
 
 ### Médecin
 
 - Planning : **▶ Démarrer** la consultation à l'arrivée du patient, puis rédaction du compte-rendu et **■ Terminer**.
 - Une fois la consultation terminée : **ordonnance** avec recherche des médicaments par nom, dosage ou **famille** et disponibilité en stock (saisie libre possible hors stock), puis **programmation d'un acte** (chirurgie, traitement, examen, hospitalisation, soins) à une date et une heure, avec détails et lieu. L'accueil et la direction le voient ; il s'imprime.
 - Après l'acte : compte-rendu, **résultat (réussi, partiel, échec)** et date de réalisation ; l'accueil le facture.
+- **Programmer un contrôle** en fin de consultation : le rendez-vous est rattaché à la consultation et devient gratuit pour le patient une fois celle-ci payée (hors délai, c'est un suivi facturé).
+- Les médecins peuvent aussi réaliser les **soins** (injection, perfusion...).
+
+### Direction
+
+- **Tarifs et gratuité** (`/direction/tarifs`) : grille tarifaire complète (consultation générale et **par spécialité**, soins, hospitalisation, chirurgie, examens...) : ajout, modification, activation / désactivation, suppression d'un tarif jamais facturé. Réglage de la **consultation de contrôle gratuite** : activée ou non, délai en jours, nombre de contrôles par consultation payée.
+- **Paramètres · employés** (`/direction/parametres`) : ajout, modification, désactivation et suppression des employés, sessions et appareils, rôles. Les comptes administrateurs ne sont pas visibles.
+- **Présence en temps réel** : arrivées et départs des employés, médecins en consultation, disponibles ou en retard s'affichent automatiquement (flux SSE `/api/evenements`), sans recharger la page.
 
 ### Pharmacien
 
@@ -160,6 +171,12 @@ Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi,
 - **Connexions et appareils** : sessions ouvertes, appareil, navigateur, système, adresse IP, dernière activité ; **révocation** d'une session.
 - **Journal d'activité** : toutes les actions (connexions et échecs, créations, paiements, annulations, exports PDF...), sans aucune donnée médicale.
 - **Rôles et permissions** et **coordonnées du cabinet** imprimées sur tous les documents.
+
+### Langue arabe
+
+- Bouton **العربية / Français** dans la barre du haut et sur la page de connexion. Le choix est mémorisé sur le poste.
+- En arabe, toute l'interface est traduite (navigation, écrans, boutons, messages, statuts, dates, messages d'erreur du serveur) et passe en **lecture de droite à gauche** (`dir="rtl"`, police Cairo). Les feuilles de style utilisent des propriétés logiques (`margin-inline-start`...) : la mise en page s'inverse d'elle-même.
+- Le dictionnaire (`frontend/src/core/i18n/ar.ts`) n'est téléchargé que si l'arabe est choisi ; les données saisies (noms, motifs) restent telles quelles.
 
 ### Export et import des dossiers
 
@@ -252,7 +269,7 @@ Patients de démonstration (Nouakchott) : Lalle Ould Mohamed, Mohamed Ould Sidi,
 
 La migration `V4__demo_data.sql` (détaillée dans [SCHEMA-BDD.md](SCHEMA-BDD.md)) crée un jeu de données complet et daté relativement à l'exécution : catalogue de 11 actes facturables, 3 médecins (médecine générale, cardiologie, chirurgie), 8 patients, 14 rendez-vous (terminés, en cours, confirmés, planifiés, absent, annulé), 5 consultations avec ordonnances et 9 factures (payées, partielles, en attente, annulée) accompagnées de 6 paiements cohérents avec les statuts.
 
-La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, et `V13` remplace les noms de démonstration par des noms mauritaniens. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
+La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur stock initial. `V6` ajoute le rôle pharmacien, `V7` relie les prescriptions existantes au stock, `V8` corrige son compte de démonstration, `V9` ajoute les prix d'achat/vente, fournisseur et expiration, `V10` ajoute le numéro de file quotidien, `V11` le motif, la date et l'auteur de l'annulation d'une facture, et `V12` le rôle administrateur, les actes programmés, les liens facture → rendez-vous / acte / dispensation, les références de paiement, les familles et mouvements de stock, les sessions et le journal d'activité, `V13` remplace les noms de démonstration par des noms mauritaniens, et `V14` ajoute la grille tarifaire par spécialité et les tarifs de soins, la règle du contrôle gratuit, le lien rendez-vous de contrôle → consultation d'origine et la table `soins`. Une dispensation décrémente le stock et crée automatiquement une facture pharmacie imprimable.
 
 ## Interface Angular livrée
 
@@ -314,7 +331,14 @@ La redirection après connexion dépend du rôle : accueil vers `/accueil`, méd
 | Dashboard | `GET /api/dashboard/impayes` | DIRECTION |
 | Dashboard | `GET /api/dashboard/activite-medecins` | DIRECTION |
 | Catalogue | `GET /api/actes-catalogue` | ACCUEIL, MEDECIN, DIRECTION |
-| Catalogue | `POST /api/actes-catalogue` | DIRECTION |
+| Catalogue | `POST /api/actes-catalogue`, `PUT /api/actes-catalogue/{id}`, `DELETE /api/actes-catalogue/{id}` (refusé si déjà facturé) | DIRECTION |
+| Catalogue | `GET /api/actes-catalogue?tous=true` (grille complète, tarifs inactifs compris) | ACCUEIL, MEDECIN, DIRECTION, ADMIN |
+| Contrôle gratuit | `GET /api/rendezvous/controle-gratuit?patientId&medecinId&date` | ACCUEIL, MEDECIN, DIRECTION, ADMIN |
+| Contrôle gratuit | `POST /api/rendezvous/{id}/controle` (le médecin programme le contrôle) | MEDECIN propriétaire |
+| Contrôle gratuit | `GET /api/parametres-cabinet/controle-gratuit` (tous), `PUT` | DIRECTION, ADMIN |
+| Soins | `GET /api/soins?date&patientId&statut`, `GET /api/soins/{id}` | ACCUEIL, MEDECIN, DIRECTION, ADMIN |
+| Soins | `POST /api/soins`, `PUT /api/soins/{id}`, `POST /api/soins/{id}/demarrer`, `/terminer`, `/annulation` | ACCUEIL, MEDECIN |
+| Temps réel | `GET /api/evenements?jeton=` (flux SSE : présence, consultations, soins) | Utilisateur connecté |
 | Factures | `GET /api/factures`, `GET /api/factures/{id}` | ACCUEIL, MEDECIN, PHARMACIEN, DIRECTION |
 | Factures | `POST /api/factures` | ACCUEIL, PHARMACIEN |
 | Factures | `POST /api/factures/{id}/annulation` (motif obligatoire, refusée si un paiement existe) | ACCUEIL |
@@ -356,7 +380,7 @@ cd backend
 ./mvnw.cmd test
 ```
 
-Résultat : 20 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `ParcoursCompletIntegrationTest` vérifient à travers l'API réelle (JWT compris, base H2) :
+Résultat : 26 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `ParcoursCompletIntegrationTest` vérifient à travers l'API réelle (JWT compris, base H2) :
 
 - paiement partiel puis complet, recalcul du statut, refus d'un paiement supérieur au reste dû (`422`) ;
 - annulation de facture : motif obligatoire, refus si déjà annulée ou déjà encaissée ;
@@ -369,7 +393,11 @@ Résultat : 20 tests, `BUILD SUCCESS`. `ParcoursMetierIntegrationTest` et `Parco
 - facture unique par rendez-vous, référence obligatoire hors espèces ;
 - démarrer puis terminer une consultation, programmer / réaliser / facturer un acte ;
 - vente pharmacie : stock, paiement, mouvements et finances ;
-- administration : comptes, révocation de session, compte désactivé, journal, présence des médecins.
+- administration : comptes, révocation de session, compte désactivé, journal, présence des médecins ;
+- direction : gestion des employés et de leurs sessions, flux temps réel (SSE) ;
+- grille tarifaire : création, modification, désactivation, suppression refusée pour un tarif déjà facturé ;
+- contrôle gratuit : refus tant que la consultation n'est pas payée, autre médecin ou hors délai non éligibles, un seul contrôle par défaut puis deux après réglage par la direction, facture à 0 soldée, contrôle programmé par le médecin ;
+- soins : enregistrement, démarrage, fin, facture rattachée au soin (unique), droits par rôle.
 
 Frontend :
 
@@ -406,7 +434,7 @@ Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 | Dossier patient côté médecin (compte-rendu, prescription) | Terminé (API + écrans `/rendez-vous/:id/consultation` et `/dossier/:patientId`) |
 | Facturation multi-actes et paiements | Terminé (statut recalculé côté serveur) |
 | Tableau de bord direction | Terminé (4 endpoints agrégés sur données réelles) |
-| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`) |
+| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`, tarifs et soins `V14`) |
 | Pharmacie interne | Terminé (stock, mouvements, vente avec paiement, finances) |
 | Actes programmés (chirurgie, traitement...) | Terminé (programmation, réalisation, facturation) |
 | Administration | Terminé (comptes, sessions, journal, permissions) |
@@ -417,7 +445,10 @@ Livrées après stabilisation du cœur :
 
 - pharmacie interne : familles, stock et mouvements, fiche produit, vente des ordonnances avec paiement, finances ;
 - actes programmés : chirurgie, traitement, examen, hospitalisation et soins planifiés à un créneau du médecin, avec compte-rendu, résultat et facture ;
-- administration : comptes, sessions, journal d'activité, permissions.
+- administration : comptes, sessions, journal d'activité, permissions ;
+- soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) ;
+- grille tarifaire de la direction et consultation de contrôle gratuite ;
+- interface bilingue français / arabe (RTL).
 
 Restent possibles : laboratoire (demande d'examen, résultat rattaché au dossier), gestion des salles et des lits, espace patient.
 

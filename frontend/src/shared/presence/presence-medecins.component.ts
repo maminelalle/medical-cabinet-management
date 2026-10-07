@@ -41,13 +41,13 @@ import { PresenceMedecin, StatutPresence } from '../../core/models/admin';
     .presence-card { display: grid; gap: 14px; }
     .live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
     .presence-list { display: grid; gap: 8px; }
-    .presence-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-soft); border-left-width: 3px; border-radius: var(--radius-sm); background: var(--bg-subtle); }
-    .presence-row.disponible { border-left-color: var(--accent); }
-    .presence-row.en_consultation { border-left-color: var(--brand); }
-    .presence-row.en_retard { border-left-color: var(--warn); }
-    .presence-row.absent { border-left-color: var(--border-strong); opacity: .8; }
+    .presence-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-soft); border-inline-start-width: 3px; border-radius: var(--radius-sm); background: var(--bg-subtle); }
+    .presence-row.disponible { border-inline-start-color: var(--accent); }
+    .presence-row.en_consultation { border-inline-start-color: var(--brand); }
+    .presence-row.en_retard { border-inline-start-color: var(--warn); }
+    .presence-row.absent { border-inline-start-color: var(--border-strong); opacity: .8; }
     .presence-avatar { position: relative; display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 50%; background: var(--brand-soft); color: var(--brand-dark); font-size: var(--fs-xs); font-weight: 800; }
-    .presence-avatar i { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border: 2px solid var(--bg-surface); border-radius: 50%; background: var(--border-strong); }
+    .presence-avatar i { position: absolute; inset-inline-end: -1px; bottom: -1px; width: 11px; height: 11px; border: 2px solid var(--bg-surface); border-radius: 50%; background: var(--border-strong); }
     .presence-avatar i.on { background: var(--accent); }
     .presence-info { display: grid; gap: 2px; flex: 1; min-width: 0; }
     .presence-info strong { color: var(--text-strong); font-size: var(--fs-sm); }

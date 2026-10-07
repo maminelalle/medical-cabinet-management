@@ -6,10 +6,10 @@
 .table-card .message { padding: 0 22px; }
 .table-card .empty-state { margin: 22px; }
 .table-card .table-wrap { margin-top: 18px; }
-.table-card thead th:first-child { padding-left: 22px; border-radius: 0; }
-.table-card thead th:last-child { padding-right: 22px; border-radius: 0; }
-.table-card tbody td:first-child { padding-left: 22px; }
-.table-card tbody td:last-child { padding-right: 22px; }
+.table-card thead th:first-child { padding-inline-start: 22px; border-radius: 0; }
+.table-card thead th:last-child { padding-inline-end: 22px; border-radius: 0; }
+.table-card tbody td:first-child { padding-inline-start: 22px; }
+.table-card tbody td:last-child { padding-inline-end: 22px; }
 
 /* --- Fiche patient ------------------------------------------------------ */
 .edit-drawer { display: grid; gap: 20px; border-color: #dbeafe; box-shadow: var(--shadow-pop); }
@@ -43,6 +43,6 @@
   .edit-drawer form { grid-template-columns: minmax(0, 1fr); }
   .table-card .table-heading { padding: 18px 18px 0; }
   .table-card .empty-state { margin: 18px; }
-  .table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 18px; }
-  .table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 18px; }
+  .table-card thead th:first-child, .table-card tbody td:first-child { padding-inline-start: 18px; }
+  .table-card thead th:last-child, .table-card tbody td:last-child { padding-inline-end: 18px; }
 }

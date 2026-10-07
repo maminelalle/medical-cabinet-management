@@ -17,6 +17,11 @@ public class CatalogueActe {
     private String libelle;
     @Column(nullable = false, length = 50)
     private String type;
+    /** Tarif de consultation propre a une specialite (null = tarif general). */
+    @Column(length = 150)
+    private String specialite;
+    @Column(length = 255)
+    private String description;
     @Column(name = "montant_defaut", nullable = false, precision = 12, scale = 2)
     private BigDecimal montantDefaut;
     @Column(nullable = false)

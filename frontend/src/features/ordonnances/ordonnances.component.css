@@ -12,7 +12,7 @@ td.meds { max-width: 260px; overflow: hidden; color: var(--text-muted); text-ove
 .identity-list { display: grid; margin: 0; padding: 0; list-style: none; }
 .identity-list li { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid var(--border-soft); font-size: var(--fs-xs); }
 .identity-list li span { color: var(--text-muted); font-weight: 600; }
-.identity-list li strong { color: var(--text-strong); text-align: right; }
+.identity-list li strong { color: var(--text-strong); text-align: end; }
 .ordonnance { display: grid; gap: 10px; }
 .ordonnance > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-subtle); }
 .ordonnance strong { color: var(--text-strong); font-size: var(--fs-sm); font-weight: 700; }

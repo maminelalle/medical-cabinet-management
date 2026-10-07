@@ -5,7 +5,7 @@
 .summary-card .patient-avatar { width: 46px; height: 46px; font-size: 14px; }
 .summary-card h2 { font-size: 18px; }
 .summary-card p { margin-top: 4px; color: var(--text-muted); font-size: var(--fs-xs); }
-.summary-card .badge { margin-left: auto; }
+.summary-card .badge { margin-inline-start: auto; }
 
 .consultation-card { display: grid; gap: 22px; }
 .report-text {

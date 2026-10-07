@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { CatalogueActeService } from '../../core/catalogue/catalogue-acte.service';
-import { CatalogueActe } from '../../core/models/catalogue';
+import { CatalogueActe, TYPES_TARIF } from '../../core/models/catalogue';
 
 @Component({
   selector: 'app-catalogue',
@@ -17,7 +17,7 @@ export class CatalogueComponent {
   private readonly builder = inject(FormBuilder);
 
   readonly peutCreer = this.auth.role() === 'DIRECTION';
-  readonly types = ['CONSULTATION', 'HOSPITALISATION', 'CHIRURGIE', 'LABORATOIRE', 'IMAGERIE', 'PHARMACIE', 'SOINS'];
+  readonly types = TYPES_TARIF;
   readonly form = this.builder.nonNullable.group({
     libelle: ['', [Validators.required, Validators.maxLength(150)]],
     type: ['CONSULTATION', Validators.required],

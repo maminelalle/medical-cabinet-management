@@ -11,18 +11,18 @@
 .table-card .table-heading { padding: 22px 22px 0; }
 .table-card .empty-state, .table-card .error-state { margin: 22px; }
 .table-card .table-wrap { margin-top: 18px; }
-.table-card thead th:first-child { padding-left: 22px; border-radius: 0; }
-.table-card thead th:last-child { padding-right: 22px; border-radius: 0; }
-.table-card tbody td:first-child { padding-left: 22px; }
-.table-card tbody td:last-child { padding-right: 22px; }
+.table-card thead th:first-child { padding-inline-start: 22px; border-radius: 0; }
+.table-card thead th:last-child { padding-inline-end: 22px; border-radius: 0; }
+.table-card tbody td:first-child { padding-inline-start: 22px; }
+.table-card tbody td:last-child { padding-inline-end: 22px; }
 
 @media (max-width: 760px) {
   .filters { padding: 16px; }
   .filter-search { flex: 1 1 100%; }
   .table-card .table-heading { padding: 18px 18px 0; }
   .table-card .empty-state, .table-card .error-state { margin: 18px; }
-  .table-card thead th:first-child, .table-card tbody td:first-child { padding-left: 18px; }
-  .table-card thead th:last-child, .table-card tbody td:last-child { padding-right: 18px; }
+  .table-card thead th:first-child, .table-card tbody td:first-child { padding-inline-start: 18px; }
+  .table-card thead th:last-child, .table-card tbody td:last-child { padding-inline-end: 18px; }
 }
 /* Facture du rendez-vous et actions rapides */
 .time small { display: block; margin-top: 2px; color: var(--text-soft); font-size: var(--fs-label); font-weight: 600; }
@@ -31,3 +31,7 @@
 .facture-lien.payee { background: var(--accent-soft); color: var(--accent-text); }
 .actions { flex-wrap: wrap; }
 .row-action.danger { color: var(--danger-text); }
+
+/* Rendez-vous de controle (gratuit selon la regle de la direction) */
+.badge-controle { display: inline-block; margin-inline-start: 6px; padding: 2px 8px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 800; }
+.badge-controle.gratuit { background: #dcfce7; color: #166534; }

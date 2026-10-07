@@ -35,7 +35,7 @@
 .summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, var(--brand-soft), var(--bg-surface) 65%); border-color: #dbeafe; }
 .summary span { display: block; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; }
 .summary strong { display: block; margin-top: 8px; color: var(--text-strong); font-size: clamp(22px, 2vw, 28px); font-weight: 800; letter-spacing: -.03em; }
-.summary p { max-width: 320px; color: var(--text-muted); font-size: var(--fs-xs); text-align: right; }
+.summary p { max-width: 320px; color: var(--text-muted); font-size: var(--fs-xs); text-align: end; }
 
 @media (max-width: 1180px) {
   .line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -45,7 +45,7 @@
   .line { grid-template-columns: minmax(0, 1fr); }
   .line .remove-button { grid-column: 1; justify-self: start; }
   .summary { flex-direction: column; align-items: flex-start; }
-  .summary p { max-width: none; text-align: left; }
+  .summary p { max-width: none; text-align: start; }
 }
 /* Origine, paiement */
 .new-invoice-page form { display: grid; gap: 18px; }
@@ -60,3 +60,4 @@
 .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .hint { color: var(--text-soft); font-size: var(--fs-xs); }
 @media (max-width: 900px) { .form-grid.three { grid-template-columns: minmax(0, 1fr); } }
+.origin-card small.gratuit { display: block; color: #15803d; font-weight: 700; }

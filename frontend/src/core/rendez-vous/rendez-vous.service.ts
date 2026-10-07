@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Creneau, RendezVous, RendezVousRequest, StatutRendezVous } from '../models/rendez-vous';
+import { ControleGratuit, Creneau, RendezVous, RendezVousRequest, StatutRendezVous } from '../models/rendez-vous';
 
 export interface Medecin { id: number; nom: string; prenom: string; specialite?: string; }
 
@@ -29,6 +29,16 @@ export class RendezVousService {
   creneaux(medecinId: number, date: string, dureeMinutes: number): Observable<Creneau[]> {
     const params = new HttpParams().set('medecinId', medecinId).set('date', date).set('dureeMinutes', dureeMinutes);
     return this.http.get<Creneau[]>(`${this.url}/creneaux`, { params });
+  }
+  /** Le patient a-t-il droit a un controle gratuit avec ce medecin a cette date ? */
+  controleGratuit(patientId: number, medecinId: number, date: string, exclure?: number): Observable<ControleGratuit> {
+    let params = new HttpParams().set('patientId', patientId).set('medecinId', medecinId).set('date', date);
+    if (exclure) params = params.set('exclure', exclure);
+    return this.http.get<ControleGratuit>(`${this.url}/controle-gratuit`, { params });
+  }
+  /** Le medecin programme le controle du patient en fin de consultation. */
+  programmerControle(id: number, dateHeure: string, dureeMinutes: number, motif?: string): Observable<RendezVous> {
+    return this.http.post<RendezVous>(`${this.url}/${id}/controle`, { dateHeure, dureeMinutes, motif });
   }
   doctors(): Observable<Medecin[]> { return this.http.get<Medecin[]>(`${environment.apiUrl}/medecins`); }
   /** Cree le rendez-vous ; avec {@code nouveauPatient}, la fiche patient est creee en meme temps. */

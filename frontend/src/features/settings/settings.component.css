@@ -8,10 +8,10 @@
 dl { display: grid; gap: 14px; margin: 0; }
 dl div { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 dt { color: var(--text-muted); }
-dd { margin: 0; color: var(--text-strong); font-weight: 700; text-align: right; }
+dd { margin: 0; color: var(--text-strong); font-weight: 700; text-align: end; }
 .access-list { display: grid; gap: 18px; list-style: none; margin: 0; padding: 0; }
 .access-list li { display: flex; gap: 12px; align-items: flex-start; }
 .access-list li > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #e6f7ef; color: #16704c; font-weight: 800; }
 .access-list strong, .access-list small { display: block; }
 .access-list small { margin-top: 4px; color: var(--text-muted); }
-@media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } dl div { display: grid; gap: 4px; } dd { text-align: left; } }
+@media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } dl div { display: grid; gap: 4px; } dd { text-align: start; } }

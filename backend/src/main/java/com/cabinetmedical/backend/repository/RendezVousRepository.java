@@ -3,13 +3,14 @@ package com.cabinetmedical.backend.repository;
 import com.cabinetmedical.backend.entity.RendezVous;
 import com.cabinetmedical.backend.entity.StatutRendezVous;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
 		List<RendezVous> findAllByOrderByDateHeureAsc();
 
 		List<RendezVous> findByPatientIdOrderByDateHeureDesc(Long patientId);
+
+		List<RendezVous> findByRendezVousOrigineId(Long rendezVousOrigineId);
 
 		long countByPatientId(Long patientId);
 

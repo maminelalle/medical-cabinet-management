@@ -13,6 +13,8 @@ import { Medicament } from '../../core/models/pharmacie';
 import { RendezVous } from '../../core/models/rendez-vous';
 import { PharmacieService } from '../../core/pharmacie/pharmacie.service';
 import { RendezVousService } from '../../core/rendez-vous/rendez-vous.service';
+import { CatalogueActeService } from '../../core/catalogue/catalogue-acte.service';
+import { RegleControleGratuit } from '../../core/models/catalogue';
 import { ChoixMedicament, MedicamentRechercheComponent } from '../../shared/medicament-recherche/medicament-recherche.component';
 
 interface LigneOrdonnance { medicamentId: number | null; medicament: string; posologie: string; duree: string; }
@@ -54,8 +56,14 @@ export class ConsultationComponent {
   lignes: LigneOrdonnance[] = [this.nouvelleLigne()];
   acteOuvert = false;
   acte = { type: 'CHIRURGIE' as TypeActe, intitule: '', details: '', date: '', heure: '09:00', dureeMinutes: 60, lieu: '' };
+  /** Rendez-vous de controle programme par le medecin (gratuit selon la regle de la direction). */
+  controleOuvert = false;
+  controle = { date: '', heure: '09:00', dureeMinutes: 20, motif: 'Consultation de contrôle' };
+  controleProgramme: RendezVous | null = null;
+  regleControle: RegleControleGratuit | null = null;
 
   constructor() {
+    inject(CatalogueActeService).regleControle().subscribe({ next: (regle) => { this.regleControle = regle; } });
     this.pharmacieService.medicaments().subscribe({ next: (items) => this.medicaments = items, error: () => this.medicaments = [] });
     this.charger();
     interval(30000).pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(() => this.maintenant = Date.now());
@@ -141,6 +149,35 @@ export class ConsultationComponent {
     }).subscribe({
       next: () => { this.message = 'Ordonnance enregistrée : elle apparaît chez le pharmacien et peut être imprimée.'; this.saving = false; this.charger(); },
       error: (response) => { this.error = messageErreur(response, 'L’ordonnance n’a pas pu être enregistrée.'); this.saving = false; }
+    });
+  }
+
+  // --- Controle -----------------------------------------------------------------------------------
+
+  ouvrirControle(): void {
+    this.controleOuvert = !this.controleOuvert;
+    if (!this.controle.date) {
+      // Par defaut : une semaine plus tard, dans le delai du controle gratuit.
+      const jours = Math.min(7, this.regleControle?.jours ?? 7);
+      this.controle.date = new Date(Date.now() + jours * 86400000).toLocaleDateString('sv-SE');
+    }
+  }
+
+  programmerControle(): void {
+    if (!this.rendezVous || !this.controle.date || !this.controle.heure) { this.error = 'Choisissez la date et l’heure du contrôle.'; return; }
+    this.saving = true;
+    this.error = '';
+    this.rendezVousService.programmerControle(this.rendezVous.id, `${this.controle.date}T${this.controle.heure}`,
+      Number(this.controle.dureeMinutes), this.controle.motif.trim() || undefined).subscribe({
+      next: (rendezVous) => {
+        this.controleProgramme = rendezVous;
+        this.message = rendezVous.rendezVousOrigineId
+          ? 'Contrôle programmé : il est gratuit pour le patient une fois cette consultation payée.'
+          : 'Rendez-vous de suivi programmé (hors délai du contrôle gratuit : il sera facturé).';
+        this.controleOuvert = false;
+        this.saving = false;
+      },
+      error: (response) => { this.error = messageErreur(response, 'Le contrôle n’a pas pu être programmé.'); this.saving = false; }
     });
   }
 

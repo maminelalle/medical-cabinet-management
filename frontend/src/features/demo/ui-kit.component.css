@@ -25,7 +25,7 @@
 .nav-preview .nav-label:first-child { margin-top: 4px; }
 .nav-preview .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; }
 .nav-preview .nav-item.active { background: var(--bg-active); color: var(--brand-dark); font-weight: 700; }
-.nav-preview .nav-item em { margin-left: auto; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--bg-hover); color: var(--text-soft); font-size: 9.5px; font-style: normal; font-weight: 700; }
+.nav-preview .nav-item em { margin-inline-start: auto; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--bg-hover); color: var(--text-soft); font-size: 9.5px; font-style: normal; font-weight: 700; }
 
 /* Accent de chacune des quatre cartes indicateurs */
 .ui-kit-page .stats-grid .stat-card:nth-child(1) { border-top-color: var(--accent); }

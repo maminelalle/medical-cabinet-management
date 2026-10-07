@@ -88,7 +88,15 @@
                   <small>Patient #{{ appointment.patientId }}</small>
                 </td>
                 <td>Dr. {{ appointment.medecinPrenom }} {{ appointment.medecinNom }}</td>
-                <td>{{ appointment.motif || 'Consultation' }}</td>
+                <td>
+                  {{ appointment.motif || 'Consultation' }}
+                  @if (appointment.rendezVousOrigineId) {
+                    <span class="badge-controle" [class.gratuit]="appointment.controleGratuit"
+                          [title]="appointment.controleGratuit ? 'Consultation précédente payée : rien à facturer' : 'Gratuit une fois la consultation d’origine payée'">
+                      {{ appointment.controleGratuit ? 'Contrôle gratuit' : 'Contrôle' }}
+                    </span>
+                  }
+                </td>
                 <td><span class="badge" [class]="appointment.statut.toLowerCase()">{{ statusLabel(appointment.statut) }}</span></td>
                 @if (!isDoctor) {
                   <td>

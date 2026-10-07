@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Facture multi-actes. Elle peut etre rattachee a un rendez-vous ou a un acte programme (une seule facture
+ * Facture multi-actes. Elle peut etre rattachee a un rendez-vous, un acte programme ou un soin (une seule facture
  * active par origine) et encaissee immediatement avec {@code paiement}.
  */
 public record FactureRequest(
@@ -17,9 +17,10 @@ public record FactureRequest(
         @NotEmpty List<@Valid LigneFactureRequest> lignes,
         Long rendezVousId,
         Long acteProgrammeId,
+        Long soinId,
         @Valid PaiementRequest paiement
 ) {
     public FactureRequest(Long patientId, LocalDate dateFacture, List<LigneFactureRequest> lignes) {
-        this(patientId, dateFacture, lignes, null, null, null);
+        this(patientId, dateFacture, lignes, null, null, null, null);
     }
 }

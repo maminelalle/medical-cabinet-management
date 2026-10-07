@@ -5,13 +5,14 @@ import { environment } from '../../environments/environment';
 import { Facture, PaiementRequest, StatutFacture } from '../models/facture';
 
 export interface FactureLineRequest { catalogueActeId?: number; libelle: string; typeActe: string; montant: number; }
-/** Facture rattachee a un rendez-vous ou a un acte, encaissee immediatement si {@code paiement} est fourni. */
+/** Facture rattachee a un rendez-vous, un acte ou un soin, encaissee immediatement si {@code paiement} est fourni. */
 export interface FactureCreateRequest {
   patientId: number;
   dateFacture: string;
   lignes: FactureLineRequest[];
   rendezVousId?: number | null;
   acteProgrammeId?: number | null;
+  soinId?: number | null;
   paiement?: PaiementRequest | null;
 }
 

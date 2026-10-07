@@ -17,7 +17,11 @@
         <p class="breadcrumb">RENDEZ-VOUS ENREGISTRÉ</p>
         <h2>{{ cree.patientPrenom }} {{ cree.patientNom }} · {{ cree.dateHeure | date:'EEEE d MMMM à HH:mm':'':'fr-FR' }}</h2>
         <p>Dr. {{ cree.medecinPrenom }} {{ cree.medecinNom }} · {{ cree.dureeMinutes }} min · numéro de file <strong>{{ cree.numeroFile }}</strong></p>
-        <p class="hint">Le patient peut payer maintenant ou après sa consultation.</p>
+        @if (cree.controleGratuit) {
+          <p class="hint gratuit">Contrôle gratuit : la consultation précédente est payée, la facture de ce rendez-vous sera à 0 MRU.</p>
+        } @else {
+          <p class="hint">Le patient peut payer maintenant ou après sa consultation.</p>
+        }
       </div>
       <div class="success-actions">
         <a class="primary-button" routerLink="/factures/nouveau" [queryParams]="{ rendezVousId: cree.id }">▤ Rédiger la facture maintenant</a>
@@ -106,6 +110,19 @@
             }
           </div>
           <label class="manual-time">Heure choisie *<input type="time" formControlName="heure"></label>
+        }
+
+        @if (controle?.eligible) {
+          <div class="controle-gratuit">
+            <label class="interrupteur">
+              <input type="checkbox" [checked]="appliquerControle" (change)="appliquerControle = !appliquerControle" [disabled]="form.disabled">
+              <span><strong>Contrôle gratuit</strong> · consultation payée du {{ controle!.dateOrigine | date:'dd/MM/yyyy' }}, valable jusqu’au {{ controle!.dateLimite | date:'dd/MM/yyyy' }}
+              ({{ controle!.restants }} contrôle(s) restant(s))</span>
+            </label>
+            <small>{{ appliquerControle ? 'Rien à payer pour ce rendez-vous.' : 'Décoché : le rendez-vous sera facturé comme une nouvelle consultation.' }}</small>
+          </div>
+        } @else if (controle && origineExistante) {
+          <div class="controle-gratuit attention"><small>Contrôle programmé par le médecin : {{ controle.message }}.</small></div>
         }
       </article>
 

@@ -30,6 +30,8 @@ public class Facture {
     private RendezVous rendezVous;
     @ManyToOne @JoinColumn(name = "acte_programme_id")
     private ActeProgramme acteProgramme;
+    @ManyToOne @JoinColumn(name = "soin_id")
+    private Soin soin;
     @Column(name = "motif_annulation", length = 500)
     private String motifAnnulation;
     @Column(name = "date_annulation")

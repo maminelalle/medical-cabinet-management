@@ -6,11 +6,12 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../../core/auth/auth.service';
 import { FactureService } from '../../core/factures/facture.service';
 import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
+import { ChoixLangueComponent } from '../langue/choix-langue.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [ChoixLangueComponent, FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="app-shell" [class.is-collapsed]="collapsed()">
       <aside class="sidebar">
@@ -55,6 +56,10 @@ import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M12 8v8M8 12h8" /></svg></span>
               <span class="nav-text">{{ role === 'MEDECIN' ? 'Mes actes programmés' : 'Actes programmés' }}</span>
             </a>
+            <a routerLink="/soins" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 3 3 3M16.5 4.5l3 3M19.5 7.5 9 18l-3 .9.9-3L17.5 5.5" /><path d="m6 18-3 3M12 9l3 3" /></svg></span>
+              <span class="nav-text">Soins et injections</span>
+            </a>
           }
           <a routerLink="/ordonnances" routerLinkActive="active">
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M14 3v5h5" /><path d="M9.5 12.5v5M9.5 12.5h2.2a1.6 1.6 0 0 1 0 3.2H9.5M11.4 15.7l2.6 2.8" /></svg></span>
@@ -66,7 +71,12 @@ import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1Z" /><path d="M9.5 8.5h5M9.5 12.5h5" /></svg></span>
             <span class="nav-text">Facturation</span>
           </a>
-          @if (peutVoirCatalogue) {
+          @if (role === 'DIRECTION') {
+            <a routerLink="/direction/tarifs" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12Z" /><circle cx="7.5" cy="8" r="1.5" /></svg></span>
+              <span class="nav-text">Tarifs et gratuité</span>
+            </a>
+          } @else if (peutVoirCatalogue) {
             <a routerLink="/catalogue" routerLinkActive="active">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5.5A1.5 1.5 0 0 1 5.5 4H16a1 1 0 0 1 1 1v14.5" /><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19V8" /><path d="M8 8h5M8 12h5" /></svg></span>
               <span class="nav-text">Catalogue des actes</span>
@@ -159,6 +169,7 @@ import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
             <p class="topbar-context">{{ role === 'PHARMACIEN' ? 'Pharmacie · stock et ventes' : role === 'ADMIN' ? 'Administration · comptes, sessions et activité' : 'Direction · pilotage de l’activité du cabinet' }}</p>
           }
           <div class="topbar-actions">
+            <app-choix-langue />
             @if (billing) {
               <button
                 type="button"

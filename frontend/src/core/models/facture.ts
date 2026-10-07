@@ -1,5 +1,5 @@
 export type StatutFacture = 'EN_ATTENTE' | 'PARTIELLE' | 'PAYEE' | 'ANNULEE';
-export type OrigineFacture = 'CONSULTATION' | 'ACTE' | 'PHARMACIE' | 'LIBRE';
+export type OrigineFacture = 'CONSULTATION' | 'ACTE' | 'SOIN' | 'PHARMACIE' | 'LIBRE';
 
 export interface LigneFacture {
   id: number;
@@ -41,6 +41,8 @@ export interface Facture {
   acteProgrammeId?: number | null;
   acteIntitule?: string | null;
   dispensationId?: number | null;
+  soinId?: number | null;
+  soinIntitule?: string | null;
 }
 
 export interface PaiementRequest {
@@ -68,6 +70,7 @@ export function libelleOrigine(facture: Facture): string {
   switch (facture.origine) {
     case 'CONSULTATION': return 'Rendez-vous' + (facture.rendezVousMedecin ? ' · ' + facture.rendezVousMedecin : '');
     case 'ACTE': return 'Acte · ' + (facture.acteIntitule ?? '');
+    case 'SOIN': return 'Soin · ' + (facture.soinIntitule ?? '');
     case 'PHARMACIE': return 'Pharmacie';
     default: return 'Facture libre';
   }

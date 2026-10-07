@@ -1,3 +1,4 @@
+import { ChoixLangueComponent } from '../../shared/langue/choix-langue.component';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -5,7 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
 const CLE_EMAIL_MEMORISE = 'cabinet.emailMemoire';
 
-@Component({ selector: 'app-login', standalone: true, imports: [ReactiveFormsModule], templateUrl: './login.component.html', styleUrl: './login.component.css' })
+@Component({ selector: 'app-login', standalone: true, imports: [ChoixLangueComponent, ReactiveFormsModule], templateUrl: './login.component.html', styleUrl: './login.component.css' })
 export class LoginComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(AuthService);

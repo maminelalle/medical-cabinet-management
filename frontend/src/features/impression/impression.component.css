@@ -14,9 +14,9 @@
 .print-document h2 { font-size: 15px; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .document-row { display: flex; justify-content: space-between; gap: 20px; padding: 13px 0; border-bottom: 1px solid var(--border-soft); }
 .document-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.document-table th { padding: 10px 8px; border-bottom: 2px solid var(--text-strong); text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.document-table th { padding: 10px 8px; border-bottom: 2px solid var(--text-strong); text-align: start; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
 .document-table td { padding: 10px 8px; border-bottom: 1px solid var(--border-soft); }
-.document-table .right { text-align: right; white-space: nowrap; }
+.document-table .right { text-align: end; white-space: nowrap; }
 .document-totals { display: grid; gap: 8px; margin: 20px 0 0 auto; max-width: 340px; }
 .document-totals p { display: flex; justify-content: space-between; gap: 18px; color: var(--text-muted); }
 .document-totals strong { color: var(--text-strong); }
@@ -29,7 +29,7 @@
 .doctor-block { display: grid; gap: 3px; margin-top: 22px; }
 .doctor-block strong { font-size: 17px; color: var(--text-strong); }
 .doctor-block span { color: var(--text-muted); font-size: 13px; }
-.prescription-lines { display: grid; gap: 14px; margin: 10px 0 0; padding-left: 22px; }
+.prescription-lines { display: grid; gap: 14px; margin: 10px 0 0; padding-inline-start: 22px; }
 .prescription-lines li strong { display: block; color: var(--text-strong); }
 .prescription-lines li span { color: var(--text-muted); font-size: 13px; }
 .dossier-entry { padding: 12px 0; border-bottom: 1px solid var(--border-soft); }

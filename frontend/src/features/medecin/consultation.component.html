@@ -102,6 +102,38 @@
 
         <section class="card consultation-card">
           <div class="section-heading">
+            <div>
+              <h2>Rendez-vous de contrôle</h2>
+              <p>
+                @if (regleControle?.actif) {
+                  Gratuit pour le patient pendant {{ regleControle!.jours }} jours après cette consultation payée
+                } @else {
+                  Le contrôle gratuit est désactivé par la direction : le rendez-vous sera facturé
+                }
+              </p>
+            </div>
+            <button class="soft-button" type="button" (click)="ouvrirControle()">{{ controleOuvert ? 'Fermer' : '+ Programmer un contrôle' }}</button>
+          </div>
+          @if (controleOuvert) {
+            <div class="acte-form">
+              <label>Date *<input type="date" [(ngModel)]="controle.date"></label>
+              <label>Heure *<input type="time" [(ngModel)]="controle.heure"></label>
+              <label>Durée (min)<input type="number" min="5" step="5" [(ngModel)]="controle.dureeMinutes"></label>
+              <label class="wide">Motif<input [(ngModel)]="controle.motif"></label>
+              <div class="form-actions full"><button class="primary-button" type="button" (click)="programmerControle()" [disabled]="saving">Programmer le contrôle</button></div>
+            </div>
+          }
+          @if (controleProgramme) {
+            <div class="acte-row">
+              <span><strong>{{ controleProgramme.motif }}</strong><small>{{ controleProgramme.dateHeure | date:'EEEE d MMMM yyyy à HH:mm':'':'fr-FR' }} · {{ controleProgramme.dureeMinutes }} min</small></span>
+              <span class="badge" [class.success]="controleProgramme.rendezVousOrigineId">{{ controleProgramme.rendezVousOrigineId ? 'Contrôle gratuit' : 'Suivi facturé' }}</span>
+              <a class="row-action" [routerLink]="['/impression/rendez-vous', controleProgramme.id]" aria-label="Imprimer">⎙</a>
+            </div>
+          }
+        </section>
+
+        <section class="card consultation-card">
+          <div class="section-heading">
             <div><h2>Actes programmés</h2><p>Chirurgie, traitement, examen… à une date et une heure précises</p></div>
             <button class="soft-button" type="button" (click)="ouvrirActe()">{{ acteOuvert ? 'Fermer' : '+ Programmer un acte' }}</button>
           </div>
