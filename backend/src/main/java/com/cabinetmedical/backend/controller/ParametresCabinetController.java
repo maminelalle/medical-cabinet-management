@@ -25,12 +25,12 @@ public class ParametresCabinetController {
     @PreAuthorize("hasRole('ADMIN')")
     public ParametresCabinetDto modifier(@Valid @RequestBody ParametresCabinetDto request) { return service.modifier(request); }
 
-    /** Apparence de l'interface : lisible sans connexion (page de connexion). */
+    /** Apparence de l'interface : lisible sans connexion (page de connexion), modifiable par l'administrateur et la direction. */
     @GetMapping("/apparence")
     public ApparenceDto apparence() { return service.lireApparence(); }
 
     @PutMapping("/apparence")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTION')")
     public ApparenceDto modifierApparence(@Valid @RequestBody ApparenceDto request) { return service.modifierApparence(request); }
 
     /** Regle du controle gratuit (delai et nombre), affichee a l'accueil et reglee par la direction. */

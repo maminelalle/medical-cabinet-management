@@ -90,6 +90,23 @@ cd backend
 
 API disponible sur `http://localhost:8080`.
 
+### Appliquer une mise à jour (nouvelle version du code)
+
+Les évolutions de la base sont des **migrations Flyway** (`backend/src/main/resources/db/migration`, de `V1` à `V16`). Elles s'appliquent **automatiquement au démarrage du backend**, dans l'ordre, une seule fois chacune.
+
+1. Récupérer le code : `git pull` (branche `feat/dossier-complet-et-obligatoires` tant que la pull request n'est pas fusionnée).
+2. **Arrêter puis relancer le backend** (Ctrl+C dans son terminal, puis `./mvnw.cmd spring-boot:run`). Au démarrage, le journal affiche par exemple `Migrating schema "public" to version "16 - apparence interface"`. Tant que le backend n'est pas relancé, les nouveaux écrans s'affichent mais leurs appels au serveur échouent (403 ou 404).
+3. Le frontend lancé avec `npm start` se recompile tout seul à chaque modification ; sinon le relancer. Après `npm install` si `package.json` a changé.
+4. Dans le navigateur, recharger sans cache : **Ctrl+F5**.
+
+Vérifier les migrations appliquées :
+
+```powershell
+psql -U postgres -d cabinet_medical -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank;"
+```
+
+Règle à respecter : **ne jamais modifier une migration déjà appliquée** (Flyway refuse de démarrer, « checksum mismatch ») ; toute évolution passe par un nouveau fichier `V17__...sql`.
+
 ### Démarrer le frontend
 
 ```powershell
@@ -171,13 +188,33 @@ Patients de démonstration (Nouakchott) : Lalle Mohamed, Mohamed Sidi, Fatimetou
 - **Connexions et appareils** : sessions ouvertes, appareil, navigateur, système, adresse IP, dernière activité ; **révocation** d'une session.
 - **Journal d'activité** : toutes les actions (connexions et échecs, créations, paiements, annulations, exports PDF...), sans aucune donnée médicale.
 - **Rôles et permissions** et **coordonnées du cabinet** imprimées sur tous les documents.
-- **Personnalisation de l'interface** (page **Design system**) : nom de l'interface, sous-titre, **logo** (PNG, JPEG, WEBP ou SVG, 300 Ko au plus) et **couleurs** (principale, accent, boutons). Aperçu en direct, puis application à tous les écrans, à la page de connexion et à l'onglet du navigateur pour tous les utilisateurs.
+- **Personnalisation de l'interface** (page **Design system**, administrateur et direction) : nom de l'interface, sous-titre, **logo** (PNG, JPEG, WEBP ou SVG, 300 Ko au plus) et **couleurs** (principale, accent, boutons). Aperçu en direct, puis application à tous les écrans, à la page de connexion et à l'onglet du navigateur pour tous les utilisateurs.
 
 ### Langue arabe
 
-- Bouton **العربية / Français** dans la barre du haut et sur la page de connexion. Le choix est mémorisé sur le poste.
-- En arabe, toute l'interface est traduite (navigation, écrans, boutons, messages, statuts, dates, messages d'erreur du serveur) et passe en **lecture de droite à gauche** (`dir="rtl"`, police Cairo). Les feuilles de style utilisent des propriétés logiques (`margin-inline-start`...) : la mise en page s'inverse d'elle-même.
-- Le dictionnaire (`frontend/src/core/i18n/ar.ts`) n'est téléchargé que si l'arabe est choisi ; les données saisies (noms, motifs) restent telles quelles.
+**Utilisation** : bouton **العربية / Français** dans la barre du haut et sur la page de connexion. Le choix est mémorisé sur le poste (`localStorage`, clé `cabinet.langue`). En arabe, toute l'interface est traduite (navigation, écrans, boutons, messages, statuts, dates, messages d'erreur du serveur, boîtes de confirmation) et passe en **lecture de droite à gauche**.
+
+**Comment l'arabe a été ajouté** (sans réécrire les 90 écrans) :
+
+1. **Extraction des textes** : un script a relevé les ~1 000 textes français des gabarits Angular, plus les messages du code TypeScript et les messages d'erreur du backend Java.
+2. **Dictionnaire** `frontend/src/core/i18n/ar.ts` : un objet `"texte français": "النص العربي"` (≈ 1 400 entrées). Il n'est téléchargé que lorsqu'un utilisateur choisit l'arabe (import dynamique).
+3. **Service de traduction** `frontend/src/core/i18n/traduction.service.ts` : quand l'arabe est actif, un `MutationObserver` surveille la page ; chaque texte affiché (et les attributs `placeholder`, `title`, `aria-label`) est remplacé par sa traduction. Les textes qu'Angular met à jour ensuite sont retraduits automatiquement, et le texte français d'origine est conservé pour revenir au français sans recharger. Les textes composés (« 3 créneau(x) libre(s) », dates « mercredi 7 octobre ») sont traduits par expressions. Les boîtes `confirm` / `prompt` / `alert` sont aussi traduites.
+4. **Lecture de droite à gauche** : le service pose `<html dir="rtl" lang="ar">`. Les feuilles de style ont été converties en **propriétés logiques** (`margin-inline-start` au lieu de `margin-left`, `inset-inline-end` au lieu de `right`...) : la mise en page s'inverse d'elle-même. Police **Cairo** (Google Fonts) et espacement entre lettres neutralisé pour ne pas casser la liaison des lettres arabes. Les champs date, heure et nombre restent de gauche à droite.
+5. **Démarrage** : `provideAppInitializer` (`app.config.ts`) charge le dictionnaire avant le premier affichage si l'arabe était choisi.
+
+**Ajouter ou corriger une traduction** : ajouter la ligne `"Texte français exact": "الترجمة",` dans `ar.ts` (le texte tel qu'il s'affiche, espaces multiples ignorés). Un texte à ne jamais traduire se marque `translate="no"` ou avec la classe `sans-traduction`. Les données saisies (noms, motifs) ne sont pas traduites.
+
+### Personnaliser l'interface (nom, logo, couleurs)
+
+Réservé à l'**administrateur** et à la **direction** : menu **Système → Design system**, carte « Personnalisation de l'interface ».
+
+1. Modifier le **nom de l'interface** et le **sous-titre** (barre latérale, page de connexion, titre de l'onglet).
+2. **Logo** : « Choisir une image » (PNG, JPEG, WEBP ou SVG, 300 Ko au plus). Il remplace la croix dans la barre latérale et sur la page de connexion, et sert d'icône d'onglet. « Retirer le logo » revient au logo par défaut.
+3. **Couleurs** : principale (liens, menu actif, marque), accent (succès, statuts payés, présence), boutons. Les nuances claires et foncées sont calculées automatiquement.
+4. L'**aperçu** s'applique aussitôt à toute l'application ; « Annuler les changements » revient à l'apparence enregistrée, « Couleurs et nom par défaut » remet la charte d'origine.
+5. **« Enregistrer et appliquer »** : l'apparence est enregistrée en base (`parametres_cabinet`, migration V16) et s'applique à tous les utilisateurs à leur prochain chargement de page (y compris la page de connexion, lue sans authentification via `GET /api/parametres-cabinet/apparence`).
+
+Si la page affiche « Serveur à redémarrer », le backend tourne encore avec une version antérieure : le relancer (voir « Appliquer une mise à jour »).
 
 ### Export et import des dossiers
 
@@ -361,7 +398,7 @@ La redirection après connexion dépend du rôle : accueil vers `/accueil`, méd
 | Session | `POST /api/auth/logout`, `GET /api/auth/ping` | Utilisateur connecté |
 | Administration | `/api/admin/tableau-de-bord`, `/utilisateurs`, `/sessions`, `/journal`, `/permissions` | ADMIN |
 | Cabinet | `GET /api/parametres-cabinet` (tous), `PUT` (ADMIN) | Selon méthode |
-| Apparence | `GET /api/parametres-cabinet/apparence` (public : page de connexion), `PUT` | ADMIN |
+| Apparence | `GET /api/parametres-cabinet/apparence` (public : page de connexion), `PUT` | ADMIN, DIRECTION |
 
 ### Format des erreurs
 

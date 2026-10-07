@@ -21,8 +21,11 @@ const TAILLE_MAX_LOGO = 300 * 1024;
           <h2>Personnalisation de l'interface</h2>
           <p>Nom, logo et couleurs de l'application, appliqués à tous les écrans et à la page de connexion.</p>
         </div>
-        @if (!peutModifier) { <span class="badge neutral">Réservé à l'administrateur</span> }
+        @if (!peutModifier) { <span class="badge neutral">Réservé à l'administrateur et à la direction</span> }
       </div>
+      @if (!serveurAJour()) {
+        <div class="alert warning"><span>!</span><div><strong>Serveur à redémarrer</strong>Le backend ne propose pas encore la personnalisation (migration V16). Arrêtez puis relancez le backend : l'aperçu fonctionne déjà, mais l'enregistrement échouera tant qu'il n'est pas redémarré.</div></div>
+      }
 
       <div class="grille">
         <fieldset [disabled]="!peutModifier || enregistrement">
@@ -110,6 +113,8 @@ const TAILLE_MAX_LOGO = 300 * 1024;
     .actions-logo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .fichier { position: relative; overflow: hidden; cursor: pointer; }
     .fichier input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    fieldset:disabled .fichier, fieldset:disabled input, fieldset:disabled .apercu-logo { opacity: .55; cursor: not-allowed; }
+    fieldset:disabled .fichier input { cursor: not-allowed; }
     .previsualisation { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius-md); background: var(--bg-app); border: 1px solid var(--border); }
     .previsualisation > small { color: var(--text-soft); font-weight: 800; text-transform: uppercase; font-size: var(--fs-label); }
     .mini-barre { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: var(--radius-md); background: var(--bg-surface); }
@@ -126,7 +131,9 @@ const TAILLE_MAX_LOGO = 300 * 1024;
 })
 export class PersonnalisationComponent implements OnDestroy {
   private readonly service = inject(ApparenceService);
-  readonly peutModifier = inject(AuthService).role() === 'ADMIN';
+  /** L'administrateur et la direction reglent l'apparence ; les autres roles la consultent. */
+  readonly peutModifier = ['ADMIN', 'DIRECTION'].includes(inject(AuthService).role() ?? '');
+  readonly serveurAJour = this.service.serveurAJour;
   readonly champsCouleur: { cle: 'couleurPrincipale' | 'couleurAccent' | 'couleurBouton'; libelle: string; aide: string }[] = [
     { cle: 'couleurPrincipale', libelle: 'Couleur principale', aide: 'Liens, menu actif, logo, éléments de marque' },
     { cle: 'couleurAccent', libelle: 'Couleur d’accent', aide: 'Succès, statuts payés, présence' },
@@ -178,7 +185,13 @@ export class PersonnalisationComponent implements OnDestroy {
         this.enregistrement = false;
         this.afficher('Apparence enregistrée : elle s’applique à tous les utilisateurs à leur prochain chargement.', false);
       },
-      error: (erreur) => { this.enregistrement = false; this.afficher(messageErreur(erreur, 'L’enregistrement a échoué.'), true); }
+      error: (erreur) => {
+        this.enregistrement = false;
+        const ancienServeur = erreur?.status === 403 || erreur?.status === 404 || erreur?.status === 405;
+        this.afficher(ancienServeur
+          ? 'Enregistrement refusé par le serveur : redémarrez le backend pour appliquer la mise à jour (migration V16), puis réessayez.'
+          : messageErreur(erreur, 'L’enregistrement a échoué.'), true);
+      }
     });
   }
 

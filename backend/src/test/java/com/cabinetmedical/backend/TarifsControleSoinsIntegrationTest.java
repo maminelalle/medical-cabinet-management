@@ -163,7 +163,8 @@ class TarifsControleSoinsIntegrationTest extends IntegrationTestBase {
 
         String apparence = "{\"nomInterface\":\"Clinique Nour\",\"sousTitre\":\"Nouakchott\",\"couleurPrincipale\":\"#0F766E\","
                 + "\"couleurAccent\":\"#16a34a\",\"couleurBouton\":\"#1f2937\",\"logo\":\"data:image/png;base64,iVBORw0KGgo=\"}";
-        envoyer("PUT", "/api/parametres-cabinet/apparence", connexion("direction@test.local"), apparence).andExpect(status().isForbidden());
+        envoyer("PUT", "/api/parametres-cabinet/apparence", connexion("medecin@test.local"), apparence).andExpect(status().isForbidden());
+        envoyer("PUT", "/api/parametres-cabinet/apparence", connexion("direction@test.local"), apparence).andExpect(status().isOk());
         String admin = connexion("admin@test.local");
         envoyer("PUT", "/api/parametres-cabinet/apparence", admin, apparence)
                 .andExpect(status().isOk())

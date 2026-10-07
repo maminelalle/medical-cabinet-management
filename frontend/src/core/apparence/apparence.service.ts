@@ -38,13 +38,19 @@ export class ApparenceService {
   readonly apparence = signal<Apparence>(ApparenceService.lireCache());
   /** Apparence affichee : l'enregistree, ou l'apercu en cours de l'administrateur. */
   readonly affichee = signal<Apparence>(this.apparence());
+  /** Faux si le serveur ne propose pas encore l'apparence (backend a redemarrer apres mise a jour). */
+  readonly serveurAJour = signal(true);
 
   /** Appele au demarrage : applique le cache tout de suite, puis la version du serveur. */
   async initialiser(): Promise<void> {
     this.appliquer(this.apparence());
     try {
       this.definir(await firstValueFrom(this.http.get<Apparence>(this.url)));
-    } catch { /* serveur indisponible : l'apparence en cache reste appliquee */ }
+      this.serveurAJour.set(true);
+    } catch {
+      // Serveur injoignable ou pas encore mis a jour : l'apparence en cache reste appliquee.
+      this.serveurAJour.set(false);
+    }
   }
 
   enregistrer(apparence: Apparence): Observable<Apparence> {

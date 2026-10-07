@@ -318,6 +318,7 @@ Points de conception importants :
 | Soins — enregistrer / réaliser | Oui (et facturer) | Oui | Non | Lecture | Lecture |
 | Grille tarifaire et règle du contrôle gratuit | Lecture | Lecture | Non | Oui | Règle uniquement |
 | Rendez-vous de contrôle | Proposé à la prise de RDV | Programmation en fin de consultation | Non | Lecture | Lecture |
+| Apparence de l'interface (nom, logo, couleurs) | Non | Non | Non | Oui | Oui |
 
 Cette matrice se traduit directement en annotations @PreAuthorize côté back-end et en gardes de route (RoleGuard) côté front-end : les deux doivent rester synchronisés, le front-end masque l'interface mais le back-end reste la seule source de vérité pour la sécurité réelle.
 
@@ -391,7 +392,25 @@ Rappel du sujet : ces trois modules ne doivent être commencés qu'une fois les 
 
 Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier médical, facturation multi-actes, tableau de bord — forme un parcours cohérent de bout en bout qui peut être développé progressivement, semaine après semaine, sans dépendance externe bloquante. Le modèle de données est volontairement minimal mais structuré pour que les extensions bonus s'y greffent sans refonte, conformément à la consigne de cadrage du sujet : mieux vaut un cœur complet et propre qu'un ensemble de modules inachevés.
 
-## 13. Évolutions réalisées
+## 13. Internationalisation, personnalisation et mise à jour
+
+### 13.1 Interface en arabe
+
+- **Choix d'architecture** : plutôt que de réécrire chaque gabarit avec des clés de traduction, l'interface est écrite en français et traduite à l'affichage. `TraductionService` observe le DOM (`MutationObserver`) et remplace chaque texte et attribut (`placeholder`, `title`, `aria-label`) par sa traduction tirée du dictionnaire `core/i18n/ar.ts` (≈ 1 400 entrées, chargé à la demande). Le texte d'origine est gardé : le retour au français est immédiat. Les textes composés de valeurs dynamiques sont traduits expression par expression (y compris les noms de jours et de mois).
+- **Lecture de droite à gauche** : `dir="rtl"` sur `<html>`, CSS converties en propriétés logiques (`*-inline-start` / `*-inline-end`), police Cairo, pas d'espacement entre lettres en arabe.
+- **Limites assumées** : les données saisies (noms, motifs, libellés du catalogue créés par l'utilisateur) ne sont pas traduites ; un nouveau texte de l'interface doit être ajouté au dictionnaire.
+
+### 13.2 Personnalisation de l'interface
+
+- Données : colonnes `nom_interface`, `couleur_principale`, `couleur_accent`, `couleur_bouton` (format `#RRGGBB` contrôlé en base et dans l'API) et `logo` (data URL d'image, 300 Ko au plus) dans `parametres_cabinet` (V16).
+- API : `GET /api/parametres-cabinet/apparence` public (la page de connexion doit afficher le nom et le logo avant authentification), `PUT` réservé à ADMIN et DIRECTION, journalisé.
+- Frontend : `ApparenceService` applique les couleurs en variables CSS sur `<html>` (`--brand`, `--brand-dark`, `--brand-soft`, `--accent`..., nuances calculées), met à jour le titre et l'icône de l'onglet, et garde la dernière apparence sur le poste pour l'afficher dès le chargement. L'aperçu est appliqué en direct, sans enregistrement, et annulé si l'on quitte la page.
+
+### 13.3 Appliquer une mise à jour
+
+Les migrations Flyway s'appliquent automatiquement au démarrage du backend : après `git pull`, **redémarrer le backend**, puis recharger le navigateur (Ctrl+F5). Une migration appliquée n'est jamais modifiée (contrôle d'empreinte) ; chaque évolution de schéma est une nouvelle migration. Le détail des commandes est dans le README.
+
+## 14. Évolutions réalisées
 
 | Date | Évolution | Migration |
 |---|---|---|
@@ -406,4 +425,4 @@ Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier
 | 7 octobre 2026 | Grille tarifaire de la direction (tarif de consultation par spécialité, soins), consultation de contrôle gratuite réglable, soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) | V14 |
 | 7 octobre 2026 | Interface bilingue français / arabe avec lecture de droite à gauche | — |
 | 7 octobre 2026 | Noms de démonstration simplifiés (sans « Ould » ni « Mint ») | V15 |
-| 7 octobre 2026 | Personnalisation de l'interface par l'administrateur : nom, sous-titre, logo et couleurs appliqués à toute l'application ; impression limitée au document | V16 |
+| 7 octobre 2026 | Personnalisation de l'interface (administrateur et direction) : nom, sous-titre, logo et couleurs appliqués à toute l'application ; impression limitée au document ; design system interactif | V16 |
