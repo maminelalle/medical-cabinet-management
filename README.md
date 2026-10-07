@@ -317,7 +317,8 @@ La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur s
 - Composants globaux réutilisables : en-têtes de page, cartes, cartes d'indicateurs, tableaux, badges de statut, boutons (principal, secondaire, discret, icône, ligne), formulaires et filtres, alertes, états vide/erreur/chargement, avatars et barres de progression.
 - Coquille d'administration : barre latérale blanche repliable regroupée par domaine (pilotage, parcours patient, finance, système), topbar avec recherche, notifications, profil et déconnexion.
 - Typographie Manrope, responsive design et affichage conditionnel selon le rôle.
-- Page de démonstration `/design-system` présentant l'ensemble des composants (accessible à tous les rôles connectés).
+- Page `/design-system` (direction et administrateur) : composants interactifs, jetons de couleur avec leur valeur réelle (copie, export JSON et CSS) et personnalisation de l'interface (nom, logo, couleurs) avec aperçu en direct.
+- Interface bilingue français / arabe (lecture de droite à gauche), voir « Langue arabe ».
 
 ### Écrans disponibles
 
@@ -333,19 +334,71 @@ La migration `V5__pharmacie.sql` ajoute 5 références de médicaments et leur s
 | `/rendez-vous/:id/consultation` | MEDECIN | Compte-rendu de consultation et ordonnance |
 | `/dossier/:patientId` | ACCUEIL, MEDECIN, DIRECTION | Dossier complet (identité, consultations, ordonnances, rendez-vous, factures), export/import JSON et impression ; compte-rendu masqué pour l'accueil |
 | `/ordonnances` | Tous les rôles | Liste des ordonnances (le médecin ne voit que les siennes), statut de délivrance, impression |
-| `/impression/{type}/:id` | Selon document | Documents imprimables (`facture`, `recu`, `ordonnance`, `rendez-vous`, `dossier`) |
+| `/impression/{type}/:id` | Selon document | Documents imprimables (`facture`, `recu`, `ordonnance`, `rendez-vous`, `dossier`, `acte`) ; seul le document s'imprime |
 | `/factures` | ACCUEIL, MEDECIN, PHARMACIEN, DIRECTION | Liste, recherche et détail ; depuis le détail : imprimer la facture, le reçu de paiement ou une ordonnance du patient ; encaissement accueil/pharmacie |
 | `/factures/nouveau` | ACCUEIL | Création d'une facture multi-actes |
 | `/direction/dashboard` | DIRECTION | Indicateurs réels, chiffre d'affaires par type d'acte, impayés, activité par médecin |
 | `/pharmacie` | PHARMACIEN, DIRECTION, ADMIN | Stock, import/export, vente des ordonnances avec paiement, finances |
 | `/pharmacie/medicaments/:id` | PHARMACIEN, DIRECTION, ADMIN | Fiche produit : ventes, achats, mouvements, approvisionnement |
 | `/actes` | ACCUEIL, MEDECIN, DIRECTION, ADMIN | Actes programmés : réalisation, facturation, annulation |
+| `/soins` | ACCUEIL, MEDECIN (gestion), DIRECTION, ADMIN (lecture) | Soins et injections : enregistrement, réalisation, facturation |
+| `/direction/tarifs` | DIRECTION | Grille tarifaire et règle du contrôle gratuit |
+| `/direction/parametres` | DIRECTION | Employés, sessions et appareils, rôles |
+| `/catalogue` | ACCUEIL, MEDECIN, ADMIN | Tarifs en lecture |
 | `/rendez-vous/:id/modifier` | ACCUEIL | Modification / reprogrammation |
 | `/admin`, `/admin/utilisateurs`, `/admin/sessions`, `/admin/journal`, `/admin/permissions`, `/admin/cabinet` | ADMIN | Administration |
 | `/parametres` | Tous les rôles | Profil connecté, rôle et accès applicatifs |
-| `/design-system` | Tous | Vitrine des composants de l'interface |
+| `/design-system` | DIRECTION, ADMIN | Composants interactifs et personnalisation de l'interface (nom, logo, couleurs) |
 
 La redirection après connexion dépend du rôle : accueil vers `/accueil`, médecin vers `/medecin/dashboard`, pharmacien vers `/pharmacie`, direction vers `/direction/dashboard`, administrateur vers `/admin`.
+
+## Historique des réalisations
+
+Toutes les étapes sont sur la branche `feat/dossier-complet-et-obligatoires` (pull request [#13](https://github.com/maminelalle/medical-cabinet-management/pull/13)).
+
+| Étape | Contenu | Migration | Commit |
+|---|---|---|---|
+| Semaines 1 et 2 | Fondations, authentification JWT, patients, rendez-vous, consultations, prescriptions, catalogue, facturation, tableau de bord direction, données de démonstration | V1 à V10 | `main` |
+| Dossier patient complet | Dossier (consultations, ordonnances, rendez-vous, factures), import / export, page Ordonnances, impressions (facture, reçu, ordonnance, ticket, dossier) | — | `821c623` |
+| Points obligatoires de l'audit | Suppression de patient protégée, modification de rendez-vous, annulation de facture, gestion globale des erreurs, tests, collection Postman | V11 | `821c623` |
+| Parcours complets | Accueil (création rapide du patient, créneaux, facture liée, paiement immédiat ou différé, références Bankily / Masrvi / Sedad), médecin (démarrer / terminer, ordonnance depuis le stock, actes programmés), pharmacie (fiche produit, mouvements, vente avec paiement, finances, exports Excel et PDF JasperReports), administration (comptes, sessions, journal, permissions) | V12 | `bb164a3` |
+| Données et documentation | Noms mauritaniens, suppression des emojis, documentation complète | V13 | `9733337` |
+| Direction et temps réel | Paramètres des employés (ajout, modification, suppression, sessions) ; arrivées, départs et consultations affichés en direct (SSE) | — | `c4e6192` |
+| Tarifs, contrôle gratuit, soins, arabe | Grille tarifaire de la direction (consultation par spécialité, soins), contrôle gratuit réglable, soins (injection, perfusion...), interface bilingue français / arabe | V14 | `d777464` |
+| Noms simplifiés | Exemples sans « Ould » ni « Mint » | V15 | `b997392` |
+| Impression | Seul le document s'imprime | — | `003ec47` |
+| Personnalisation de l'interface | Nom, sous-titre, logo et couleurs réglables ; `rootDir` dans `tsconfig.json` | V16 | `0ba4c3d` |
+| Design system interactif | Composants de la page manipulables, aperçu en direct du nom et du logo | — | `2e46cfe` |
+| Personnalisation pour la direction | Direction autorisée, message « Serveur à redémarrer », documentation de mise à jour | — | `ba42035` |
+
+## Problèmes rencontrés et solutions
+
+Chaque problème est décrit dans une issue GitHub fermée ([liste des issues](https://github.com/maminelalle/medical-cabinet-management/issues?q=is%3Aissue)).
+
+| Issue | Problème | Cause | Solution |
+|---|---|---|---|
+| [#1](https://github.com/maminelalle/medical-cabinet-management/issues/1) | Flyway refusait de démarrer (« checksum mismatch ») | Une migration déjà appliquée avait été modifiée. | Migrations V1 à V4 restaurées à l'identique ; toute évolution passe par une nouvelle migration (V5 à V16). |
+| [#2](https://github.com/maminelalle/medical-cabinet-management/issues/2) | Supprimer un patient avec historique provoquait une erreur 500 | Aucune vérification métier avant la suppression. | Refus 409 avec message clair ; format d'erreur unifié (`GlobalExceptionHandler`). |
+| [#3](https://github.com/maminelalle/medical-cabinet-management/issues/3) | Une facture saisie par erreur ne pouvait pas être annulée | Pas de cycle d'annulation dans le modèle. | Annulation avec motif, date et auteur (V11), refusée si un paiement existe. |
+| [#4](https://github.com/maminelalle/medical-cabinet-management/issues/4) | Un créneau réservé pouvait être donné à un autre patient | Seule l'heure exacte était contrôlée, sans durée ni actes programmés. | `DisponibiliteService` contrôle les chevauchements (409) ; grille de créneaux libres / réservés / passés. |
+| [#5](https://github.com/maminelalle/medical-cabinet-management/issues/5) | Bouton d'impression mal placé à côté des notifications | Action globale au lieu d'une action contextuelle. | Impression de la facture, du reçu et de l'ordonnance depuis le détail de la facture. |
+| [#6](https://github.com/maminelalle/medical-cabinet-management/issues/6) | « Bonjour » affiché sans le nom à l'accueil (avec un emoji) | Le profil ne renvoyait le nom que pour les médecins. | `ProfilService` renvoie le nom de tous les comptes ; emoji supprimé. |
+| [#7](https://github.com/maminelalle/medical-cabinet-management/issues/7) | Anciennes ventes pharmacie affichées comme « facture libre » | Origine déduite seulement du lien dispensation, absent des anciennes données. | Facture dont toutes les lignes sont PHARMACIE reconnue comme vente pharmacie. |
+| [#8](https://github.com/maminelalle/medical-cabinet-management/issues/8) | Départ d'un employé détecté en 30 s ; fermeture de flux SSE ignorée en test | `complete()` ne déclenche pas le rappel dans MockMvc ; détection sur le battement de 30 s. | Méthode `fermer()` (retirer puis compléter) ; vérification des connexions toutes les 5 s (départ détecté en ~6 s). |
+| [#9](https://github.com/maminelalle/medical-cabinet-management/issues/9) | Test et Postman attendaient un refus 403 pour la direction sur les employés | Règle d'accès élargie à la direction sans mise à jour des vérifications. | Vérifications portées sur le médecin et sur le journal d'administration. |
+| [#10](https://github.com/maminelalle/medical-cabinet-management/issues/10) | Contrôle gratuit : paiement de 0 MRU impossible | Un paiement doit être strictement positif (voulu). | Facture d'un total nul soldée (PAYEE) dès sa création. |
+| [#11](https://github.com/maminelalle/medical-cabinet-management/issues/11) | Mise en page cassée en arabe (droite à gauche) | CSS écrites en propriétés physiques (`margin-left`, `right`...). | Conversion en propriétés logiques, police Cairo, pas d'espacement entre lettres en arabe. |
+| [#12](https://github.com/maminelalle/medical-cabinet-management/issues/12) | Noms d'exemple avec « Ould » et « Mint » | Choix des données de démonstration. | Noms simplifiés (Lalle Mohamed, Ahmed Sidi...) : migration V15, tests, documentation, Postman. |
+| [#14](https://github.com/maminelalle/medical-cabinet-management/issues/14) | Impression : le tableau de bord apparaissait sur la facture ou le reçu | Règles `@media print` encapsulées dans le composant d'impression par Angular. | Règles d'impression globales : seul le document s'imprime (vérifié en PDF, français et arabe). |
+| [#15](https://github.com/maminelalle/medical-cabinet-management/issues/15) | Erreur sur « outDir » dans `tsconfig.json` (VS Code) | TypeScript 6 de l'éditeur exige `rootDir` dès que `outDir` est défini. | `"rootDir": "./src"` ajouté ; `ng build` inchangé. |
+| [#16](https://github.com/maminelalle/medical-cabinet-management/issues/16) | Design system : choisir un logo ou une couleur ne changeait rien | Formulaire réservé à l'admin (verrouillé pour la direction), backend non redémarré après la mise à jour, composants de démonstration statiques. | Personnalisation ouverte à la direction, avertissement « Serveur à redémarrer », page entièrement interactive. |
+
+Enseignements retenus :
+
+- une migration Flyway appliquée ne se modifie jamais ; après une mise à jour, **redémarrer le backend** pour appliquer les nouvelles migrations ;
+- les styles d'un composant Angular sont encapsulés : les règles qui touchent toute la page (impression, thème) vont dans `src/styles.css` ;
+- toute règle d'accès modifiée doit être reportée dans les tests et dans Postman ;
+- une mise en page prévue pour plusieurs langues utilise des propriétés CSS logiques.
 
 ## Endpoints REST
 
@@ -445,7 +498,9 @@ cd frontend
 npm run build
 ```
 
-Résultat : compilation Angular réussie avec les routes lazy-loaded (planning, consultation, dossier patient, design system).
+Résultat : compilation Angular réussie avec les routes lazy-loaded.
+
+Recette dans Chrome : écrans principaux de chaque rôle en français et en arabe sans erreur JavaScript, impression vérifiée en PDF, interactions du design system et choix du logo vérifiés.
 
 ## Scénario de démonstration final
 
@@ -473,10 +528,15 @@ Migrations et parcours de bout en bout (backend démarré sur PostgreSQL) :
 | Dossier patient côté médecin (compte-rendu, prescription) | Terminé (API + écrans `/rendez-vous/:id/consultation` et `/dossier/:patientId`) |
 | Facturation multi-actes et paiements | Terminé (statut recalculé côté serveur) |
 | Tableau de bord direction | Terminé (4 endpoints agrégés sur données réelles) |
-| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`, tarifs et soins `V14`, noms simplifiés `V15`) |
+| Jeu de données de démonstration | Terminé (`V4__demo_data.sql`, pharmacie `V5` à `V10`, noms mauritaniens `V13`, tarifs et soins `V14`, noms simplifiés `V15`, apparence `V16`) |
 | Pharmacie interne | Terminé (stock, mouvements, vente avec paiement, finances) |
 | Actes programmés (chirurgie, traitement...) | Terminé (programmation, réalisation, facturation) |
 | Administration | Terminé (comptes, sessions, journal, permissions) |
+| Présence en temps réel | Terminé (flux SSE : arrivées, départs, consultations, soins) |
+| Soins (injection, perfusion...) | Terminé (enregistrement, réalisation, facture) |
+| Tarifs et contrôle gratuit | Terminé (grille par spécialité, règle réglable par la direction) |
+| Interface en arabe | Terminé (traduction complète, droite à gauche) |
+| Personnalisation de l'interface | Terminé (nom, logo, couleurs ; V16) |
 
 ## Extensions bonus
 
@@ -487,7 +547,8 @@ Livrées après stabilisation du cœur :
 - administration : comptes, sessions, journal d'activité, permissions ;
 - soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) ;
 - grille tarifaire de la direction et consultation de contrôle gratuite ;
-- interface bilingue français / arabe (RTL).
+- interface bilingue français / arabe (RTL) ;
+- personnalisation de l'interface (nom, logo, couleurs) et design system interactif.
 
 Restent possibles : laboratoire (demande d'examen, résultat rattaché au dossier), gestion des salles et des lits, espace patient.
 

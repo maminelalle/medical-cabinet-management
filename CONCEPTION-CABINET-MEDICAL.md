@@ -5,6 +5,21 @@ Stage — Licence 3 Informatique · Durée : 1 mois · Stack imposée : Spring B
 
 ## Sommaire
 
+1. Analyse du besoin
+2. Acteurs et cas d'utilisation
+3. Processus métier clé — le fil conducteur
+4. Modèle de données
+5. Architecture technique
+6. Spécification des API REST
+7. Matrice des droits par rôle
+8. Recommandations de sécurité et de qualité
+9. Extensions bonus — impact sur le modèle
+10. Planning détaillé affiné (4 semaines)
+11. Livrables attendus
+12. Synthèse
+13. Internationalisation, personnalisation et mise à jour
+14. Problèmes rencontrés et enseignements
+15. Évolutions réalisées
 
 ## 1. Analyse du besoin
 
@@ -410,7 +425,37 @@ Le cœur du sujet — authentification par rôle, patients, rendez-vous, dossier
 
 Les migrations Flyway s'appliquent automatiquement au démarrage du backend : après `git pull`, **redémarrer le backend**, puis recharger le navigateur (Ctrl+F5). Une migration appliquée n'est jamais modifiée (contrôle d'empreinte) ; chaque évolution de schéma est une nouvelle migration. Le détail des commandes est dans le README.
 
-## 14. Évolutions réalisées
+## 14. Problèmes rencontrés et enseignements
+
+Les problèmes rencontrés pendant le développement sont tracés dans des issues GitHub fermées ([https://github.com/maminelalle/medical-cabinet-management/issues](https://github.com/maminelalle/medical-cabinet-management/issues?q=is%3Aissue)) et résumés dans le README (« Problèmes rencontrés et solutions »).
+
+| Issue | Problème | Cause | Solution |
+|---|---|---|---|
+| [#1](https://github.com/maminelalle/medical-cabinet-management/issues/1) | Flyway refusait de démarrer (« checksum mismatch ») | Une migration déjà appliquée avait été modifiée. | Migrations V1 à V4 restaurées à l'identique ; toute évolution passe par une nouvelle migration (V5 à V16). |
+| [#2](https://github.com/maminelalle/medical-cabinet-management/issues/2) | Supprimer un patient avec historique provoquait une erreur 500 | Aucune vérification métier avant la suppression. | Refus 409 avec message clair ; format d'erreur unifié (`GlobalExceptionHandler`). |
+| [#3](https://github.com/maminelalle/medical-cabinet-management/issues/3) | Une facture saisie par erreur ne pouvait pas être annulée | Pas de cycle d'annulation dans le modèle. | Annulation avec motif, date et auteur (V11), refusée si un paiement existe. |
+| [#4](https://github.com/maminelalle/medical-cabinet-management/issues/4) | Un créneau réservé pouvait être donné à un autre patient | Seule l'heure exacte était contrôlée, sans durée ni actes programmés. | `DisponibiliteService` contrôle les chevauchements (409) ; grille de créneaux libres / réservés / passés. |
+| [#5](https://github.com/maminelalle/medical-cabinet-management/issues/5) | Bouton d'impression mal placé à côté des notifications | Action globale au lieu d'une action contextuelle. | Impression de la facture, du reçu et de l'ordonnance depuis le détail de la facture. |
+| [#6](https://github.com/maminelalle/medical-cabinet-management/issues/6) | « Bonjour » affiché sans le nom à l'accueil (avec un emoji) | Le profil ne renvoyait le nom que pour les médecins. | `ProfilService` renvoie le nom de tous les comptes ; emoji supprimé. |
+| [#7](https://github.com/maminelalle/medical-cabinet-management/issues/7) | Anciennes ventes pharmacie affichées comme « facture libre » | Origine déduite seulement du lien dispensation, absent des anciennes données. | Facture dont toutes les lignes sont PHARMACIE reconnue comme vente pharmacie. |
+| [#8](https://github.com/maminelalle/medical-cabinet-management/issues/8) | Départ d'un employé détecté en 30 s ; fermeture de flux SSE ignorée en test | `complete()` ne déclenche pas le rappel dans MockMvc ; détection sur le battement de 30 s. | Méthode `fermer()` (retirer puis compléter) ; vérification des connexions toutes les 5 s (départ détecté en ~6 s). |
+| [#9](https://github.com/maminelalle/medical-cabinet-management/issues/9) | Test et Postman attendaient un refus 403 pour la direction sur les employés | Règle d'accès élargie à la direction sans mise à jour des vérifications. | Vérifications portées sur le médecin et sur le journal d'administration. |
+| [#10](https://github.com/maminelalle/medical-cabinet-management/issues/10) | Contrôle gratuit : paiement de 0 MRU impossible | Un paiement doit être strictement positif (voulu). | Facture d'un total nul soldée (PAYEE) dès sa création. |
+| [#11](https://github.com/maminelalle/medical-cabinet-management/issues/11) | Mise en page cassée en arabe (droite à gauche) | CSS écrites en propriétés physiques (`margin-left`, `right`...). | Conversion en propriétés logiques, police Cairo, pas d'espacement entre lettres en arabe. |
+| [#12](https://github.com/maminelalle/medical-cabinet-management/issues/12) | Noms d'exemple avec « Ould » et « Mint » | Choix des données de démonstration. | Noms simplifiés (Lalle Mohamed, Ahmed Sidi...) : migration V15, tests, documentation, Postman. |
+| [#14](https://github.com/maminelalle/medical-cabinet-management/issues/14) | Impression : le tableau de bord apparaissait sur la facture ou le reçu | Règles `@media print` encapsulées dans le composant d'impression par Angular. | Règles d'impression globales : seul le document s'imprime (vérifié en PDF, français et arabe). |
+| [#15](https://github.com/maminelalle/medical-cabinet-management/issues/15) | Erreur sur « outDir » dans `tsconfig.json` (VS Code) | TypeScript 6 de l'éditeur exige `rootDir` dès que `outDir` est défini. | `"rootDir": "./src"` ajouté ; `ng build` inchangé. |
+| [#16](https://github.com/maminelalle/medical-cabinet-management/issues/16) | Design system : choisir un logo ou une couleur ne changeait rien | Formulaire réservé à l'admin (verrouillé pour la direction), backend non redémarré après la mise à jour, composants de démonstration statiques. | Personnalisation ouverte à la direction, avertissement « Serveur à redémarrer », page entièrement interactive. |
+
+Enseignements pour la suite du projet :
+
+1. **Base de données** : une migration Flyway appliquée est figée ; chaque évolution est une nouvelle migration, appliquée au redémarrage du backend.
+2. **Sécurité** : toute modification d'une règle d'accès (`@PreAuthorize`) est reportée dans la matrice des droits, les tests d'intégration et la collection Postman.
+3. **Frontend** : les styles qui concernent toute la page (impression, thème, langue) sont globaux ; les styles de composant sont encapsulés par Angular.
+4. **Internationalisation** : propriétés CSS logiques et textes centralisés dans un dictionnaire pour ajouter une langue sans réécrire les écrans.
+5. **Vérification** : chaque évolution est testée à travers l'API réelle (tests d'intégration) et dans le navigateur (recette des écrans, impression en PDF).
+
+## 15. Évolutions réalisées
 
 | Date | Évolution | Migration |
 |---|---|---|
@@ -425,4 +470,5 @@ Les migrations Flyway s'appliquent automatiquement au démarrage du backend : ap
 | 7 octobre 2026 | Grille tarifaire de la direction (tarif de consultation par spécialité, soins), consultation de contrôle gratuite réglable, soins au cabinet (injection, perfusion, pansement, nébulisation, constantes) | V14 |
 | 7 octobre 2026 | Interface bilingue français / arabe avec lecture de droite à gauche | — |
 | 7 octobre 2026 | Noms de démonstration simplifiés (sans « Ould » ni « Mint ») | V15 |
-| 7 octobre 2026 | Personnalisation de l'interface (administrateur et direction) : nom, sous-titre, logo et couleurs appliqués à toute l'application ; impression limitée au document ; design system interactif | V16 |
+| 7 octobre 2026 | Impression limitée au document (facture, reçu, ordonnance...) | — |
+| 7 octobre 2026 | Personnalisation de l'interface (administrateur et direction) : nom, sous-titre, logo et couleurs appliqués à toute l'application ; design system interactif | V16 |
