@@ -27,12 +27,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
+        String token = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
+        // EventSource ne peut pas envoyer d'en-tete : jeton en parametre, accepte seulement pour le flux d'evenements.
+        if (token == null && request.getRequestURI().startsWith("/api/evenements")) {
+            token = request.getParameter("jeton");
+        }
+        if (token == null || token.isBlank()) {
             chain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
         try {
             String username = jwtService.extractUsername(token);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

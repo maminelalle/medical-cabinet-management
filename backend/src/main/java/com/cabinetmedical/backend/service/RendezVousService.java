@@ -14,6 +14,7 @@ import com.cabinetmedical.backend.repository.FactureRepository;
 import com.cabinetmedical.backend.repository.MedecinRepository;
 import com.cabinetmedical.backend.repository.PatientRepository;
 import com.cabinetmedical.backend.repository.RendezVousRepository;
+import com.cabinetmedical.backend.temps.TempsReelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,6 +42,7 @@ public class RendezVousService {
     private final PatientService patientService;
     private final DisponibiliteService disponibiliteService;
     private final UtilisateurConnecte utilisateurConnecte;
+    private final TempsReelService tempsReelService;
 
     @Transactional(readOnly = true)
     public List<RendezVousResponse> rechercher(Long medecinId, LocalDate date, LocalDate dateDebut, LocalDate dateFin,
@@ -160,6 +162,8 @@ public class RendezVousService {
             }
         }
         rendezVous.setStatut(statut);
+        // Presence des medecins (en consultation, en retard) a jour sur tous les ecrans ouverts.
+        tempsReelService.diffuserApresValidation("CONSULTATION", null, null);
         return versResponse(rendezVousRepository.save(rendezVous));
     }
 

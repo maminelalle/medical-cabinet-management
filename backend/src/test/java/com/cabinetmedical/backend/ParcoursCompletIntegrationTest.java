@@ -15,6 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Parcours accueil, medecin, pharmacie et administration ajoutes avec les actes, sessions et mouvements de stock. */
 class ParcoursCompletIntegrationTest extends IntegrationTestBase {
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.cabinetmedical.backend.temps.TempsReelService tempsReelService;
 
     // --- Accueil : creneaux et creation rapide du patient ----------------------------------------
 
@@ -187,7 +189,8 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
     @Test
     void lAdministrateurGereLesComptesEtRevoqueLesSessions() throws Exception {
         String admin = connexion("admin@test.local");
-        envoyer("GET", "/api/admin/utilisateurs", connexion("direction@test.local"), null).andExpect(status().isForbidden());
+        envoyer("GET", "/api/admin/utilisateurs", connexion("medecin@test.local"), null).andExpect(status().isForbidden());
+        envoyer("GET", "/api/admin/tableau-de-bord", connexion("direction@test.local"), null).andExpect(status().isForbidden());
 
         long id = id(envoyer("POST", "/api/admin/utilisateurs", admin,
                 "{\"email\":\"caisse2@test.local\",\"nom\":\"Mint Sidi\",\"prenom\":\"Aicha\",\"role\":\"ACCUEIL\",\"motDePasse\":\"motdepasse1\"}")
@@ -239,6 +242,55 @@ class ParcoursCompletIntegrationTest extends IntegrationTestBase {
         envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].statut").value("EN_CONSULTATION"))
                 .andExpect(jsonPath("$[?(@.nom == 'Ould Cheikh')].patientEnCours").value("Lalle Ould Mohamed"));
         envoyer("GET", chemin, connexion("medecin@test.local"), null).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void laDirectionGereLesEmployesSansToucherAuxComptesAdministrateur() throws Exception {
+        String direction = connexion("direction@test.local");
+        long adminId = utilisateurRepository.findByEmailIgnoreCase("admin@test.local").orElseThrow().getId();
+
+        long nouveau = id(envoyer("POST", "/api/admin/utilisateurs", direction,
+                "{\"email\":\"secretaire@test.local\",\"nom\":\"Mint Sidi\",\"prenom\":\"Aicha\",\"role\":\"ACCUEIL\",\"motDePasse\":\"motdepasse1\"}")
+                .andExpect(status().isCreated()));
+        envoyer("POST", "/api/admin/utilisateurs", direction,
+                "{\"email\":\"pirate@test.local\",\"nom\":\"X\",\"prenom\":\"Y\",\"role\":\"ADMIN\",\"motDePasse\":\"motdepasse1\"}")
+                .andExpect(status().isForbidden());
+        envoyer("GET", "/api/admin/utilisateurs", direction, null).andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.role == 'ADMIN')]").isEmpty())
+                .andExpect(jsonPath("$[*].email", hasItem("secretaire@test.local")));
+        envoyer("PATCH", "/api/admin/utilisateurs/" + adminId + "/statut", direction, "{\"actif\":false}").andExpect(status().isForbidden());
+        envoyer("GET", "/api/admin/sessions?periode=actives", direction, null).andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.role == 'ADMIN')]").isEmpty());
+        envoyer("GET", "/api/admin/journal", direction, null).andExpect(status().isForbidden());
+
+        // Un compte sans historique se supprime ; un compte qui a travaille se desactive.
+        envoyer("DELETE", "/api/admin/utilisateurs/" + nouveau, direction, null).andExpect(status().isNoContent());
+        creerFacture(connexion("accueil@test.local"), "100");
+        long accueilId = utilisateurRepository.findByEmailIgnoreCase("accueil@test.local").orElseThrow().getId();
+        envoyer("DELETE", "/api/admin/utilisateurs/" + accueilId, direction, null).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("désactivez")));
+        envoyer("DELETE", "/api/admin/utilisateurs/" + medecin.getUtilisateur().getId(), direction, null).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void lOuvertureEtLaFermetureDeLApplicationMettentLaPresenceAJourImmediatement() throws Exception {
+        String accueil = connexion("accueil@test.local");
+        String jetonMedecin = connexion("cardio@test.local").substring("Bearer ".length());
+        String chemin = "/api/medecins/presence";
+        // Activite de connexion trop ancienne : seul le flux temps reel rend le medecin present.
+        sessionRepository.findAll().forEach(session -> { session.setDerniereActivite(java.time.Instant.now().minusSeconds(600)); sessionRepository.save(session); });
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Mint Ahmed')].statut").value("ABSENT"));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/evenements").param("jeton", jetonMedecin))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted());
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Mint Ahmed')].statut").value("DISPONIBLE"))
+                .andExpect(jsonPath("$[?(@.nom == 'Mint Ahmed')].connecte").value(true));
+
+        // Fermeture de l'application (dernier flux ferme) : absent sans attendre.
+        tempsReelService.fermerUtilisateur(autreMedecin.getUtilisateur().getId());
+        envoyer("GET", chemin, accueil, null).andExpect(jsonPath("$[?(@.nom == 'Mint Ahmed')].statut").value("ABSENT"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/evenements").param("jeton", "jeton-invalide"))
+                .andExpect(status().isForbidden());
     }
 
     /** Ordonnance d'une consultation terminee, prete a etre delivree. */

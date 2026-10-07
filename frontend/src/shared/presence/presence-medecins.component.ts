@@ -1,7 +1,8 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { switchMap, timer } from 'rxjs';
+import { debounceTime, merge, switchMap, timer } from 'rxjs';
+import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 import { AdminService } from '../../core/admin/admin.service';
 import { PresenceMedecin, StatutPresence } from '../../core/models/admin';
 
@@ -64,7 +65,8 @@ export class PresenceMedecinsComponent {
   readonly erreur = signal('');
 
   constructor() {
-    timer(0, 30000).pipe(
+    // Rechargement a chaque connexion, depart ou consultation (temps reel), et toutes les 60 s par securite.
+    merge(timer(0, 60000), inject(TempsReelService).changements$.pipe(debounceTime(300))).pipe(
       switchMap(() => this.service.presenceMedecins()),
       takeUntilDestroyed(inject(DestroyRef))
     ).subscribe({

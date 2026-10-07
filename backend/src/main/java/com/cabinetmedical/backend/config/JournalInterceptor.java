@@ -53,6 +53,7 @@ public class JournalInterceptor implements HandlerInterceptor {
             new Regle("PUT", "/api/admin/utilisateurs/(\\d+)", "Modification d'un utilisateur"),
             new Regle("PATCH", "/api/admin/utilisateurs/(\\d+)/statut", "Activation / désactivation d'un compte"),
             new Regle("POST", "/api/admin/utilisateurs/(\\d+)/mot-de-passe", "Réinitialisation d'un mot de passe"),
+            new Regle("DELETE", "/api/admin/utilisateurs/(\\d+)", "Suppression d'un utilisateur"),
             new Regle("DELETE", "/api/admin/sessions/(\\d+)", "Révocation d'une session"),
             new Regle("PUT", "/api/parametres-cabinet", "Modification des coordonnées du cabinet"));
 

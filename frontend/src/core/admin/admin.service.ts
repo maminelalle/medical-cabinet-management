@@ -18,6 +18,8 @@ export class AdminService {
   modifierUtilisateur(id: number, request: UtilisateurRequest): Observable<Utilisateur> {
     return this.http.put<Utilisateur>(`${this.url}/utilisateurs/${id}`, request);
   }
+  /** Suppression d'un compte sans historique (sinon le serveur demande de le desactiver). */
+  supprimerUtilisateur(id: number): Observable<void> { return this.http.delete<void>(`${this.url}/utilisateurs/${id}`); }
   changerStatut(id: number, actif: boolean): Observable<Utilisateur> {
     return this.http.patch<Utilisateur>(`${this.url}/utilisateurs/${id}/statut`, { actif });
   }

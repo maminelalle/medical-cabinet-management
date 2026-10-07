@@ -3,7 +3,11 @@ package com.cabinetmedical.backend.service;
 import com.cabinetmedical.backend.dto.admin.AdminDtos.*;
 import com.cabinetmedical.backend.dto.admin.UtilisateurRequest;
 import com.cabinetmedical.backend.entity.*;
+import com.cabinetmedical.backend.repository.ActeProgrammeRepository;
 import com.cabinetmedical.backend.repository.JournalActiviteRepository;
+import com.cabinetmedical.backend.repository.RendezVousRepository;
+import com.cabinetmedical.backend.temps.TempsReelService;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.cabinetmedical.backend.repository.MedecinRepository;
 import com.cabinetmedical.backend.repository.SessionUtilisateurRepository;
 import com.cabinetmedical.backend.repository.UtilisateurRepository;
@@ -37,6 +41,9 @@ public class AdminService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final UtilisateurConnecte utilisateurConnecte;
+    private final TempsReelService tempsReelService;
+    private final RendezVousRepository rendezVousRepository;
+    private final ActeProgrammeRepository acteProgrammeRepository;
 
     // --- Tableau de bord -------------------------------------------------------------------------
 
@@ -61,6 +68,13 @@ public class AdminService {
     // --- Comptes ---------------------------------------------------------------------------------
 
     @Transactional(readOnly = true)
+    public List<UtilisateurResponse> utilisateurs(UserDetails connecte) {
+        // La direction gere les employes du cabinet ; les comptes administrateur ne lui sont pas montres.
+        boolean direction = UtilisateurConnecte.aLeRole(connecte, "DIRECTION");
+        return utilisateurs().stream().filter(u -> !direction || u.role() != Role.ADMIN).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<UtilisateurResponse> utilisateurs() {
         Map<Long, List<SessionUtilisateur>> sessionsOuvertes = sessionRepository.findByDateFinIsNullOrderByDerniereActiviteDesc()
                 .stream().filter(this::nonExpiree).collect(Collectors.groupingBy(session -> session.getUtilisateur().getId()));
@@ -74,7 +88,8 @@ public class AdminService {
     }
 
     @Transactional
-    public UtilisateurResponse creer(UtilisateurRequest request) {
+    public UtilisateurResponse creer(UtilisateurRequest request, UserDetails connecte) {
+        verifierRoleAttribuable(request.role(), connecte);
         if (request.motDePasse() == null || request.motDePasse().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le mot de passe initial est obligatoire (8 caractères minimum)");
         }
@@ -92,18 +107,21 @@ public class AdminService {
             appliquer(medecin, request);
             medecin = medecinRepository.save(medecin);
         }
+        tempsReelService.diffuserApresValidation("COMPTES", null, utilisateur.getId());
         return versUtilisateur(utilisateur, List.of(), medecin);
     }
 
     @Transactional
     public UtilisateurResponse modifier(Long id, UtilisateurRequest request, UserDetails connecte) {
         Utilisateur utilisateur = trouver(id);
+        verifierPeutGerer(utilisateur, connecte);
+        verifierRoleAttribuable(request.role(), connecte);
         if ((utilisateur.getRole() == Role.MEDECIN) != (request.role() == Role.MEDECIN)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Le rôle médecin ne peut pas être ajouté ou retiré à un compte existant : créez un nouveau compte");
         }
-        if (utilisateur.getId().equals(utilisateurConnecte.utilisateur(connecte).getId()) && request.role() != Role.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous ne pouvez pas retirer votre propre rôle administrateur");
+        if (utilisateur.getId().equals(utilisateurConnecte.utilisateur(connecte).getId()) && request.role() != utilisateur.getRole()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous ne pouvez pas changer votre propre rôle");
         }
         verifierEmailLibre(request.email(), id);
         // Un changement de role ou d'email deconnecte l'utilisateur : son jeton porte l'ancien role.
@@ -113,7 +131,8 @@ public class AdminService {
         appliquer(utilisateur, request);
         Medecin medecin = medecinRepository.findByUtilisateurId(id).orElse(null);
         if (medecin != null) appliquer(medecin, request);
-        if (identiteModifiee) sessionService.fermerToutes(id, SessionUtilisateur.FIN_REVOQUEE);
+        if (identiteModifiee) deconnecter(id);
+        tempsReelService.diffuserApresValidation("COMPTES", null, id);
         return versUtilisateur(utilisateurRepository.save(utilisateur), sessionsOuvertes(id), medecin);
     }
 
@@ -121,41 +140,103 @@ public class AdminService {
     @Transactional
     public UtilisateurResponse changerStatut(Long id, boolean actif, UserDetails connecte) {
         Utilisateur utilisateur = trouver(id);
+        verifierPeutGerer(utilisateur, connecte);
         if (!actif && utilisateur.getId().equals(utilisateurConnecte.utilisateur(connecte).getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous ne pouvez pas désactiver votre propre compte");
         }
         utilisateur.setActif(actif);
-        if (!actif) sessionService.fermerToutes(id, SessionUtilisateur.FIN_REVOQUEE);
+        if (!actif) deconnecter(id);
+        tempsReelService.diffuserApresValidation("COMPTES", null, id);
         return versUtilisateur(utilisateurRepository.save(utilisateur), sessionsOuvertes(id),
                 medecinRepository.findByUtilisateurId(id).orElse(null));
     }
 
     @Transactional
-    public void reinitialiserMotDePasse(Long id, String motDePasse) {
+    public void reinitialiserMotDePasse(Long id, String motDePasse, UserDetails connecte) {
         Utilisateur utilisateur = trouver(id);
+        verifierPeutGerer(utilisateur, connecte);
         utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
         utilisateurRepository.save(utilisateur);
-        sessionService.fermerToutes(id, SessionUtilisateur.FIN_REVOQUEE);
+        deconnecter(id);
+    }
+
+    /**
+     * Suppression definitive d'un compte sans historique. Un compte qui a deja travaille (rendez-vous, factures,
+     * paiements, consultations...) doit etre desactive : son historique et la tracabilite sont conserves.
+     */
+    @Transactional
+    public void supprimer(Long id, UserDetails connecte) {
+        Utilisateur utilisateur = trouver(id);
+        verifierPeutGerer(utilisateur, connecte);
+        if (utilisateur.getId().equals(utilisateurConnecte.utilisateur(connecte).getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous ne pouvez pas supprimer votre propre compte");
+        }
+        Medecin medecin = medecinRepository.findByUtilisateurId(id).orElse(null);
+        if (medecin != null) {
+            boolean aTravaille = rendezVousRepository.findAllByOrderByDateHeureAsc().stream()
+                    .anyMatch(rendezVous -> rendezVous.getMedecin().getId().equals(medecin.getId()))
+                    || !acteProgrammeRepository.findByMedecinIdOrderByDateHeureDesc(medecin.getId()).isEmpty();
+            if (aTravaille) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Ce médecin a des rendez-vous ou des actes : désactivez son compte au lieu de le supprimer");
+            }
+            medecinRepository.delete(medecin);
+        }
+        tempsReelService.fermerUtilisateur(id);
+        sessionRepository.deleteAll(sessionRepository.findByUtilisateurId(id));
+        journalRepository.detacherUtilisateur(id);
+        try {
+            utilisateurRepository.delete(utilisateur);
+            utilisateurRepository.flush();
+        } catch (DataIntegrityViolationException historique) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ce compte a un historique (rendez-vous, factures, paiements, ventes...) : désactivez-le au lieu de le supprimer");
+        }
+        tempsReelService.diffuserApresValidation("COMPTES", null, id);
+    }
+
+    /** Ferme les sessions en base et les flux temps reel : l'utilisateur est deconnecte partout. */
+    private void deconnecter(Long utilisateurId) {
+        sessionService.fermerToutes(utilisateurId, SessionUtilisateur.FIN_REVOQUEE);
+        tempsReelService.fermerUtilisateur(utilisateurId);
+    }
+
+    /** La direction gere les employes, pas les comptes administrateur. */
+    private static void verifierPeutGerer(Utilisateur cible, UserDetails connecte) {
+        if (cible.getRole() == Role.ADMIN && !UtilisateurConnecte.aLeRole(connecte, "ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seul un administrateur peut gérer un compte administrateur");
+        }
+    }
+
+    private static void verifierRoleAttribuable(Role role, UserDetails connecte) {
+        if (role == Role.ADMIN && !UtilisateurConnecte.aLeRole(connecte, "ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seul un administrateur peut attribuer le rôle administrateur");
+        }
     }
 
     // --- Sessions et journal ---------------------------------------------------------------------
 
     /** {@code periode} : "actives" (sessions ouvertes), "jour" ou "semaine" (connexions de la periode). */
     @Transactional(readOnly = true)
-    public List<SessionResponse> sessions(String periode) {
+    public List<SessionResponse> sessions(String periode, UserDetails connecte) {
+        boolean direction = UtilisateurConnecte.aLeRole(connecte, "DIRECTION");
         List<SessionUtilisateur> sessions = switch (periode == null ? "jour" : periode) {
             case "actives" -> sessionRepository.findByDateFinIsNullOrderByDerniereActiviteDesc().stream().filter(this::nonExpiree).toList();
             case "semaine" -> sessionRepository.findByDateConnexionGreaterThanEqualOrderByDateConnexionDesc(debutDuJour().minus(Duration.ofDays(6)));
             default -> sessionRepository.findByDateConnexionGreaterThanEqualOrderByDateConnexionDesc(debutDuJour());
         };
-        return sessions.stream().map(this::versSession).toList();
+        return sessions.stream()
+                .filter(session -> !direction || session.getUtilisateur().getRole() != Role.ADMIN)
+                .map(this::versSession).toList();
     }
 
     @Transactional
-    public void revoquerSession(Long id) {
+    public void revoquerSession(Long id, UserDetails connecte) {
         SessionUtilisateur session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+        verifierPeutGerer(session.getUtilisateur(), connecte);
         sessionService.fermer(session.getJetonId(), SessionUtilisateur.FIN_REVOQUEE);
+        tempsReelService.fermerSession(session.getJetonId());
     }
 
     @Transactional(readOnly = true)
@@ -202,7 +283,7 @@ public class AdminService {
 
     private UtilisateurResponse versUtilisateur(Utilisateur utilisateur, List<SessionUtilisateur> ouvertes, Medecin medecin) {
         Instant derniereActivite = ouvertes.stream().map(SessionUtilisateur::getDerniereActivite).max(Comparator.naturalOrder()).orElse(null);
-        boolean enLigne = derniereActivite != null && derniereActivite.isAfter(Instant.now().minus(SessionService.EN_LIGNE));
+        boolean enLigne = tempsReelService.estEnLigne(utilisateur.getId(), derniereActivite);
         boolean aujourdhui = utilisateur.getDerniereConnexion() != null && !utilisateur.getDerniereConnexion().isBefore(debutDuJour());
         return new UtilisateurResponse(utilisateur.getId(), utilisateur.getEmail(), utilisateur.getRole(), utilisateur.getNom(),
                 utilisateur.getPrenom(), utilisateur.getTelephone(), utilisateur.isActif(), utilisateur.getDerniereConnexion(),
@@ -215,7 +296,8 @@ public class AdminService {
         Utilisateur utilisateur = session.getUtilisateur();
         String statut = session.getDateFin() != null ? session.getMotifFin()
                 : !nonExpiree(session) ? SessionUtilisateur.FIN_EXPIREE
-                : session.getDerniereActivite().isAfter(Instant.now().minus(SessionService.EN_LIGNE)) ? "EN_LIGNE" : "INACTIVE";
+                : tempsReelService.sessionEnDirect(session.getJetonId())
+                        || tempsReelService.activiteRecente(utilisateur.getId(), session.getDerniereActivite()) ? "EN_LIGNE" : "INACTIVE";
         return new SessionResponse(session.getId(), utilisateur.getId(), utilisateur.getEmail(), nomComplet(utilisateur),
                 utilisateur.getRole(), session.getAdresseIp(), session.getAppareil(), session.getNavigateur(), session.getSysteme(),
                 session.getDateConnexion(), session.getDerniereActivite(), session.getDateFin(), statut);

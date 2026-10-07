@@ -9,6 +9,7 @@ import com.cabinetmedical.backend.security.JwtAuthenticationFilter;
 import com.cabinetmedical.backend.security.JwtService;
 import com.cabinetmedical.backend.security.SessionService;
 import com.cabinetmedical.backend.service.JournalService;
+import com.cabinetmedical.backend.temps.TempsReelService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class AuthController {
     private final SessionService sessionService;
     private final JournalService journalService;
     private final UtilisateurRepository utilisateurRepository;
+    private final TempsReelService tempsReelService;
 
     /** Connexion : ouvre une session (appareil, adresse IP) et renvoie un jeton qui la reference. */
     @PostMapping("/login")
@@ -60,7 +62,10 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@AuthenticationPrincipal UserDetails connecte, HttpServletRequest requete) {
         Object sessionId = requete.getAttribute(JwtAuthenticationFilter.ATTRIBUT_SESSION);
-        if (sessionId != null) sessionService.fermer(sessionId.toString(), SessionUtilisateur.FIN_DECONNEXION);
+        if (sessionId != null) {
+            sessionService.fermer(sessionId.toString(), SessionUtilisateur.FIN_DECONNEXION);
+            tempsReelService.fermerSession(sessionId.toString());
+        }
         if (connecte != null) journalService.enregistrer(connecte.getUsername(), "Déconnexion", null, requete, 204);
     }
 

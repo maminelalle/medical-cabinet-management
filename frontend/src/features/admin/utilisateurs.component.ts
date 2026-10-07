@@ -1,28 +1,38 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, Input, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, filter } from 'rxjs';
 import { AdminService } from '../../core/admin/admin.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { messageErreur } from '../../core/http/erreur-api';
 import { ROLES, Role, Utilisateur, UtilisateurRequest, libelleRole } from '../../core/models/admin';
+import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 
-/** Gestion des comptes : creation, modification, activation / desactivation, mot de passe. */
+/**
+ * Gestion des comptes : creation, modification, activation / desactivation, mot de passe, suppression.
+ * Utilisee par l'administrateur et par la direction (employes du cabinet, sans les comptes administrateur).
+ * L'etat "en ligne" se met a jour en temps reel.
+ */
 @Component({
   selector: 'app-admin-utilisateurs',
   standalone: true,
   imports: [DatePipe, FormsModule, RouterLink],
   template: `
     <section class="admin-page">
-      <header class="page-heading">
-        <div><p class="breadcrumb">ADMINISTRATION / UTILISATEURS</p><h1>Utilisateurs</h1><p class="subtitle">Comptes du cabinet, rôles (permissions) et état de connexion.</p></div>
-        <button class="primary-button" type="button" (click)="nouveau()">+ Nouvel utilisateur</button>
-      </header>
+      @if (!integre) {
+        <header class="page-heading">
+          <div><p class="breadcrumb">ADMINISTRATION / UTILISATEURS</p><h1>Utilisateurs</h1><p class="subtitle">Comptes du cabinet, rôles (permissions) et état de connexion.</p></div>
+          <button class="primary-button" type="button" (click)="nouveau()">+ Nouvel utilisateur</button>
+        </header>
+      }
       @if (message) { <div class="alert success"><span>✓</span><div><strong>Opération réalisée</strong>{{ message }}</div></div> }
       @if (erreur) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ erreur }}</div></div> }
 
       @if (formulaire) {
         <section class="card form-card">
-          <div class="card-heading"><div><h2>{{ editionId ? 'Modifier le compte' : 'Nouveau compte' }}</h2><p>Le rôle détermine les écrans et les actions autorisés (voir Permissions)</p></div><button class="soft-button" type="button" (click)="formulaire = false">×</button></div>
+          <div class="card-heading"><div><h2>{{ editionId ? 'Modifier le compte' : 'Nouvel employé' }}</h2><p>Le rôle détermine les écrans et les actions autorisés</p></div><button class="soft-button" type="button" (click)="formulaire = false">×</button></div>
           <div class="form-quatre">
             <label>Prénom *<input [(ngModel)]="saisie.prenom"></label>
             <label>Nom *<input [(ngModel)]="saisie.nom"></label>
@@ -46,10 +56,11 @@ import { ROLES, Role, Utilisateur, UtilisateurRequest, libelleRole } from '../..
 
       <article class="card table-card">
         <div class="table-heading">
-          <div><h2>Comptes</h2><p>{{ filtres.length }} compte(s)</p></div>
+          <div><h2>{{ integre ? 'Employés du cabinet' : 'Comptes' }}</h2><p>{{ filtres.length }} compte(s) · {{ enLigne }} en ligne maintenant</p></div>
           <div class="filters">
             <input type="search" [(ngModel)]="recherche" placeholder="Nom ou email">
             <select [(ngModel)]="filtreRole"><option value="">Tous les rôles</option>@for (role of roles; track role.code) { <option [value]="role.code">{{ role.libelle }}</option> }</select>
+            @if (integre) { <button class="primary-button" type="button" (click)="nouveau()">+ Nouvel employé</button> }
           </div>
         </div>
         <div class="table-wrap"><table>
@@ -62,21 +73,31 @@ import { ROLES, Role, Utilisateur, UtilisateurRequest, libelleRole } from '../..
                 <td>
                   @if (!u.actif) { <span class="etat desactive">Désactivé</span> }
                   @else if (u.enLigne) { <span class="etat en_ligne">En ligne</span> }
-                  @else { <span class="etat">Hors ligne</span> }
+                  @else { <span class="etat">Absent</span> }
                 </td>
                 <td>{{ u.derniereConnexion ? (u.derniereConnexion | date:'dd/MM/yyyy HH:mm') : 'Jamais' }}<small>{{ u.connecteAujourdhui ? 'connecté aujourd’hui' : 'pas aujourd’hui' }}</small></td>
                 <td>{{ u.sessionsOuvertes }}</td>
                 <td>
                   <div class="actions-ligne">
                     <button class="soft-button petit" type="button" (click)="modifier(u)">✎ Modifier</button>
-                    <button class="soft-button petit" [class.danger]="u.actif" type="button" (click)="basculer(u)">{{ u.actif ? 'Désactiver' : 'Activer' }}</button>
+                    @if (u.id !== monId) {
+                      <button class="soft-button petit" [class.danger]="u.actif" type="button" (click)="basculer(u)">{{ u.actif ? 'Désactiver' : 'Activer' }}</button>
+                    }
                     @if (motDePasseId === u.id) {
                       <input class="petit" type="password" [(ngModel)]="nouveauMotDePasse" placeholder="Nouveau (8 car.)" autocomplete="new-password">
                       <button class="primary-button petit" type="button" (click)="reinitialiser(u)">OK</button>
                     } @else {
                       <button class="soft-button petit" type="button" (click)="motDePasseId = u.id; nouveauMotDePasse = ''">Mot de passe</button>
                     }
-                    <a class="soft-button petit" routerLink="/admin/journal" [queryParams]="{ utilisateurId: u.id }">Activité</a>
+                    @if (u.id !== monId) {
+                      @if (aSupprimer === u.id) {
+                        <button class="soft-button danger petit" type="button" (click)="supprimer(u)">Confirmer la suppression</button>
+                        <button class="soft-button petit" type="button" (click)="aSupprimer = null">Non</button>
+                      } @else {
+                        <button class="soft-button danger petit" type="button" (click)="aSupprimer = u.id">Supprimer</button>
+                      }
+                    }
+                    @if (!integre) { <a class="soft-button petit" routerLink="/admin/journal" [queryParams]="{ utilisateurId: u.id }">Activité</a> }
                   </div>
                 </td>
               </tr>
@@ -89,8 +110,14 @@ import { ROLES, Role, Utilisateur, UtilisateurRequest, libelleRole } from '../..
   styleUrl: './admin.css'
 })
 export class UtilisateursComponent {
+  /** Integre dans une autre page (parametres de la direction) : pas d'en-tete de page. */
+  @Input() integre = false;
+
   private readonly service = inject(AdminService);
-  readonly roles = ROLES;
+  private readonly auth = inject(AuthService);
+  readonly estAdmin = this.auth.role() === 'ADMIN';
+  /** La direction n'attribue pas le role administrateur. */
+  readonly roles = ROLES.filter((role) => this.estAdmin || role.code !== 'ADMIN');
   readonly libelleRole = libelleRole;
   utilisateurs: Utilisateur[] = [];
   recherche = '';
@@ -101,11 +128,20 @@ export class UtilisateursComponent {
   saisie: UtilisateurRequest = this.vide();
   motDePasseId: number | null = null;
   nouveauMotDePasse = '';
+  aSupprimer: number | null = null;
   saving = false;
   message = '';
   erreur = '';
 
-  constructor() { this.charger(); }
+  constructor() {
+    this.charger();
+    // Connexions, departs et modifications de comptes : la liste se met a jour sans rafraichir.
+    inject(TempsReelService).changements$
+      .pipe(filter((evenement) => evenement.type !== 'BATTEMENT'), debounceTime(300), takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe(() => this.charger());
+  }
+
+  get monId(): number | undefined { return this.auth.profil()?.id; }
 
   charger(): void {
     this.service.utilisateurs().subscribe({ next: (items) => this.utilisateurs = items, error: () => this.erreur = 'Liste des comptes indisponible.' });
@@ -116,6 +152,7 @@ export class UtilisateursComponent {
     return this.utilisateurs.filter((u) => (!this.filtreRole || u.role === this.filtreRole)
       && (!terme || `${u.prenom ?? ''} ${u.nom ?? ''} ${u.email}`.toLowerCase().includes(terme)));
   }
+  get enLigne(): number { return this.utilisateurs.filter((u) => u.enLigne).length; }
 
   nouveau(): void { this.formulaire = true; this.editionId = null; this.roleInitial = null; this.saisie = this.vide(); this.message = ''; this.erreur = ''; }
 
@@ -153,6 +190,14 @@ export class UtilisateursComponent {
     this.service.reinitialiserMotDePasse(u.id, this.nouveauMotDePasse).subscribe({
       next: () => { this.message = `Mot de passe de ${this.nom(u)} réinitialisé ; ses sessions ont été fermées.`; this.motDePasseId = null; this.charger(); },
       error: (response) => this.erreur = messageErreur(response, 'Réinitialisation impossible.')
+    });
+  }
+
+  supprimer(u: Utilisateur): void {
+    this.erreur = '';
+    this.service.supprimerUtilisateur(u.id).subscribe({
+      next: () => { this.message = `Le compte de ${this.nom(u)} est supprimé.`; this.aSupprimer = null; this.charger(); },
+      error: (response) => { this.erreur = messageErreur(response, 'Suppression impossible.'); this.aSupprimer = null; }
     });
   }
 

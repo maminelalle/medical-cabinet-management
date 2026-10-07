@@ -9,7 +9,7 @@ import com.cabinetmedical.backend.repository.MedecinRepository;
 import com.cabinetmedical.backend.repository.RendezVousRepository;
 import com.cabinetmedical.backend.repository.SessionUtilisateurRepository;
 import com.cabinetmedical.backend.security.JwtService;
-import com.cabinetmedical.backend.security.SessionService;
+import com.cabinetmedical.backend.temps.TempsReelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +37,7 @@ public class PresenceService {
     private final RendezVousRepository rendezVousRepository;
     private final SessionUtilisateurRepository sessionRepository;
     private final JwtService jwtService;
+    private final TempsReelService tempsReelService;
 
     @Transactional(readOnly = true)
     public List<PresenceMedecinResponse> presenceMedecins() {
@@ -55,7 +56,7 @@ public class PresenceService {
                 .sorted(Comparator.comparing(Medecin::getNom))
                 .map(medecin -> {
                     Instant activite = activiteParUtilisateur.get(medecin.getUtilisateur().getId());
-                    boolean connecte = activite != null && activite.isAfter(maintenant.minus(SessionService.EN_LIGNE));
+                    boolean connecte = tempsReelService.estEnLigne(medecin.getUtilisateur().getId(), activite);
                     List<RendezVous> rendezVous = planning.getOrDefault(medecin.getId(), List.of());
                     RendezVous enCours = rendezVous.stream().filter(r -> r.getStatut() == StatutRendezVous.EN_COURS).findFirst().orElse(null);
                     List<RendezVous> aVenir = rendezVous.stream()

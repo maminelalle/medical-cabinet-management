@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { FactureService } from '../../core/factures/facture.service';
+import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 
 @Component({
   selector: 'app-shell',
@@ -107,6 +108,12 @@ import { FactureService } from '../../core/factures/facture.service';
           }
 
           <p class="nav-label">Système</p>
+          @if (role === 'DIRECTION') {
+            <a routerLink="/direction/parametres" routerLinkActive="active">
+              <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19v-1a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v1" /><path d="M17.5 9.5a2 2 0 1 0 0-4M20.5 19v-1a3.5 3.5 0 0 0-2.5-3.3" /></svg></span>
+              <span class="nav-text">Paramètres · employés</span>
+            </a>
+          }
           @if (lectureSeule) {
             <a routerLink="/design-system" routerLinkActive="active">
               <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="9.2" cy="9.6" r="1.1" /><circle cx="14.8" cy="9.6" r="1.1" /><circle cx="10.4" cy="14.8" r="1.1" /><path d="M14.4 17.6c1-1.6 2.1-2.4 3.4-2.4" /></svg></span>
@@ -178,6 +185,15 @@ import { FactureService } from '../../core/factures/facture.service';
           </div>
         </header>
         <main class="page-content"><router-outlet /></main>
+        <div class="notifications" aria-live="polite">
+          @for (notification of notifications(); track notification.id) {
+            <div class="notification" [class.hors-ligne]="!notification.enLigne">
+              <span class="point"></span>
+              <span>{{ notification.texte }}</span>
+              <button type="button" (click)="fermerNotification(notification.id)" aria-label="Fermer">×</button>
+            </div>
+          }
+        </div>
       </section>
     </div>
   `,
@@ -197,12 +213,27 @@ export class AppShellComponent {
   readonly peutVoirCatalogue = this.role !== 'PHARMACIEN';
   readonly collapsed = signal(false);
   readonly facturesImpayees = signal(0);
+  readonly notifications = signal<{ id: number; texte: string; enLigne: boolean }[]>([]);
+  private compteurNotifications = 0;
+  private readonly tempsReel = inject(TempsReelService);
+  /** Accueil, direction et administration sont prevenus des arrivees et departs. */
+  readonly voitPresence = this.role === 'ACCUEIL' || this.role === 'DIRECTION' || this.role === 'ADMIN';
   readonly champRecherche = viewChild<ElementRef<HTMLInputElement>>('champRecherche');
   recherche = '';
 
   constructor() {
+    const destruction = inject(DestroyRef);
     // Signal de presence toutes les minutes : alimente "en ligne" (administration) et la presence des medecins.
-    interval(60000).pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(() => this.auth.ping().subscribe({ error: () => undefined }));
+    interval(60000).pipe(takeUntilDestroyed(destruction)).subscribe(() => this.auth.ping().subscribe({ error: () => undefined }));
+    // Flux temps reel : le serveur sait que l'application est ouverte et previent des connexions / departs.
+    this.tempsReel.connecter();
+    destruction.onDestroy(() => this.tempsReel.deconnecter());
+    this.tempsReel.evenements$.pipe(takeUntilDestroyed(destruction)).subscribe((evenement) => {
+      const presence = evenement.type === 'EN_LIGNE' || evenement.type === 'HORS_LIGNE';
+      if (presence && this.voitPresence && evenement.message && evenement.utilisateurId !== this.auth.profil()?.id) {
+        this.notifier(evenement.message, evenement.type === 'EN_LIGNE');
+      }
+    });
     if (this.billing) {
       this.factureService.list().subscribe({
         next: (factures) => this.facturesImpayees.set(factures.filter((facture) => Number(facture.resteAPayer) > 0).length),
@@ -232,8 +263,18 @@ export class AppShellComponent {
     }
   }
 
-  /** Deconnexion : la session est fermee cote serveur (et journalisee). */
+  /** Notification ephemere (6 s) en bas d'ecran. */
+  private notifier(texte: string, enLigne: boolean): void {
+    const id = ++this.compteurNotifications;
+    this.notifications.update((liste) => [...liste.slice(-3), { id, texte, enLigne }]);
+    setTimeout(() => this.fermerNotification(id), 6000);
+  }
+
+  fermerNotification(id: number): void { this.notifications.update((liste) => liste.filter((item) => item.id !== id)); }
+
+  /** Deconnexion : la session est fermee cote serveur (et journalisee), le flux temps reel aussi. */
   logout(): void {
+    this.tempsReel.deconnecter();
     this.auth.deconnecter().subscribe(() => this.router.navigate(['/login']));
   }
 }

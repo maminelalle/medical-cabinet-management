@@ -2,7 +2,8 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { switchMap, timer } from 'rxjs';
+import { debounceTime, merge, switchMap, timer } from 'rxjs';
+import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 import { AdminService } from '../../core/admin/admin.service';
 import { TableauBordAdmin, Utilisateur, libelleRole } from '../../core/models/admin';
 import { PresenceMedecinsComponent } from '../../shared/presence/presence-medecins.component';
@@ -66,7 +67,8 @@ export class AdminDashboardComponent {
   erreur = '';
 
   constructor() {
-    timer(0, 30000).pipe(switchMap(() => this.service.tableauDeBord()), takeUntilDestroyed(inject(DestroyRef))).subscribe({
+    // Rechargement a chaque connexion, depart ou consultation (temps reel), et toutes les 60 s par securite.
+    merge(timer(0, 60000), inject(TempsReelService).changements$.pipe(debounceTime(300))).pipe(switchMap(() => this.service.tableauDeBord()), takeUntilDestroyed(inject(DestroyRef))).subscribe({
       next: (donnees) => { this.donnees = donnees; this.erreur = ''; },
       error: () => this.erreur = 'Le tableau de bord d’administration est indisponible.'
     });

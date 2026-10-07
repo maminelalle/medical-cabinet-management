@@ -14,5 +14,7 @@ public interface SessionUtilisateurRepository extends JpaRepository<SessionUtili
 
     List<SessionUtilisateur> findByUtilisateurIdAndDateFinIsNull(Long utilisateurId);
 
+    List<SessionUtilisateur> findByUtilisateurId(Long utilisateurId);
+
     List<SessionUtilisateur> findByDateConnexionGreaterThanEqualOrderByDateConnexionDesc(Instant depuis);
 }

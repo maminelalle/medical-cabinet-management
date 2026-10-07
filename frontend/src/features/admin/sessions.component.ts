@@ -1,4 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, Input, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
+import { TempsReelService } from '../../core/temps-reel/temps-reel.service';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/admin/admin.service';
@@ -12,6 +15,7 @@ import { SessionUtilisateur, libelleRole } from '../../core/models/admin';
   imports: [DatePipe, FormsModule],
   template: `
     <section class="admin-page">
+      @if (!integre) {
       <header class="page-heading">
         <div><p class="breadcrumb">ADMINISTRATION / SESSIONS</p><h1>Connexions et appareils</h1><p class="subtitle">Sessions ouvertes, appareils, navigateurs et adresses IP. Une session révoquée est déconnectée immédiatement.</p></div>
         <div class="page-actions">
@@ -23,6 +27,15 @@ import { SessionUtilisateur, libelleRole } from '../../core/models/admin';
           <button class="soft-button" type="button" (click)="charger()">↻</button>
         </div>
       </header>
+      } @else {
+        <div class="actions-ligne">
+          <select [(ngModel)]="periode" (change)="charger()" aria-label="Période">
+            <option value="actives">Sessions ouvertes</option>
+            <option value="jour">Connexions d’aujourd’hui</option>
+            <option value="semaine">Connexions des 7 derniers jours</option>
+          </select>
+        </div>
+      }
       @if (message) { <div class="alert success"><span>✓</span><div><strong>{{ message }}</strong></div></div> }
       @if (erreur) { <div class="alert danger"><span>×</span><div><strong>Action impossible</strong>{{ erreur }}</div></div> }
       <article class="card table-card">
@@ -49,6 +62,8 @@ import { SessionUtilisateur, libelleRole } from '../../core/models/admin';
   styleUrl: './admin.css'
 })
 export class SessionsComponent {
+  /** Integre dans une autre page (parametres de la direction) : pas d'en-tete de page. */
+  @Input() integre = false;
   private readonly service = inject(AdminService);
   readonly libelleRole = libelleRole;
   periode: 'actives' | 'jour' | 'semaine' = 'actives';
@@ -56,7 +71,11 @@ export class SessionsComponent {
   message = '';
   erreur = '';
 
-  constructor() { this.charger(); }
+  constructor() {
+    this.charger();
+    // Ouverture et fermeture de l'application, revocations : liste a jour sans rafraichir.
+    inject(TempsReelService).changements$.pipe(debounceTime(300), takeUntilDestroyed(inject(DestroyRef))).subscribe(() => this.charger());
+  }
 
   charger(): void {
     this.service.sessions(this.periode).subscribe({ next: (items) => this.sessions = items, error: () => this.erreur = 'Sessions indisponibles.' });
