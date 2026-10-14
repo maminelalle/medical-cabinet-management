@@ -21,6 +21,12 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V15__noms_sans_ould_mint.sql` | Noms de démonstration simplifiés : « Ould » et « Mint » retirés (patients, médecins, comptes) |
 | `V16__apparence_interface.sql` | Apparence de l'interface dans `parametres_cabinet` : `nom_interface`, `couleur_principale`, `couleur_accent`, `couleur_bouton` (#RRGGBB contrôlé), `logo` (data URL) |
 
+## Image du schéma
+
+![Schéma de la base de données](docs/schema-bdd.png)
+
+Image générée depuis la base PostgreSQL réelle (20 tables, 38 clés étrangères, migrations V1 à V16). Version zoomable : `docs/schema-bdd.html` (à ouvrir dans un navigateur).
+
 ## Diagramme entité-association
 
 ```mermaid
