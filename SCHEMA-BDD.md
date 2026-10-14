@@ -21,11 +21,21 @@ Base PostgreSQL `cabinet_medical`, schéma versionné par **Flyway** (`backend/s
 | `V15__noms_sans_ould_mint.sql` | Noms de démonstration simplifiés : « Ould » et « Mint » retirés (patients, médecins, comptes) |
 | `V16__apparence_interface.sql` | Apparence de l'interface dans `parametres_cabinet` : `nom_interface`, `couleur_principale`, `couleur_accent`, `couleur_bouton` (#RRGGBB contrôlé), `logo` (data URL) |
 
-## Image du schéma
+## Images du schéma
 
-![Schéma de la base de données](docs/schema-bdd.png)
+Images générées depuis la base PostgreSQL réelle (20 tables, migrations V1 à V16). Les liens de traçabilité (`created_by`, `enregistre_par`... vers `utilisateurs`) ne sont pas dessinés pour garder les schémas lisibles. Versions zoomables : fichiers `.html` du dossier `docs/`.
 
-Image générée depuis la base PostgreSQL réelle (20 tables, 38 clés étrangères, migrations V1 à V16). Version zoomable : `docs/schema-bdd.html` (à ouvrir dans un navigateur).
+### 1. Vue d'ensemble (champs essentiels)
+
+![Vue d'ensemble du schéma](docs/schema-1-resume.png)
+
+### 2. Détail : patients, rendez-vous et parcours médical
+
+![Schéma détaillé 1](docs/schema-2-patients-medical.png)
+
+### 3. Détail : facturation, pharmacie et administration
+
+![Schéma détaillé 2](docs/schema-3-facturation-pharmacie-admin.png)
 
 ## Diagramme entité-association
 
